@@ -1,0 +1,18 @@
+{
+    "version": "1.0.0",
+    "thumbnail": "store/thumbnail.png",
+    "id": "io_github_cuebot_Cuebot",
+    "name": "Cuebot",
+    "github": "https://github.com/TechDaddyKB/cuebot",
+    "descriptions": {
+        "en_US": "Run Cuebot actions, toggle them, set global variables and fire Cuebot's Stream Deck trigger. Keys also show the titles, images and values Cuebot sends them."
+    },
+    "short-descriptions": {
+        "en_US": "Control Cuebot from your Stream Deck"
+    },
+    "tags": ["Streaming", "Automation"],
+    "minimum-app-version": "1.5.0-beta",
+    "app-version": "1.5.0-beta",
+    "description": "Run Cuebot actions, toggle them, set global variables and fire Cuebot's Stream Deck trigger.",
+    "short-description": "Control Cuebot from your Stream Deck"
+}

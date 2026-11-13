@@ -117,6 +117,7 @@ jobs:
             dist/Cuebot-win-x64.zip dist/Cuebot-x86_64.AppImage dist/Cuebot-x86_64.flatpak dist/Cuebot-*-linux-*.tar.gz \
             dist/Cuebot-macos-arm64.dmg dist/Cuebot-macos-x64.dmg \
             dist/io.github.cuebot.streamdeck.streamDeckPlugin \
+            dist/Cuebot-StreamController-plugin.zip \
             "${companion[@]}"
 
   aur:

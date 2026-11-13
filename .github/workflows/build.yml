@@ -444,3 +444,23 @@ jobs:
           retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: Cuebot-StreamDeck-plugin
           path: streamdeck/dist/io.github.cuebot.streamdeck.streamDeckPlugin
+
+  # Cuebot's plugin for StreamController (Linux): tests the connection and key logic, then zips the plugin folder.
+  streamcontroller-plugin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: streamcontroller
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: pip install pytest websocket-client requests
+      - run: python -m pytest -q tests
+      - run: scripts/pack.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          retention-days: 7
+          name: Cuebot-StreamController-plugin
+          path: streamcontroller/dist/Cuebot-StreamController-plugin.zip

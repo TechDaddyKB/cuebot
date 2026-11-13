@@ -13,6 +13,9 @@ There are two ways to connect one. Pick **one**.
 
 Both are on **Input > Stream Deck**.
 
+On Linux there is a third way: keep using [StreamController](streamcontroller.md) for your Stream Deck and add Cuebot's
+plugin for it. Then Cuebot keys sit next to your other StreamController keys.
+
 ## Way 1: the Stream Deck app and Cuebot's plugin
 
 ![Input > Stream Deck](../../assets/screens/page-stream-deck.png)

@@ -191,6 +191,7 @@ nav:
               - mtion studio: guides/apps/mtion-studio.md
               - StreamFog: guides/apps/streamfog.md
           - Stream Deck: guides/apps/stream-deck.md
+          - StreamController: guides/apps/streamcontroller.md
           - Decks: guides/apps/decks.md
           - Buttons and controllers:
               - guides/apps/controllers.md

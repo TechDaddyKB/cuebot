@@ -12,6 +12,22 @@ public class HubTests
     }
 
     [Fact]
+    public async Task A_named_app_like_StreamController_is_shown_by_its_name()
+    {
+        await using var h = new Harness();
+        var peer = new FakePeer("sc");
+        await h.Hub.OpenAsync(peer);
+        await h.Hub.HandleAsync("sc", """
+            {"type":"hello","protocol":1,"plugin":{"uuid":"io.github.cuebot.streamcontroller","version":"1.0.0"},
+             "app":{"name":"StreamController","version":"1.5.0-beta.16","platform":"linux","language":"en"},
+             "devices":[],"buttons":[]}
+            """);
+        Assert.Equal("StreamController", Assert.Single(h.EventsOf(StreamDeckHub.ConnectedEvent)).Args["appName"]);
+        var instance = Assert.Single(h.Hub.Instances);
+        Assert.Equal(("StreamController", "1.5.0-beta.16", "linux"), (instance.AppName, instance.AppVersion, instance.Platform));
+    }
+
+    [Fact]
     public async Task Hello_publishes_connected_and_info_and_lists_the_instance()
     {
         await using var h = new Harness();
@@ -30,6 +46,7 @@ public class HubTests
         var connected = Assert.Single(h.EventsOf(StreamDeckHub.ConnectedEvent));
         Assert.Equal("0.1.0", connected.Args["pluginVersion"]);
         Assert.Equal("7.1.0", connected.Args["streamDeckVersion"]);
+        Assert.Equal("Stream Deck", connected.Args["appName"]);   // the Stream Deck app sends no name
         var info = Assert.Single(h.EventsOf(StreamDeckHub.InfoEvent));
         Assert.Equal(2, info.Args["deviceCount"]);
         Assert.Equal("My XL, My Plus", info.Args["deviceNames"]);

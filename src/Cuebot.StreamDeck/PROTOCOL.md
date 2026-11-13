@@ -13,7 +13,10 @@ reference for both; the formats are covered by `tests/Cuebot.StreamDeck.Tests` (
 - The listener is generic: any module can register an `IApiWebSocketRoute` (`src/Cuebot.Server/Api/ApiWebSocketRoute.cs`)
   for `/api/v1/{name}`.
 
-A connection is one Stream Deck app (one running plugin). Several may connect at once (e.g. two PCs).
+A connection is one Stream Deck app (one running plugin). Several may connect at once (e.g. two PCs). Two plugins
+speak it: the Elgato one (`streamdeck/`) and the StreamController one (`streamcontroller/`, Linux); the second sends
+`app.name` = `"StreamController"` in its hello (the Stream Deck app sends no name), shown on the Stream Deck page and
+as `%appName%`.
 
 ## Plugin → Cuebot
 

@@ -75,4 +75,5 @@ public sealed record StreamDeckInstanceInfo(
     string AppVersion,
     string Platform,
     IReadOnlyList<StreamDeckDevice> Devices,
-    IReadOnlyList<StreamDeckButton> Buttons);
+    IReadOnlyList<StreamDeckButton> Buttons,
+    string AppName = "Stream Deck");

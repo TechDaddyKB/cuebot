@@ -25,6 +25,7 @@
         "instanceId": "Which Stream Deck program connected (useful if you use more than one computer)",
         "pluginVersion": "The version of the Cuebot plugin in Stream Deck",
         "streamDeckVersion": "The version of the Stream Deck program",
+        "appName": "The program the plugin runs in: \"Stream Deck\", or \"StreamController\" for the StreamController plugin",
         "platform": "The computer system it runs on, like \"windows\" or \"mac\"",
         "deviceCount": "How many Stream Decks are connected"
       }
@@ -36,6 +37,7 @@
         "instanceId": "Which Stream Deck program connected (useful if you use more than one computer)",
         "pluginVersion": "The version of the Cuebot plugin in Stream Deck",
         "streamDeckVersion": "The version of the Stream Deck program",
+        "appName": "The program the plugin runs in: \"Stream Deck\", or \"StreamController\" for the StreamController plugin",
         "platform": "The computer system it runs on, like \"windows\" or \"mac\"",
         "deviceCount": "How many Stream Decks are connected"
       }
@@ -47,6 +49,7 @@
         "instanceId": "Which Stream Deck program connected (useful if you use more than one computer)",
         "pluginVersion": "The version of the Cuebot plugin in Stream Deck",
         "streamDeckVersion": "The version of the Stream Deck program",
+        "appName": "The program the plugin runs in: \"Stream Deck\", or \"StreamController\" for the StreamController plugin",
         "platform": "The computer system it runs on, like \"windows\" or \"mac\"",
         "deviceCount": "How many Stream Decks are connected",
         "deviceNames": "The names of the Stream Decks, separated by commas",

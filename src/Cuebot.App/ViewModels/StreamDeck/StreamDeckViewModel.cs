@@ -152,7 +152,7 @@ public sealed partial class StreamDeckViewModel : PageViewModel
 /// <summary>One connected Stream Deck app (one plugin instance).</summary>
 public sealed class StreamDeckInstanceViewModel(StreamDeckInstanceInfo info)
 {
-    public string Title => $"Stream Deck {Fallback(info.AppVersion)} on {Platform(info.Platform)}";
+    public string Title => $"{info.AppName} {Fallback(info.AppVersion)} on {Platform(info.Platform)}";
 
     public string Details =>
         $"Plugin {Fallback(info.PluginVersion)} · from {info.Remote} · connected {info.ConnectedAt.LocalDateTime:t}";
@@ -171,6 +171,7 @@ public sealed class StreamDeckInstanceViewModel(StreamDeckInstanceInfo info)
     {
         "windows" => "Windows",
         "mac" => "macOS",
+        "linux" => "Linux",
         "" => "an unknown system",
         _ => platform,
     };

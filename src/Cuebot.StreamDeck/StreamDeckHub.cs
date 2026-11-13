@@ -193,6 +193,8 @@ public sealed class StreamDeckHub : IApiWebSocketRoute, IConnectionStatus
         session.PluginVersion = message.Obj("plugin")?.Str("version") ?? "";
         var app = message.Obj("app");
         session.AppVersion = app?.Str("version") ?? "";
+        // The Stream Deck app sends no name; other apps with Cuebot's plugin (StreamController) say which they are.
+        session.AppName = app?.Str("name") is { Length: > 0 } name ? name : "Stream Deck";
         session.Platform = app?.Str("platform") ?? "";
         session.Hello = message.Clone();
         session.SetDevices(StreamDeckProtocol.ParseDevices(message));
@@ -200,7 +202,7 @@ public sealed class StreamDeckHub : IApiWebSocketRoute, IConnectionStatus
         session.Ready = true;
         if (!wasReady)
         {
-            _log.Info(Source, $"Stream Deck plugin {session.PluginVersion} connected (Stream Deck {session.AppVersion}, {Plural(session.DeviceCount, "device")})");
+            _log.Info(Source, $"Stream Deck plugin {session.PluginVersion} connected ({session.AppName} {session.AppVersion}, {Plural(session.DeviceCount, "device")})");
             _bus.Publish(new BotEvent(ConnectedEvent, SessionArgs(session)));
         }
         _bus.Publish(new BotEvent(InfoEvent, InfoArgs(session)));
@@ -231,6 +233,7 @@ public sealed class StreamDeckHub : IApiWebSocketRoute, IConnectionStatus
         ["remote"] = s.Peer.Remote,
         ["pluginVersion"] = s.PluginVersion,
         ["streamDeckVersion"] = s.AppVersion,
+        ["appName"] = s.AppName,
         ["platform"] = s.Platform,
         ["deviceCount"] = s.DeviceCount,
     };
@@ -481,6 +484,7 @@ public sealed class StreamDeckHub : IApiWebSocketRoute, IConnectionStatus
         public volatile bool Ready;
         public string PluginVersion { get; set; } = "";
         public string AppVersion { get; set; } = "";
+        public string AppName { get; set; } = "Stream Deck";
         public string Platform { get; set; } = "";
 
         /// <summary>The last hello message, for Streamer.bot's <c>data.*</c> info names.</summary>
@@ -545,7 +549,8 @@ public sealed class StreamDeckHub : IApiWebSocketRoute, IConnectionStatus
             lock (_gate)
             {
                 return new StreamDeckInstanceInfo(Peer.Id, Peer.Remote, ConnectedAt, PluginVersion, AppVersion, Platform, _devices,
-                    [.. _buttons.Values.OrderBy(b => b.DeviceId).ThenBy(b => b.Row ?? int.MaxValue).ThenBy(b => b.Column ?? int.MaxValue)]);
+                    [.. _buttons.Values.OrderBy(b => b.DeviceId).ThenBy(b => b.Row ?? int.MaxValue).ThenBy(b => b.Column ?? int.MaxValue)],
+                    AppName);
             }
         }
     }

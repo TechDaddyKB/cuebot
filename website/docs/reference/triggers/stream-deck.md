@@ -14,6 +14,7 @@ Runs when the Cuebot plugin in your Stream Deck program connects to Cuebot. Hand
 | `%instanceId%` | Which Stream Deck program connected (useful if you use more than one computer) |
 | `%pluginVersion%` | The version of the Cuebot plugin in Stream Deck |
 | `%streamDeckVersion%` | The version of the Stream Deck program |
+| `%appName%` | The program the plugin runs in: "Stream Deck", or "StreamController" for the StreamController plugin |
 | `%platform%` | The computer system it runs on, like "windows" or "mac" |
 | `%deviceCount%` | How many Stream Decks are connected |
 
@@ -30,6 +31,7 @@ Runs when Cuebot learns about the Stream Decks that are plugged in, when the plu
 | `%instanceId%` | Which Stream Deck program connected (useful if you use more than one computer) |
 | `%pluginVersion%` | The version of the Cuebot plugin in Stream Deck |
 | `%streamDeckVersion%` | The version of the Stream Deck program |
+| `%appName%` | The program the plugin runs in: "Stream Deck", or "StreamController" for the StreamController plugin |
 | `%platform%` | The computer system it runs on, like "windows" or "mac" |
 | `%deviceCount%` | How many Stream Decks are connected |
 | `%deviceNames%` | The names of the Stream Decks, separated by commas |
@@ -49,6 +51,7 @@ Runs when the Stream Deck program stops talking to Cuebot, for example when you 
 | `%instanceId%` | Which Stream Deck program connected (useful if you use more than one computer) |
 | `%pluginVersion%` | The version of the Cuebot plugin in Stream Deck |
 | `%streamDeckVersion%` | The version of the Stream Deck program |
+| `%appName%` | The program the plugin runs in: "Stream Deck", or "StreamController" for the StreamController plugin |
 | `%platform%` | The computer system it runs on, like "windows" or "mac" |
 | `%deviceCount%` | How many Stream Decks are connected |
 
