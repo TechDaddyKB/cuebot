@@ -107,12 +107,14 @@
         "images": "Optional. Pictures to throw instead (web addresses or files), separated by commas.",
         "count": "Optional. How many to throw. The default is 1.",
         "size": "Optional. The size from 0 to 1. The default is 0.15.",
-        "flinch": "Optional. How hard the model reacts, from 0 to 1. The default is 0.5."
+        "flinch": "Optional. How hard the model reacts, from 0 to 1. The default is 0.5.",
+        "from": "Optional. Where they fly in from: Random (left or right, the default), Anywhere (a different direction each throw), Left, Right, Top, Bottom, TopLeft, TopRight, BottomLeft, BottomRight, Front (from the camera), or an angle in degrees (0 from the top, 90 from the right)."
       },
       "returns": "How many were thrown.",
       "example": {
         "files": "tomato.png",
-        "count": 3
+        "count": 3,
+        "from": "Top"
       }
     },
     "vtubestudio.colorTint": {

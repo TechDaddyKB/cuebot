@@ -37,6 +37,7 @@ public sealed class ServerServices
     private TimerService? _timers;
     private Cuebot.Core.Transfer.TransferService? _transfer;
     private Cuebot.Core.Scripting.ScriptApi? _scripts;
+    private Mcp.IFeatureRequestSender? _featureRequests;
 
     public ServerServices()
     {
@@ -78,6 +79,13 @@ public sealed class ServerServices
 
     /// <summary>Trigger and sub-action types, for the REST API / MCP catalogue and action validation.</summary>
     public Registry? Registry { get => _registry ??= _provider?.GetService<Registry>(); init => _registry = value; }
+
+    /// <summary>Files feature requests on GitHub (MCP request_feature); the app provides it.</summary>
+    public Mcp.IFeatureRequestSender? FeatureRequests
+    {
+        get => _featureRequests ??= _provider?.GetService<Mcp.IFeatureRequestSender>();
+        init => _featureRequests = value;
+    }
 
     /// <summary>Timer runtime state (REST API / MCP).</summary>
     public TimerService? Timers { get => _timers ??= _provider?.GetService<TimerService>(); init => _timers = value; }

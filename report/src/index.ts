@@ -1,5 +1,5 @@
-// Cuebot report intake: a Cloudflare Worker that turns problem and crash reports from the Cuebot app into GitHub
-// issues, so streamers can report without a GitHub account.
+// Cuebot report intake: a Cloudflare Worker that turns problem and crash reports and feature requests from the Cuebot
+// app into GitHub issues, so streamers can report without a GitHub account.
 //
 //   POST /v1/reports   {kind, title, body, version, os, installId, signature?, dryRun?}
 //     201 {number, url, duplicate}   an issue was created, or (crashes) a comment was added to the open issue
@@ -34,7 +34,7 @@ export interface Env {
 }
 
 export interface Report {
-	kind: "problem" | "crash";
+	kind: "problem" | "crash" | "feature";
 	title: string;
 	body: string;
 	version: string;
@@ -57,8 +57,8 @@ const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 export function parseReport(value: unknown): Report | string {
 	if (typeof value !== "object" || value === null) return "The body must be a JSON object";
 	const o = value as Record<string, unknown>;
-	const kind = o.kind === "crash" ? "crash" : o.kind === "problem" ? "problem" : null;
-	if (!kind) return "kind must be problem or crash";
+	const kind = o.kind === "crash" ? "crash" : o.kind === "problem" ? "problem" : o.kind === "feature" ? "feature" : null;
+	if (!kind) return "kind must be problem, crash or feature";
 	const title = str(o.title);
 	if (title.length < 3 || title.length > MAX_TITLE) return `title must be 3 to ${MAX_TITLE} characters`;
 	const body = str(o.body);
@@ -97,7 +97,8 @@ export function issueTitle(report: Report): string {
 }
 
 export function labelsFor(report: Report): string[] {
-	return report.kind === "crash" ? ["bug", "crash", "from-app"] : ["from-app"];
+	if (report.kind === "crash") return ["bug", "crash", "from-app"];
+	return report.kind === "feature" ? ["enhancement", "from-app"] : ["from-app"];
 }
 
 /** Rate limits and the crash map. One instance ("intake") serialises every report, which is plenty at this volume. */

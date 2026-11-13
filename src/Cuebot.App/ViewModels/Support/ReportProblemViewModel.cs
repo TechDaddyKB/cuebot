@@ -260,13 +260,13 @@ public sealed partial class ReportProblemViewModel : ObservableObject
         if (HasIssue) _services.OpenUrl(IssueUrl);
     }
 
-    private static string VersionOf(EnvironmentSnapshot environment)
+    internal static string VersionOf(EnvironmentSnapshot environment)
     {
         var version = (environment.AppVersion.Length > 0 ? environment.AppVersion : "0.0.0").Split('+')[0].Trim();
         return System.Text.RegularExpressions.Regex.IsMatch(version, "^[0-9A-Za-z.+-]{1,40}$") ? version : "0.0.0";
     }
 
-    private static string OsOf(EnvironmentSnapshot environment) =>
+    internal static string OsOf(EnvironmentSnapshot environment) =>
         ReportBuilder.Truncate((environment.Distro.Length > 0 ? environment.Distro : environment.Os).Trim(), 100);
 
     /// <summary>

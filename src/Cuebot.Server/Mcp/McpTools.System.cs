@@ -64,6 +64,24 @@ public static partial class McpTools
             Confirmation = a => ReqStr(a, "command") == "reset" ? "Reset this stream's totals (follows, subs, tips...)" : null,
         },
 
+        new("request_feature", "Request a feature",
+            "File a feature request for Cuebot's developers as a PUBLIC GitHub issue (labelled enhancement), for something the streamer "
+            + "wants that Cuebot cannot do. Only after checking with the other tools that it really cannot (no trigger, sub-action, "
+            + "setting or workaround), and only when the streamer agrees to send one. Write it so a developer understands it without "
+            + "this conversation: what the streamer wants to do, what they tried or what Cuebot lacks, and a suggestion if there is "
+            + "one. Never include names, channel names, links to their accounts, tokens or other private details. Cuebot always "
+            + "shows the streamer the full text with Approve and Deny first.",
+            Schema(["title", "body"],
+                ("title", Str("Short summary, e.g. VTube Studio: throw items from the top (5 to 120 characters)")),
+                ("body", Str("The request in Markdown: what they want, why Cuebot cannot do it now, a suggestion (40 to 6000 characters)")),
+                Confirm()),
+            new McpToolHints(ReadOnly: false, OpenWorld: true),
+            async (a, ct) => await ops.RequestFeatureAsync(ReqStr(a, "title"), ReqStr(a, "body"), ct).ConfigureAwait(false))
+        {
+            AlwaysConfirm = true,
+            Confirmation = a => $"File this feature request as a public GitHub issue:\n\n{ReqStr(a, "title").Trim()}\n\n{ReqStr(a, "body").Trim()}",
+        },
+
         new("list_hotkeys", "List hotkeys", "Global hotkeys (keyboard shortcuts that run actions) and their groups.", Schema([]), ReadOnlyHints,
             (_, _) => Done(ops.Hotkeys())),
         new("save_hotkey", "Create or change a hotkey",

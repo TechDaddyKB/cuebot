@@ -520,7 +520,7 @@
       }
     },
     "vtubestudio.throwItems": {
-      "description": "Throws items or pictures at your model: they fly in from the side, your model flinches, and they fall away and disappear.",
+      "description": "Throws items or pictures at your model: they fly in from a side, a corner or the camera, your model flinches, and they fall away and disappear.",
       "fields": {
         "files": "Item files to throw. Separate several with commas; one is picked at random for each throw.",
         "images": "Or pictures to throw instead, like %userProfileImageUrl% (web addresses, files or base64). The first time, VTube Studio asks you to allow Cuebot to load pictures.",
@@ -529,7 +529,7 @@
         "interval": "Seconds between throws.",
         "flightTime": "Seconds each one takes to reach the model.",
         "flinch": "How hard your model reacts, from 0 (not at all) to 1.",
-        "from": "Which side they come from.",
+        "from": "Where they fly in from: a side, a corner, Front (from the camera), Random: left or right (the old choice), or Random: any direction for a different direction each throw.",
         "askFirst": "Tick to have VTube Studio ask you before showing a picture it hasn't seen yet."
       },
       "variables": {

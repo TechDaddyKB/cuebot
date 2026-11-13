@@ -379,19 +379,20 @@ Throws items or pictures at your model; it flinches and they fall away. Fails wi
 | `count` | `count` | Optional. How many to throw. The default is 1. |
 | `size` | `size` | Optional. The size from 0 to 1. The default is 0.15. |
 | `flinch` | `flinch` | Optional. How hard the model reacts, from 0 to 1. The default is 0.5. |
+| `from` | `from_` | Optional. Where they fly in from: Random (left or right, the default), Anywhere (a different direction each throw), Left, Right, Top, Bottom, TopLeft, TopRight, BottomLeft, BottomRight, Front (from the camera), or an angle in degrees (0 from the top, 90 from the right). |
 
 **Gives back:** How many were thrown.
 
 === "C#"
 
     ```csharp
-    var answer = await Cb.Call("vtubestudio.throwItems", new { files = "tomato.png", count = 3 });
+    var answer = await Cb.Call("vtubestudio.throwItems", new { files = "tomato.png", count = 3, from = "Top" });
     ```
 
 === "Python"
 
     ```python
-    answer = cb.vtubestudio_throw_items(files="tomato.png", count=3)
+    answer = cb.vtubestudio_throw_items(files="tomato.png", count=3, from_="Top")
     ```
 
 ## vtubestudio.triggerHotkey

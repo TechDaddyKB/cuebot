@@ -82,7 +82,10 @@ public sealed record VtsThrow
     /// <summary>0 (no reaction) to 1 (big flinch).</summary>
     public double Flinch { get; init; } = 0.5;
 
-    /// <summary>"Random", "Left" or "Right": where the items come from.</summary>
+    /// <summary>
+    /// Where the items come from: one of <see cref="VtsThrowDirection.All"/> ("Random" is left or right), or a compass angle
+    /// in degrees (0 from the top, 90 from the right).
+    /// </summary>
     public string From { get; init; } = "Random";
 
     public bool AskFirst { get; init; }
@@ -897,6 +900,7 @@ public sealed partial class VTubeStudioService
     public async Task<int> ThrowAsync(VtsThrow options, CancellationToken ct = default)
     {
         if (options.Files.Count == 0 && options.Images.Count == 0) throw new ArgumentException("Enter an item file or an image to throw.");
+        VtsThrowDirection.Pick(options.From, Random.Shared);   // an unknown direction fails before anything is thrown
         var count = Math.Clamp(options.Count, 1, 50);
         if (options.Images.Count > 0)
         {
@@ -920,22 +924,25 @@ public sealed partial class VTubeStudioService
 
     private async Task ThrowOneAsync(VtsThrow o, (double X, double Y) target, CancellationToken ct)
     {
-        var side = o.From switch
-        {
-            "Left" => -1,
-            "Right" => 1,
-            _ => Random.Shared.Next(2) == 0 ? -1 : 1,
-        };
+        var (dx, dy, front) = VtsThrowDirection.Pick(o.From, Random.Shared);
         var useImage = o.Images.Count > 0;
         var source = useImage ? o.Images[Random.Shared.Next(o.Images.Count)] : o.Files[Random.Shared.Next(o.Files.Count)];
-        var startY = target.Y + (Random.Shared.NextDouble() - 0.5) * 0.8;
+        var size = Math.Clamp(o.Size, 0.01, 1);
+        // Off screen on the side it comes from, spread a little along that side; "Front" starts big below the face, as if
+        // thrown from the camera.
+        var spread = (Random.Shared.NextDouble() - 0.5) * (dx != 0 && dy != 0 ? 0.4 : 0.8);
+        var (startX, startY) = front
+            ? (target.X + spread * 0.5, Math.Max(target.Y - 0.6, -0.9))
+            : (dx * VtsThrowDirection.Edge - dy * spread, dy * VtsThrowDirection.Edge + dx * spread);
+        if (!front && dx == 0) startX += target.X;   // straight from the top or bottom: above or below the head
+        if (!front && dy == 0) startY += target.Y;
         var id = await LoadItemAsync(new VtsItemLoad(useImage ? "" : source)
         {
             Image = useImage ? source : "",
             AskFirst = o.AskFirst,
-            PositionX = side * 1.35,
+            PositionX = startX,
             PositionY = startY,
-            Size = Math.Clamp(o.Size, 0.01, 1),
+            Size = front ? Math.Min(1, size * 4) : size,
             Rotation = Random.Shared.Next(360),
             FadeTime = 0,
             UnloadWhenPluginDisconnects = true,
@@ -945,21 +952,16 @@ public sealed partial class VTubeStudioService
             var flight = Math.Clamp(o.FlightTime, 0.05, 3);
             var hitX = target.X + (Random.Shared.NextDouble() - 0.5) * 0.12;
             var hitY = target.Y + (Random.Shared.NextDouble() - 0.5) * 0.12;
-            await MoveItemsAsync([id], flight, "easeIn", hitX, hitY, null, Random.Shared.Next(360), null, null, ct).ConfigureAwait(false);
+            await MoveItemsAsync([id], flight, "easeIn", hitX, hitY, front ? size : null, Random.Shared.Next(360), null, null, ct).ConfigureAwait(false);
             await Task.Delay(TimeSpan.FromSeconds(flight), _time, ct).ConfigureAwait(false);
             var flinch = Math.Clamp(o.Flinch, 0, 1);
-            var fall = MoveItemsAsync([id], 0.9, "easeIn", hitX + side * -0.35, -1.6, null, Random.Shared.Next(360), null, null, ct);
+            var bounce = front ? (Random.Shared.NextDouble() - 0.5) * 0.5 : -dx * 0.35;
+            var fall = MoveItemsAsync([id], 0.9, "easeIn", hitX + bounce, -1.6, null, Random.Shared.Next(360), null, null, ct);
             if (flinch > 0)
             {
                 // "add" mode: works alongside face tracking and other throwing plugins.
-                await InjectParametersAsync(
-                [
-                    new VtsParameterValue("FaceAngleX", side * -25 * flinch, null),
-                    new VtsParameterValue("FaceAngleZ", side * 15 * flinch, null),
-                    new VtsParameterValue("FacePositionX", side * -8 * flinch, null),
-                    new VtsParameterValue("EyeOpenLeft", -0.6 * flinch, null),
-                    new VtsParameterValue("EyeOpenRight", -0.6 * flinch, null),
-                ], add: true, faceFound: false, TimeSpan.FromMilliseconds(350), ct).ConfigureAwait(false);
+                await InjectParametersAsync(VtsThrowDirection.Flinch(dx, dy, front, flinch), add: true, faceFound: false,
+                    TimeSpan.FromMilliseconds(350), ct).ConfigureAwait(false);
             }
             await fall.ConfigureAwait(false);
             await Task.Delay(TimeSpan.FromSeconds(0.9), _time, ct).ConfigureAwait(false);

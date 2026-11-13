@@ -52,14 +52,16 @@ internal sealed class IntegrationsScriptFunctions(VTubeStudioService vts, Voicem
             (await vts.GetHotkeysAsync(ct).ConfigureAwait(false)).Select(h => new { id = h.Id, name = h.Name, type = h.Type, file = h.File }).ToArray()),
         new("vtubestudio.getExpressions", "Expressions of the current model with their state", [], async (_, _, ct) =>
             (await vts.GetExpressionsAsync(ct).ConfigureAwait(false)).Select(e => new { name = e.DisplayName, file = e.File, active = e.Active }).ToArray()),
-        new("vtubestudio.throwItems", "Throw item files or images at the model; returns how many were thrown",
-            ["files", "images", "count", "size", "flinch"], async (_, a, ct) => await vts.ThrowAsync(new VtsThrow
+        new("vtubestudio.throwItems", "Throw item files or images at the model; from: Random (left or right), Anywhere, Left, Right, Top, "
+            + "Bottom, TopLeft, TopRight, BottomLeft, BottomRight, Front or an angle in degrees (0 top, 90 right); returns how many were thrown",
+            ["files", "images", "count", "size", "flinch", "from"], async (_, a, ct) => await vts.ThrowAsync(new VtsThrow
             {
                 Files = VtsProtocol.SplitList(a.GetString("files")),
                 Images = VtsProtocol.SplitList(a.GetString("images")),
                 Count = (int)(Num(a, "count") ?? 1),
                 Size = Num(a, "size") ?? 0.15,
                 Flinch = Num(a, "flinch") ?? 0.5,
+                From = a.GetString("from", "Random"),
             }, ct).ConfigureAwait(false)),
         new("vtubestudio.colorTint", "Tint the model (or the ArtMeshes whose names contain nameContains); undone after revertAfter seconds if given",
             ["color", "nameContains", "mix", "revertAfter"], async (_, a, ct) => await vts.ColorTintAsync(VtsProtocol.ParseColor(a.GetString("color", "#FF8080")),

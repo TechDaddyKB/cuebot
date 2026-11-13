@@ -70,6 +70,19 @@ back the way they were. If you changed one of them yourself after the answer, Cu
 The button works until you close Cuebot. Other things the assistant can change (overlays, points, quotes...) are not
 covered: check those yourself.
 
+### When Cuebot can't do it yet
+
+If you ask for something Cuebot has no way to do, the assistant says so and offers to send Cuebot's developers a
+**feature request**. Say yes and it writes one up: a short title and what you wanted to do. Before anything is sent,
+Cuebot shows you the whole text under **The assistant wants to:**. Click **Approve** to send it, or **Deny** to drop it.
+It asks even when you turned off **Confirm destructive tools**.
+
+The request becomes a **public issue** on Cuebot's GitHub page, labelled `enhancement`, so read it before you approve
+it. The assistant is told to leave out names, channels and anything private, and Cuebot removes keys and tokens it
+recognises. You don't need a GitHub account. Afterwards the assistant gives you the link so you can follow it. If the
+request can't be sent (no internet, or too many sent from your PC recently), it gives you a GitHub link with the text
+filled in instead. That one needs a GitHub account.
+
 ### What it can and cannot touch
 
 - **Can:** actions, triggers, sub-actions, commands, timers, variables, overlays, polls, quotes, points, giveaways,

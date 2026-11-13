@@ -53,7 +53,7 @@ internal sealed class TestBot : IAsyncDisposable
             AlertQueue = AlertQueue, Polls = Polls, ChatPolls = ChatPolls, Giveaways = Giveaways, Store = Store, Media = Media,
             Quotes = Quotes, Points = Points, Groups = Groups, Packages = Packages, Gallery = Gallery, StreamElementsOverlays = StreamElements,
             Speech = Speech, Hotkeys = Hotkeys, Decks = Decks, Subathon = Subathon, Approvals = Approvals,
-            Profiles = Profiles,
+            Profiles = Profiles, FeatureRequests = FeatureRequests,
         };
         Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
@@ -165,6 +165,8 @@ internal sealed class TestBot : IAsyncDisposable
     public FakeApprovals Approvals { get; } = new();
 
     public ServerServices Services { get; }
+
+    public FakeFeatureRequests FeatureRequests { get; } = new();
     public ServerManager Manager { get; }
     public FakeSender Sender { get; } = new();
     public FakeSpeaker Speaker { get; } = new();
@@ -476,4 +478,19 @@ internal sealed class SilentPlayer : Cuebot.Speech.IAudioPlayer
 {
     public Task PlayAsync(byte[] audio, Cuebot.Speech.PlaybackOptions options, CancellationToken ct) => Task.CompletedTask;
     public IReadOnlyList<Cuebot.Speech.AudioDevice> GetOutputDevices() => [];
+}
+
+/// <summary>Records feature requests instead of filing GitHub issues.</summary>
+internal sealed class FakeFeatureRequests : Cuebot.Server.Mcp.IFeatureRequestSender
+{
+    public List<(string Title, string Body)> Sent { get; } = [];
+
+    public string? FailWith { get; set; }
+
+    public Task<Cuebot.Server.Mcp.FeatureRequestResult> SendAsync(string title, string body, CancellationToken ct = default)
+    {
+        if (FailWith is { } error) return Task.FromResult(new Cuebot.Server.Mcp.FeatureRequestResult(false, "", 0, error, "https://github.com/x/y/issues/new?title=t"));
+        Sent.Add((title, body));
+        return Task.FromResult(new Cuebot.Server.Mcp.FeatureRequestResult(true, $"https://github.com/x/y/issues/{40 + Sent.Count}", 40 + Sent.Count, ""));
+    }
 }

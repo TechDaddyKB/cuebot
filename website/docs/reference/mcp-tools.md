@@ -5,9 +5,9 @@
 
 An AI app connected to Cuebot's **MCP server** can use these tools. You do not call them yourself: the AI picks them when you ask it for something, like "make a !hello command". See [Your own AI app (MCP)](../guides/ai/ai-apps.md) for how to connect one.
 
-**Asks first** means the tool can delete or change something big, or send a message. While **Confirm destructive tools** is ticked on **Apps > Servers**, Cuebot asks you (or makes the AI ask) before it does it.
+**Asks first** means the tool can delete or change something big, or send a message. While **Confirm destructive tools** is ticked on **Apps > Servers**, Cuebot asks you (or makes the AI ask) before it does it. **Always** means it asks even when that box is not ticked, because it publishes something (a feature request on GitHub).
 
-There are 118 tools.
+There are 119 tools.
 
 | Tool | What it does | Only reads | Asks first |
 | --- | --- | --- | --- |
@@ -97,6 +97,7 @@ There are 118 tools.
 | [`preview_import`](#preview-import) | Preview import | yes |  |
 | [`remove_layer`](#remove-layer) | Remove layer |  |  |
 | [`remove_media_request`](#remove-media-request) | Remove a media request |  |  |
+| [`request_feature`](#request-feature) | Request a feature |  | always |
 | [`review_redemption`](#review-redemption) | Approve or reject a redemption |  |  |
 | [`run_action`](#run-action) | Run action |  |  |
 | [`run_subactions`](#run-subactions) | Run sub-actions now |  | yes |
@@ -857,6 +858,16 @@ It takes no inputs.
 | Input | Type | What it is |
 | --- | --- | --- |
 | `id` (required) | text | Request id (get_media_requests) |
+
+## request_feature
+
+**Request a feature.** File a feature request for Cuebot's developers as a PUBLIC GitHub issue (labelled enhancement), for something the streamer wants that Cuebot cannot do. Only after checking with the other tools that it really cannot (no trigger, sub-action, setting or workaround), and only when the streamer agrees to send one. Write it so a developer understands it without this conversation: what the streamer wants to do, what they tried or what Cuebot lacks, and a suggestion if there is one. Never include names, channel names, links to their accounts, tokens or other private details. Cuebot always shows the streamer the full text with Approve and Deny first.
+
+| Input | Type | What it is |
+| --- | --- | --- |
+| `title` (required) | text | Short summary, e.g. VTube Studio: throw items from the top (5 to 120 characters) |
+| `body` (required) | text | The request in Markdown: what they want, why Cuebot cannot do it now, a suggestion (40 to 6000 characters) |
+| `confirmationToken` | text | Only when a previous call answered confirmationRequired: the token it returned, after the user agreed |
 
 ## review_redemption
 

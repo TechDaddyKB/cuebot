@@ -95,7 +95,7 @@ function send(value: unknown, ip = `10.0.0.${++ipCounter}`) {
 describe("parsing and formatting", () => {
 	it("accepts good reports and names what is wrong with bad ones", () => {
 		expect(parseReport(report())).toMatchObject({ kind: "problem", title: "The chat box stops scrolling" });
-		expect(parseReport(report({ kind: "spam" }))).toBe("kind must be problem or crash");
+		expect(parseReport(report({ kind: "spam" }))).toBe("kind must be problem, crash or feature");
 		expect(parseReport(report({ title: "x" }))).toMatch(/title/);
 		expect(parseReport(report({ installId: "not-hex" }))).toMatch(/installId/);
 		expect(parseReport(report({ version: "1.0; drop table" }))).toMatch(/version/);
@@ -147,6 +147,16 @@ describe("the intake", () => {
 		const create = github.calls.find((c) => c.path.endsWith("/issues"))!;
 		expect(create.auth).toBe("Bearer ghs_installationtoken");
 		expect(github.calls.filter((c) => c.path.includes("access_tokens")).every((c) => c.body.permissions.issues === "write")).toBe(true);
+	});
+
+	it("files a feature request labelled enhancement", async () => {
+		const res = await send(report({ kind: "feature", title: "VTube Studio: throw items from the top", body: "The streamer wants items to fall onto the model." }));
+		expect(res.status).toBe(201);
+		const result = (await res.json()) as any;
+		const issue = github.issues.get(result.number)!;
+		expect(issue.title).toBe("VTube Studio: throw items from the top");
+		expect(issue.labels).toEqual(["enhancement", "from-app"]);
+		expect(issue.body).toContain("kind=feature");
 	});
 
 	it("adds repeat crashes to the open issue, and files a new one when it was closed", async () => {

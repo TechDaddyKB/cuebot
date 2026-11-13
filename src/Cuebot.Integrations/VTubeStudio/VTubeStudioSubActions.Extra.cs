@@ -98,7 +98,10 @@ internal static partial class VTubeStudioSubActions
                     new("interval", "Seconds between throws", ParameterKind.Number) { DefaultValue = "0.15" },
                     new("flightTime", "Flight time (seconds)", ParameterKind.Number) { DefaultValue = "0.35" },
                     new("flinch", "Flinch (0-1)", ParameterKind.Number) { DefaultValue = "0.5", Help = "How hard the model reacts; 0 for no reaction" },
-                    new("from", "From", ParameterKind.Choice) { DefaultValue = "Random", Choices = ["Random", "Left", "Right"] },
+                    new("from", "From", ParameterKind.Choice)
+                    {
+                        DefaultValue = "Random", Choices = VtsThrowDirection.All, ChoiceLabels = VtsThrowDirection.Labels,
+                    },
                     new("askFirst", "Ask in VTube Studio before showing a new image", ParameterKind.Boolean) { DefaultValue = "false" },
                 ],
                 async (ctx, v, ct) => ctx.Args["vtsThrown"] = await vts.ThrowAsync(new VtsThrow

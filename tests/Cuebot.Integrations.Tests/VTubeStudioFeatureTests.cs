@@ -327,6 +327,69 @@ public sealed class VTubeStudioFeatureTests : IAsyncLifetime
         Assert.Contains(fake.Of("EventSubscriptionRequest"), r => Str(r.Data, "eventName") == "ModelOutlineEvent" && !r.Data.GetProperty("subscribe").GetBoolean());
     }
 
+    [Theory]
+    [InlineData("Top", 0, 1)]
+    [InlineData("bottom", 0, -1)]
+    [InlineData("Top left", -1, 1)]
+    [InlineData("BottomRight", 1, -1)]
+    [InlineData("90", 1, 0)]
+    [InlineData("270°", -1, 0)]
+    [InlineData("45", 1, 1)]
+    public void Throw_directions_name_the_side_the_items_come_from(string from, double dx, double dy)
+    {
+        var (x, y, front) = VtsThrowDirection.Pick(from, new Random(1));
+        Assert.False(front);
+        Assert.Equal(dx, x, 5);
+        Assert.Equal(dy, y, 5);
+    }
+
+    [Fact]
+    public void Random_stays_left_or_right_while_anywhere_goes_all_around()
+    {
+        var random = new Random(7);
+        Assert.All(Enumerable.Range(0, 50), _ => Assert.Equal(0, VtsThrowDirection.Pick("Random", random).Dy));
+        var anywhere = Enumerable.Range(0, 200).Select(_ => VtsThrowDirection.Pick("Anywhere", random)).ToArray();
+        Assert.Contains(anywhere, d => d.Dy > 0.5);
+        Assert.Contains(anywhere, d => d.Dy < -0.5);
+        Assert.All(anywhere, d => Assert.Equal(1, Math.Max(Math.Abs(d.Dx), Math.Abs(d.Dy)), 5));   // just past an edge
+        Assert.True(VtsThrowDirection.Pick("Front", random).Front);
+        Assert.Throws<ArgumentException>(() => VtsThrowDirection.Pick("Sideways", random));
+    }
+
+    [Fact]
+    public void A_hit_from_above_nods_the_head_down_and_one_from_the_left_turns_it_right()
+    {
+        static double Value(IReadOnlyList<VtsParameterValue> values, string id) => values.FirstOrDefault(v => v.Id == id)?.Value ?? 0;
+        var top = VtsThrowDirection.Flinch(0, 1, false, 1);
+        Assert.True(Value(top, "FaceAngleY") < 0);
+        Assert.Equal(0, Value(top, "FaceAngleX"));
+        var left = VtsThrowDirection.Flinch(-1, 0, false, 0.5);
+        Assert.Equal(12.5, Value(left, "FaceAngleX"));   // as before the new directions
+        Assert.Equal(-7.5, Value(left, "FaceAngleZ"));
+        Assert.Contains(VtsThrowDirection.Flinch(0, 0, true, 1), v => v.Id == "FacePositionZ");
+    }
+
+    [Fact]
+    public async Task Throwing_from_the_top_starts_above_the_screen_over_the_head()
+    {
+        var fake = await ConnectAsync();
+        Assert.Equal(1, await _vts.ThrowAsync(new VtsThrow { Files = ["hat.png"], FlightTime = 0.05, From = "Top" }));
+        var load = fake.Of("ItemLoadRequest").Single().Data;
+        Assert.True(load.GetProperty("positionY").GetDouble() > 1);
+        Assert.InRange(load.GetProperty("positionX").GetDouble(), -1, 1);
+        await Assert.ThrowsAsync<ArgumentException>(() => _vts.ThrowAsync(new VtsThrow { Files = ["hat.png"], From = "Sideways" }));
+        Assert.Single(fake.Of("ItemLoadRequest"));   // nothing thrown for an unknown direction
+    }
+
+    [Fact]
+    public async Task Throwing_from_the_front_starts_big_and_shrinks_onto_the_head()
+    {
+        var fake = await ConnectAsync();
+        await _vts.ThrowAsync(new VtsThrow { Files = ["hat.png"], FlightTime = 0.05, From = "Front", Size = 0.1 });
+        Assert.Equal(0.4, fake.Of("ItemLoadRequest").Single().Data.GetProperty("size").GetDouble(), 5);
+        Assert.Equal(0.1, fake.Of("ItemMoveRequest").First().Data.GetProperty("itemsToMove")[0].GetProperty("size").GetDouble(), 5);
+    }
+
     [Fact]
     public async Task Images_need_the_permission_and_load_as_custom_data()
     {

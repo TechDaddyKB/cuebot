@@ -642,7 +642,7 @@ Stops keeping a parameter set, so face tracking takes over again.
 
 ## Throw items at the model
 
-Throws items or pictures at your model: they fly in from the side, your model flinches, and they fall away and disappear.
+Throws items or pictures at your model: they fly in from a side, a corner or the camera, your model flinches, and they fall away and disappear.
 
 | Setting | What to put in |
 | --- | --- |
@@ -653,7 +653,7 @@ Throws items or pictures at your model: they fly in from the side, your model fl
 | **Seconds between throws** | Seconds between throws. Starts as: `0.15`. |
 | **Flight time (seconds)** | Seconds each one takes to reach the model. Starts as: `0.35`. |
 | **Flinch (0-1)** | How hard your model reacts, from 0 (not at all) to 1. Starts as: `0.5`. |
-| **From** | Which side they come from. Options: Random, Left, Right. Starts as: `Random`. |
+| **From** | Where they fly in from: a side, a corner, Front (from the camera), Random: left or right (the old choice), or Random: any direction for a different direction each throw. Options: Random: left or right, Random: any direction, Left, Right, Top, Bottom, Top left, Top right, Bottom left, Bottom right, Front (from the camera). Starts as: `Random: left or right`. |
 | **Ask in VTube Studio before showing a new image** | Tick to have VTube Studio ask you before showing a picture it hasn't seen yet. Starts as: `false`. |
 
 **Variables it adds**

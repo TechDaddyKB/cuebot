@@ -4011,7 +4011,7 @@ class Cuebot:
         Gives back: How many parameters were stopped.
         Same as cb.call(\"vtubestudio.stopParameter\", ...).
         """
-    def vtubestudio_throw_items(self, *, files: Any = None, images: Any = None, count: Any = None, size: Any = None, flinch: Any = None) -> Any:
+    def vtubestudio_throw_items(self, *, files: Any = None, images: Any = None, count: Any = None, size: Any = None, flinch: Any = None, from_: Any = None) -> Any:
         """Throws items or pictures at your model; it flinches and they fall away. Fails with an error when VTube Studio is not connected.
 
         files: Optional. Item files to throw, separated by commas (give files or images).
@@ -4019,6 +4019,7 @@ class Cuebot:
         count: Optional. How many to throw. The default is 1.
         size: Optional. The size from 0 to 1. The default is 0.15.
         flinch: Optional. How hard the model reacts, from 0 to 1. The default is 0.5.
+        from_: Optional. Where they fly in from: Random (left or right, the default), Anywhere (a different direction each throw), Left, Right, Top, Bottom, TopLeft, TopRight, BottomLeft, BottomRight, Front (from the camera), or an angle in degrees (0 from the top, 90 from the right).
         Gives back: How many were thrown.
         Same as cb.call(\"vtubestudio.throwItems\", ...).
         """

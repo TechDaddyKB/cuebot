@@ -371,7 +371,7 @@ public sealed class McpTests : IAsyncLifetime
     {
         // Guards against adding a tool without a test: the names here must match tools/list exactly.
         var tested = RequiredTools.Concat(["describe_trigger_type", "list_script_functions", "get_command", "delete_command", "update_timer",
-            "set_timer_state", "delete_timer", "delete_global", .. McpCoverageTests.Tools]).Order().ToArray();
+            "set_timer_state", "delete_timer", "delete_global", "request_feature", .. McpCoverageTests.Tools]).Order().ToArray();
         var listed = (await _host.RequestAsync("tools/list"))["tools"]!.AsArray().Select(t => t!["name"]!.GetValue<string>()).Order().ToArray();
         Assert.Equal(tested, listed);
     }
@@ -409,6 +409,31 @@ public sealed class McpTests : IAsyncLifetime
         var (direct, result) = await _host.CallAsync("delete_action", Args(("action", "Other")));
         Assert.False(direct);
         Assert.True(result["deleted"]!.GetValue<bool>());
+    }
+
+    [Fact]
+    public async Task Feature_requests_always_need_the_streamers_approval_of_the_full_text()
+    {
+        Bot.Manager.Settings.Mcp.RequireConfirmation = false;   // still asked: the issue is public
+        var args = Args(("title", "VTube Studio: throw items from the top"),
+            ("body", "The streamer wants thrown items to fall onto the model from above; only left and right exist."));
+        var (_, first) = await _host.CallAsync("request_feature", (JsonObject)args.DeepClone());
+        Assert.True(first["confirmationRequired"]!.GetValue<bool>());
+        Assert.Contains("only left and right exist", first["action"]!.GetValue<string>());
+        Assert.Empty(Bot.FeatureRequests.Sent);
+
+        var (error, filed) = await ConfirmedAsync("request_feature", (JsonObject)args.DeepClone());
+        Assert.False(error, filed.ToJsonString());
+        Assert.Equal(41, filed["issue"]!.GetValue<int>());
+        Assert.Equal("VTube Studio: throw items from the top", Assert.Single(Bot.FeatureRequests.Sent).Title);
+
+        var (tooShort, _) = await ConfirmedAsync("request_feature", Args(("title", "Add"), ("body", "x")));
+        Assert.True(tooShort);
+
+        Bot.FeatureRequests.FailWith = "Could not reach the report service.";
+        var (_, failed) = await ConfirmedAsync("request_feature", (JsonObject)args.DeepClone());
+        Assert.False(failed["sent"]!.GetValue<bool>());
+        Assert.StartsWith("https://github.com/", failed["openInBrowser"]!.GetValue<string>());
     }
 
     [Fact]

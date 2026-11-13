@@ -42,6 +42,8 @@ before the first change. A change without a timer cancels the pending undo.
 - **Throw the chatter at the model:** **Throw items at the model** with **Or images** set to `%userProfileImageUrl%`.
   Works for follows, subs and tips on every platform with one **Activity (any platform)** trigger.
 - **Bonk volley on a raid:** **Throw items at the model** with your item files, **How many** `%viewers%` (up to 50).
+  Set **From** to **Random: any direction** so they come from every side, or **Top** to make them rain down. **Front**
+  throws them from the camera: they start big and shrink onto the face.
 - **Sub tint:** **Color tint** with your sub color, only the **ArtMesh groups** you set up in VTube Studio (like `Hair`),
   and **Undo after** 30 seconds. Or **Rainbow color tint** for 10 seconds.
 - **Raid weather:** **Load visual effects preset** with your rain preset and **Undo after** 60 seconds.

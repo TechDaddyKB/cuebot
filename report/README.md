@@ -8,8 +8,10 @@ Live at `https://cuebot-report-intake.kris-barrantes.workers.dev` (the app posts
 
 ## What it does
 
-- `POST /v1/reports` with `{kind: "problem"|"crash", title, body, version, os, installId, signature?, dryRun?}`:
+- `POST /v1/reports` with `{kind: "problem"|"crash"|"feature", title, body, version, os, installId, signature?, dryRun?}`:
   - **problem** → a new issue labelled `from-app`;
+  - **feature** → a new issue labelled `enhancement`, `from-app` (sent by the Assistant's `request_feature` tool after
+    the streamer approved the text);
   - **crash** → a new issue labelled `bug`, `crash`, `from-app`, unless an **open** issue was already filed for the
     same crash signature: then a "Seen again in Cuebot vX on OS" comment is added there instead. A crash whose earlier
     issue was closed gets a new issue that links the old one.

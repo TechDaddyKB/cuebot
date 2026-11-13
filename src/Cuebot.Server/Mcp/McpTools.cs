@@ -16,6 +16,9 @@ public sealed record McpTool(string Name, string Title, string Description, Json
     /// </summary>
     public Func<JsonObject, string?>? Confirmation { get; init; }
 
+    /// <summary>Ask even when the streamer turned confirmations off (for calls that publish something, like a GitHub issue).</summary>
+    public bool AlwaysConfirm { get; init; }
+
     public JsonObject ToJson() => new()
     {
         ["name"] = Name,

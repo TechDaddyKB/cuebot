@@ -430,4 +430,24 @@ public sealed class SupportPageTests : IDisposable
         Assert.NotEqual(a, CrashSignature.Of(new ExceptionInfo { Type = "System.NullReferenceException", StackTrace = "   at Cuebot.App.Main()" }));
         Assert.Matches("^[0-9a-f]{16}$", a);
     }
+
+    [Fact]
+    public async Task Assistant_feature_requests_go_to_the_intake_scrubbed_and_fall_back_to_a_github_link()
+    {
+        FakeIntake();
+        var sender = new Cuebot.App.Diagnostics.FeatureRequestSender(_paths, _github, new Uri(IntakeUrl), () => ReportBuilderTests.Env);
+        var token = "ghp_" + new string('a', 36);
+        var result = await sender.SendAsync("VTube Studio: throw from the top", $"Items should fall from above. My token {token} leaked here.");
+        Assert.True(result.Sent);
+        Assert.Equal(7, result.Number);
+        var sent = Assert.Single(_sent);
+        Assert.Equal("feature", sent["kind"]!.GetValue<string>());
+        Assert.DoesNotContain(token, sent["body"]!.GetValue<string>());
+        Assert.Contains("approved this text", sent["body"]!.GetValue<string>());
+
+        FakeIntake(HttpStatusCode.TooManyRequests, """{"error": "Too many", "retryAfter": 60}""");
+        var failed = await sender.SendAsync("VTube Studio: throw from the top", "Items should fall from above.");
+        Assert.False(failed.Sent);
+        Assert.StartsWith("https://github.com/TechDaddyKB/cuebot/issues/new?labels=enhancement&title=VTube%20Studio", failed.BrowserUrl);
+    }
 }

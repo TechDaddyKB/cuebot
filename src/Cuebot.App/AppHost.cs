@@ -85,6 +85,8 @@ public sealed class AppHost : IAsyncDisposable
         services.AddSingleton(_ => new GoogleDriveClient(new HttpClient { Timeout = TimeSpan.FromMinutes(30) },
             GoogleDriveEndpoints.Google, TimeProvider.System));
         services.AddSingleton<GoogleDriveBackups>();
+        // The Assistant's request_feature tool files through the same intake as Send report.
+        services.AddSingleton<Cuebot.Server.Mcp.IFeatureRequestSender>(_ => new Diagnostics.FeatureRequestSender(paths));
         overrides?.Invoke(services);
         var host = new AppHost(services.BuildServiceProvider());
         Platform.StartupWarnings.Attach(host.Get<AppLog>());

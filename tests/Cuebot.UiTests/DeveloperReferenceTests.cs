@@ -458,10 +458,11 @@ public sealed class DeveloperReferenceTests : IAsyncDisposable
                   "for something, like \"make a !hello command\". See [Your own AI app (MCP)](../guides/ai/ai-apps.md) " +
                   "for how to connect one.\n\n");
         sb.Append("**Asks first** means the tool can delete or change something big, or send a message. While **Confirm destructive tools** is ticked " +
-                  "on **Apps > Servers**, Cuebot asks you (or makes the AI ask) before it does it.\n\n");
+                  "on **Apps > Servers**, Cuebot asks you (or makes the AI ask) before it does it. **Always** means it asks even when that box is " +
+                  "not ticked, because it publishes something (a feature request on GitHub).\n\n");
         sb.Append($"There are {tools.Length} tools.\n\n| Tool | What it does | Only reads | Asks first |\n| --- | --- | --- | --- |\n");
         foreach (var t in tools)
-            sb.Append($"| [`{t.Name}`](#{t.Name.Replace('_', '-')}) | {Cell(t.Title)} | {(t.Hints.ReadOnly ? "yes" : "")} | {(t.Hints.Destructive ? "yes" : "")} |\n");
+            sb.Append($"| [`{t.Name}`](#{t.Name.Replace('_', '-')}) | {Cell(t.Title)} | {(t.Hints.ReadOnly ? "yes" : "")} | {(t.AlwaysConfirm ? "always" : t.Hints.Destructive ? "yes" : "")} |\n");
         foreach (var t in tools)
         {
             sb.Append($"\n## {t.Name}\n\n**{t.Title}.** {t.Description}\n\n");

@@ -279,7 +279,7 @@ public sealed class McpServer
     {
         var name = Param(p, "name");
         if (!_tools.TryGetValue(name, out var tool)) throw new McpException(McpException.InvalidParams, $"Unknown tool: {name}");
-        return await CallAsync(tool, p, ct, confirm, alwaysConfirm: false).ConfigureAwait(false);
+        return await CallAsync(tool, p, ct, confirm, alwaysConfirm: tool.AlwaysConfirm).ConfigureAwait(false);
     }
 
     private async Task<JsonNode> CallAsync(McpTool tool, JsonObject p, CancellationToken ct, AssistantConfirm? confirm, bool alwaysConfirm)

@@ -26,6 +26,13 @@ Module: `src/Cuebot.Assistant`. Settings: `assistant.json` (data folder). UI: `C
   ends), and Cuebot's MCP server asks the page directly while the AI app's call waits (tool timeout raised to 15
   minutes for Codex and Claude Code; Grok's default is longer). Other MCP clients still get the confirmation token to
   relay. Turning off "require confirmation" on the Servers page turns this off too.
+- **Feature requests.** `request_feature` (MCP, `ApiOperations.RequestFeatureAsync`) files a public GitHub issue labelled
+  `enhancement` through the report intake (`report/`, kind `feature`) via `IFeatureRequestSender`, which the app provides
+  (`FeatureRequestSender`: scrubs secrets like Send report, adds a footer, falls back to a prefilled
+  `issues/new?labels=enhancement` link when the intake refuses). The tool sets `McpTool.AlwaysConfirm`, so the streamer
+  approves the full text even with "require confirmation" off. The prompt tells the AI to offer it only after checking
+  that Cuebot really cannot do the thing, and only send it when the streamer wants one. Mods' scoped conversations do not
+  have it.
 - **Instructions.** Every provider gets the same system prompt (`AssistantPrompt`): who the assistant is for, look things
   up before changing them, ask before destructive changes, no passwords or keys, plain short answers.
 - **Undo.** Before each turn `AssistantUndo` snapshots actions, timers and commands (JSON by id); a turn that changed any
