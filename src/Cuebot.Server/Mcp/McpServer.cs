@@ -73,7 +73,9 @@ public sealed class McpServer
         + "look up trigger and sub-action types with list_trigger_types / list_subaction_types and their parameters with "
         + "describe_subaction_type; read cuebot://docs/actions and cuebot://docs/variables. All parameter values are strings. "
         + "Almost everything else in Cuebot has a tool too (overlays and alert designs, polls, giveaways, points, speech, queues, "
-        + "connections...): cuebot://docs/capabilities says which; run_subactions does any one-off step right now. "
+        + "connections...): cuebot://docs/capabilities says which; run_subactions does any one-off step right now, including "
+        + "setting up OBS (new sources such as audio capture, source settings, filters, volume). Before saying something cannot "
+        + "be done, look for a sub-action that does it. "
         + "Ask the user before deleting or overwriting anything; destructive tools may answer with a confirmationToken that must be "
         + "passed back after the user agrees.";
 

@@ -891,7 +891,7 @@ It takes no inputs.
 
 ## run_subactions
 
-**Run sub-actions now.** Run one or more sub-actions once, right now, without saving an action: anything in list_subaction_types (switch an OBS scene, set the stream title, speak text, time out a viewer, change a light, play a sound...). Same shape as an action's subActions (describe_subaction_type for the parameters). Waits for the result. To make it repeatable, create an action instead.
+**Run sub-actions now.** Run one or more sub-actions once, right now, without saving an action: anything in list_subaction_types (switch an OBS scene, add a source such as audio capture to an OBS scene, set the stream title, speak text, time out a viewer, change a light, play a sound...). Same shape as an action's subActions (describe_subaction_type for the parameters). Waits for the result. To make it repeatable, create an action instead.
 
 | Input | Type | What it is |
 | --- | --- | --- |

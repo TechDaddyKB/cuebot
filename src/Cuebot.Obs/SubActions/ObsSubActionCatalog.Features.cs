@@ -55,7 +55,7 @@ public static partial class ObsSubActionCatalog
                 (c, _, v, ct) => c.SetSceneItemBlendModeAsync(Require(v["scene"], "Scene"), Require(v["source"], "Source"),
                     ParseChoice<ObsBlendMode>(v["blendMode"], "Blend mode"), ct)),
             Make("obs.createInput", "Create source",
-                [p.Scene(), Text("name", "New source name"), Kind("Kind", c => c.InputKinds) with { Help = "e.g. browser_source, image_source, text_gdiplus_v3, color_source_v3" },
+                [p.Scene(), Text("name", "New source name"), Kind("Kind", c => c.InputKinds) with { Help = "e.g. browser_source, image_source, text_gdiplus_v3, color_source_v3; audio: pulse_output_capture (Linux), wasapi_output_capture (Windows)" },
                  Json("settings", "Settings (JSON)"), Bool("visible", "Visible", true), p.Result("obsSceneItemId")],
                 async (c, ctx, v, ct) => Store(ctx, v["resultArgument"], await c.CreateInputAsync(Require(v["scene"], "Scene"), Require(v["name"], "New source name"),
                     Require(v["kind"], "Kind"), ParseJson(v["settings"], "Settings"), v.GetBool("visible", true), ct).ConfigureAwait(false))),

@@ -133,14 +133,14 @@ Creates a new, empty scene collection and switches to it. Can take a while.
 
 ## Create source
 
-Creates a brand new source in a scene, like a browser source for a viewer card. Delete it again with Delete source.
+Creates a brand new source in a scene, like a browser source for a viewer card, or an audio capture so OBS hears Cuebot's speech. Delete it again with Delete source.
 
 | Setting | What to put in |
 | --- | --- |
 | **Connection** | Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS. |
 | **Scene** | The scene to put it in, exactly as OBS shows it. |
 | **New source name** | The name for the new source. It must not be used yet. |
-| **Kind** | The kind of source, like "browser_source", "image_source" or "color_source_v3". The list shows what your OBS offers. |
+| **Kind** | The kind of source, like "browser_source", "image_source" or "color_source_v3". For sound, use audio output capture: "pulse_output_capture" on Linux, "wasapi_output_capture" on Windows (or "wasapi_process_output_capture" for one app). The list shows what your OBS offers. |
 | **Settings (JSON)** | Its settings as a JSON object, like {"url":"https://example.com"}. Leave empty for the defaults. |
 | **Visible** | Tick to show it right away. Starts as: `true`. |
 | **Save the answer in variable** | The name of the variable that will hold its number in the scene. Leave empty to not keep it. The default is obsSceneItemId. Starts as: `obsSceneItemId`. |

@@ -52,6 +52,8 @@ Type what you want and click **Send** (or press **Enter**). Some ideas:
 - "Post my socials in chat every 20 minutes, but only if people are chatting."
 - "What does my 'Raid alert' action do?"
 - "Add a giveaway for a Steam key that costs 100 points."
+- "Set up OBS so it hears the text-to-speech." It adds an audio capture source to the scene you're on. On Linux that
+  captures everything you hear; to capture only Cuebot, install OBS's Application Audio Capture (PipeWire) plugin first.
 
 **Stop** stops an answer, **New chat** starts fresh.
 

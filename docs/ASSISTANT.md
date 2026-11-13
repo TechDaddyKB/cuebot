@@ -16,8 +16,8 @@ Module: `src/Cuebot.Assistant`. Settings: `assistant.json` (data folder). UI: `C
   events to try alerts. Sign-ins, API keys, server settings and tokens stay out of reach (cuebot://docs/capabilities).
   API-key providers call them in process through `McpServer` (`AssistantTools`); AI CLIs reach the same server over
   `/mcp`. Every call is logged as `MCP: Tool call: <name>`, never with argument values. API-key providers also get
-  `read_cuebot_doc` for the `cuebot://docs/actions` and `cuebot://docs/variables` guides that MCP clients read as
-  resources.
+  `read_cuebot_doc` for the `cuebot://docs/actions`, `cuebot://docs/variables` and `cuebot://docs/capabilities` guides
+  that MCP clients read as resources (mods' conversations: the first two only).
 - **Approval.** Destructive tools (deletes, imports over existing items, sending chat) wait for the streamer: Cuebot
   shows the summary with **Approve** / **Deny** in the conversation, and the call goes ahead only on Approve; Deny, Stop
   or the AI giving up on the call denies. Every model is told to call such a tool straight away rather than ask in its
@@ -34,7 +34,9 @@ Module: `src/Cuebot.Assistant`. Settings: `assistant.json` (data folder). UI: `C
   that Cuebot really cannot do the thing, and only send it when the streamer wants one. Mods' scoped conversations do not
   have it.
 - **Instructions.** Every provider gets the same system prompt (`AssistantPrompt`): who the assistant is for, look things
-  up before changing them, ask before destructive changes, no passwords or keys, plain short answers.
+  up before changing them, look for a sub-action before saying something cannot be done (it once told a streamer to set
+  up TTS audio in OBS by hand, never having looked at `obs.createInput`, so the prompt and the capabilities guide name
+  the OBS setup steps), ask before destructive changes, no passwords or keys, plain short answers.
 - **Undo.** Before each turn `AssistantUndo` snapshots actions, timers and commands (JSON by id); a turn that changed any
   ends with `AssistantChanges`, shown as a card ("The assistant created ..., deleted ...") with **Undo these changes**.
   Undo restores each item the turn created, changed or deleted, but only if it still looks the way the turn left it;

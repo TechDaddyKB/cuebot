@@ -1232,12 +1232,12 @@
       "variables": {}
     },
     "obs.createInput": {
-      "description": "Creates a brand new source in a scene, like a browser source for a viewer card. Delete it again with Delete source.",
+      "description": "Creates a brand new source in a scene, like a browser source for a viewer card, or an audio capture so OBS hears Cuebot's speech. Delete it again with Delete source.",
       "fields": {
         "connection": "Which OBS to use, if you connected more than one. Type its name from your OBS settings in Cuebot. Leave empty to use your main OBS.",
         "scene": "The scene to put it in, exactly as OBS shows it.",
         "name": "The name for the new source. It must not be used yet.",
-        "kind": "The kind of source, like \"browser_source\", \"image_source\" or \"color_source_v3\". The list shows what your OBS offers.",
+        "kind": "The kind of source, like \"browser_source\", \"image_source\" or \"color_source_v3\". For sound, use audio output capture: \"pulse_output_capture\" on Linux, \"wasapi_output_capture\" on Windows (or \"wasapi_process_output_capture\" for one app). The list shows what your OBS offers.",
         "settings": "Its settings as a JSON object, like {\"url\":\"https://example.com\"}. Leave empty for the defaults.",
         "visible": "Tick to show it right away.",
         "resultArgument": "The name of the variable that will hold its number in the scene. Leave empty to not keep it. The default is obsSceneItemId."

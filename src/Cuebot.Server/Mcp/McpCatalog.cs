@@ -238,6 +238,7 @@ public sealed class McpCatalog(ApiOperations ops, ServerServices services)
         | --- | --- |
         | Automations (when X happens, do Y) | list_trigger_types, describe_trigger_type, list_subaction_types, describe_subaction_type, create_action, update_action, test_action, run_action |
         | Do something once, right now (switch an OBS scene, set the title, time someone out, speak, change a light) | run_subactions with any sub-action type |
+        | Set up OBS: add a source to a scene (audio capture so OBS hears Cuebot's speech or sounds, a browser, image, text or media source), change its settings, filters, volume or monitoring | run_subactions with obs.getCurrentScene (the scene on air), obs.createInput (describe_subaction_type lists the source kinds this OBS has, e.g. pulse_output_capture on Linux, wasapi_output_capture on Windows), obs.addSceneItem, obs.setInputSettings, obs.createFilter, obs.setInputVolume, obs.setAudioMonitor |
         | Chat commands and timers | create_command_with_action, create_command / update_command, create_timer / update_timer / set_timer_state |
         | Variables | get_globals / set_global; get_viewer_variables / set_viewer_variable |
         | Action queues | list_queues, create_queue, update_queue, control_queue |

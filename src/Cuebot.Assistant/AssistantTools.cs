@@ -25,14 +25,19 @@ public sealed class AssistantTools(McpServer mcp, McpScope? scope = null)
     /// </summary>
     public const string ReadDocTool = "read_cuebot_doc";
 
-    private static readonly string[] Docs = [McpCatalog.ActionsDocUri, McpCatalog.VariablesUri];
+    private static readonly string[] AllDocs = [McpCatalog.ActionsDocUri, McpCatalog.VariablesUri, McpCatalog.CapabilitiesUri];
+
+    /// <summary>A mod's conversation reads only the guides its scope allows (not the capabilities guide).</summary>
+    private string[] Docs => scope is null ? AllDocs : [.. AllDocs.Where(McpScope.Guides.Contains)];
 
     public IReadOnlyList<AssistantToolDefinition> List() =>
     [
         .. (scope?.Tools ?? mcp.Tools).Select(t => new AssistantToolDefinition(t.Name, t.Description, (JsonObject)t.InputSchema.DeepClone())),
         new AssistantToolDefinition(ReadDocTool,
-            $"Read one of Cuebot's guides: {McpCatalog.ActionsDocUri} (how actions, triggers and sub-actions work) or "
-            + $"{McpCatalog.VariablesUri} (variables and %arguments%). Read them before building actions.",
+            $"Read one of Cuebot's guides: {McpCatalog.ActionsDocUri} (how actions, triggers and sub-actions work), "
+            + $"{McpCatalog.VariablesUri} (variables and %arguments%)"
+            + (scope is null ? $" or {McpCatalog.CapabilitiesUri} (which tools do which job, including setting up OBS)" : "")
+            + ". Read the first two before building actions.",
             new JsonObject
             {
                 ["type"] = "object",

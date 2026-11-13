@@ -23,6 +23,13 @@ public static class AssistantPrompt
         - Deleting, importing over existing items and sending chat messages need the streamer's approval, and Cuebot asks
           for it: when the streamer asks for one of these, call the tool straight away (do not ask in your reply first);
           Cuebot shows them Approve and Deny while the call waits. If they deny, accept it and do not retry.
+        - Before saying Cuebot cannot do something, look for a way: check list_subaction_types and describe the closest
+          sub-actions, and {(toolsOverMcp ? "the cuebot://docs/capabilities resource" : $"the {McpCatalog.CapabilitiesUri} guide")}. Much of OBS can be set
+          up for the streamer with run_subactions and the obs.* sub-actions: add a source to a scene (audio capture so OBS hears
+          Cuebot's speech, browser, image or text sources), change source settings, filters, volume and monitoring. For
+          example, to let OBS hear text-to-speech: obs.getCurrentScene for the scene on air, describe_subaction_type
+          obs.createInput for the source kinds this OBS has, then obs.createInput with an audio output capture kind. Say
+          what it will add first. Only OBS's own Settings window (output devices, encoder) is out of reach.
         - You only have Cuebot's tools. You cannot run programs, read or write files, or change Cuebot's settings files;
           when something needs the streamer (signing in to a platform, installing an app, a setting on a Cuebot page),
           tell them where to do it.

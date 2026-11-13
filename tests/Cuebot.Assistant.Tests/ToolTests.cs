@@ -42,6 +42,23 @@ public sealed class ToolTests
     }
 
     [Fact]
+    public async Task The_capabilities_guide_and_the_prompt_point_to_the_obs_source_steps()
+    {
+        // A streamer asked for OBS to hear text-to-speech and the assistant said it could not: it never looked at
+        // obs.createInput. The guide and the prompt now name the OBS setup steps.
+        await using var bot = new Bot();
+        var guide = await bot.Tools.CallAsync(AssistantTools.ReadDocTool, new JsonObject { ["uri"] = "cuebot://docs/capabilities" }, (_, _) => Task.FromResult(true));
+        Assert.False(guide.IsError);
+        Assert.Contains("obs.createInput", guide.Content);
+        Assert.Contains("audio capture", guide.Content);
+        foreach (var prompt in new[] { AssistantPrompt.Build(toolsOverMcp: false), AssistantPrompt.Build(toolsOverMcp: true) })
+        {
+            Assert.Contains("obs.createInput", prompt);
+            Assert.Contains("Before saying Cuebot cannot do something", prompt);
+        }
+    }
+
+    [Fact]
     public async Task A_destructive_call_runs_only_after_the_streamer_approves()
     {
         await using var bot = new Bot();
