@@ -17,7 +17,7 @@ helps find it in the log.
 
 **App and connections**
 
-- [ ] The title bar shows **Cuebot 0.1.0-rc.14**.
+- [ ] The title bar shows **Cuebot 0.1.0-rc.15**.
 - [ ] Every platform and service you use shows as connected in the top bar. With more than four, they are small
       badges; hovering one shows its name and status. Nothing covers the search box, title or profile switcher.
 - [ ] Optional: run the automated tests for what you will use on stream (see [Running](#running)), for example
@@ -61,6 +61,19 @@ helps find it in the log.
       Tick **Run gift draws from Twitch chat with** (`!enter`) and **Tell Fourthwall when I am live on Twitch**.
 - [ ] Give an action the **Gift Draw Started** trigger that posts `%fw.entryCommand%` in Twitch chat, and one with
       **Gift Draw Ended** that posts `%fw.winners%`.
+
+**Assistant, OBS and VTube Studio** (Home > Assistant; skip the VTube Studio checks if you do not use it)
+
+- [ ] **Attach…** a logo (or drop it on the message box) and ask *"Make this a VTube Studio throwable."* A trimmed,
+      square, see-through PNG named `…-edited.png` appears next to the original; the original is unchanged.
+- [ ] Optional: attach a short clip and ask for *"the first 3 seconds as a WebM"*. A `…-edited.webm` appears.
+- [ ] Ask *"Set up OBS so it hears the text-to-speech."* The Assistant adds an audio capture source to the scene on air
+      (it says what it will add first). Ask it to say a test line: the new source's bar moves in OBS's mixer.
+- [ ] VTube Studio: in a **Throw items at the model** step, try **From** set to **Top**, **Random: any direction** and
+      **Front**, running the action each time. The items come from there, and the model flinches away from the hit.
+- [ ] Ask the Assistant for something Cuebot cannot do. It says so and offers a feature request. If you say yes, it
+      shows the whole text with **Approve**/**Deny**: **Deny** files nothing; **Approve** files a public GitHub issue
+      labelled `enhancement` and the Assistant gives you the link.
 
 **Mod portal** (Chat > Mod portal; you need a mod who can join from their own device)
 
