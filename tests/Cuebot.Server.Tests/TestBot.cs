@@ -53,7 +53,7 @@ internal sealed class TestBot : IAsyncDisposable
             AlertQueue = AlertQueue, Polls = Polls, ChatPolls = ChatPolls, Giveaways = Giveaways, Store = Store, Media = Media,
             Quotes = Quotes, Points = Points, Groups = Groups, Packages = Packages, Gallery = Gallery, StreamElementsOverlays = StreamElements,
             Speech = Speech, Hotkeys = Hotkeys, Decks = Decks, Subathon = Subathon, Approvals = Approvals,
-            Profiles = Profiles, FeatureRequests = FeatureRequests,
+            Profiles = Profiles, FeatureRequests = FeatureRequests, MediaEditor = MediaEditor,
         };
         Emotes = Services.Emotes;
         Manager = new ServerManager(null, Services);
@@ -167,6 +167,8 @@ internal sealed class TestBot : IAsyncDisposable
     public ServerServices Services { get; }
 
     public FakeFeatureRequests FeatureRequests { get; } = new();
+
+    public FakeMediaEditor MediaEditor { get; } = new();
     public ServerManager Manager { get; }
     public FakeSender Sender { get; } = new();
     public FakeSpeaker Speaker { get; } = new();
@@ -492,5 +494,35 @@ internal sealed class FakeFeatureRequests : Cuebot.Server.Mcp.IFeatureRequestSen
         if (FailWith is { } error) return Task.FromResult(new Cuebot.Server.Mcp.FeatureRequestResult(false, "", 0, error, "https://github.com/x/y/issues/new?title=t"));
         Sent.Add((title, body));
         return Task.FromResult(new Cuebot.Server.Mcp.FeatureRequestResult(true, $"https://github.com/x/y/issues/{40 + Sent.Count}", 40 + Sent.Count, ""));
+    }
+}
+
+/// <summary>Writes a marker file instead of editing (the real editor is tested in Cuebot.Portal.Tests).</summary>
+internal sealed class FakeMediaEditor : Cuebot.Server.Mcp.IMediaEditor
+{
+    public System.Text.Json.Nodes.JsonObject? LastVideoOptions { get; private set; }
+
+    public Task<System.Text.Json.Nodes.JsonObject> InfoAsync(string source, CancellationToken ct) =>
+        Task.FromResult(new System.Text.Json.Nodes.JsonObject { ["kind"] = "image", ["source"] = source });
+
+    public string OutputFor(string source, string? output, string format, bool video)
+    {
+        if (!Path.IsPathFullyQualified(source)) throw new ArgumentException("Give the full path of the file.");
+        return Path.Combine(Path.GetDirectoryName(source)!, (output ?? Path.GetFileNameWithoutExtension(source) + "-edited") + "." + format);
+    }
+
+    public Task<System.Text.Json.Nodes.JsonObject> EditImageAsync(string source, string? output, string format, System.Text.Json.Nodes.JsonArray steps,
+        bool overwrite, CancellationToken ct)
+    {
+        var target = OutputFor(source, output, format, false);
+        File.WriteAllText(target, "edited");
+        return Task.FromResult(new System.Text.Json.Nodes.JsonObject { ["output"] = target });
+    }
+
+    public Task<System.Text.Json.Nodes.JsonObject> EditVideoAsync(string source, string? output, string format, System.Text.Json.Nodes.JsonObject options,
+        bool overwrite, CancellationToken ct)
+    {
+        LastVideoOptions = (System.Text.Json.Nodes.JsonObject)options.DeepClone();
+        return Task.FromResult(new System.Text.Json.Nodes.JsonObject { ["output"] = OutputFor(source, output, format, true) });
     }
 }

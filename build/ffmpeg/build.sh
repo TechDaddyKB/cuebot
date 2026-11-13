@@ -95,7 +95,7 @@ decoders=(h264 hevc vp8 vp9 libvpx_vp8 libvpx_vp9 mjpeg png webp gif mp3 mp3floa
 encoders=(png libwebp libwebp_anim libmp3lame libvpx_vp9 libopus)
 muxers=(image2 webp mp3 webm)
 parsers=(h264 hevc vp8 vp9 mpegaudio aac flac opus vorbis png mjpeg gif webp)
-filters=(scale format aformat aresample fps null anull setsar)
+filters=(scale format aformat aresample fps null anull setsar crop transpose hflip vflip)
 threads=(); [ "$os" = mingw32 ] && threads=(--enable-w32threads)
 crossflags=(); [ -n "$cross$host" ] && crossflags=(--enable-cross-compile --cross-prefix="$cross")
 

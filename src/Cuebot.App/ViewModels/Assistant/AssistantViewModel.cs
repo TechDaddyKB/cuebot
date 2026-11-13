@@ -246,13 +246,52 @@ public sealed partial class AssistantViewModel : PageViewModel
 
     public bool IsEmpty => Items.Count == 0;
 
-    private bool CanSend() => !IsBusy && Input.Trim().Length > 0;
+    private bool CanSend() => !IsBusy && (Input.Trim().Length > 0 || Attachments.Count > 0);
+
+    /// <summary>
+    /// Files picked with Attach (or dropped on the message box), sent as full paths at the end of the message so every AI
+    /// can use them (edit_image, a sound or video step...). Nothing is uploaded: the paths are on this computer.
+    /// </summary>
+    public ObservableCollection<AssistantAttachment> Attachments { get; } = [];
+
+    public bool HasAttachments => Attachments.Count > 0;
+
+    public void Attach(IEnumerable<string> paths)
+    {
+        foreach (var path in paths)
+            if (path.Length > 0 && Attachments.All(a => !string.Equals(a.Path, path, StringComparison.Ordinal)) && Attachments.Count < 10)
+                Attachments.Add(new AssistantAttachment(path));
+        OnAttachmentsChanged();
+    }
+
+    [RelayCommand]
+    private void RemoveAttachment(AssistantAttachment attachment)
+    {
+        Attachments.Remove(attachment);
+        OnAttachmentsChanged();
+    }
+
+    private void OnAttachmentsChanged()
+    {
+        OnPropertyChanged(nameof(HasAttachments));
+        SendCommand.NotifyCanExecuteChanged();
+    }
+
+    /// <summary>The message as sent: the text, then the attached files' paths.</summary>
+    internal static string WithAttachments(string text, IReadOnlyList<AssistantAttachment> attachments)
+    {
+        if (attachments.Count == 0) return text;
+        var list = string.Join("\n", attachments.Select(a => "- " + a.Path));
+        return (text.Length > 0 ? text + "\n\n" : "") + "Attached files:\n" + list;
+    }
 
     [RelayCommand(CanExecute = nameof(CanSend))]
     private async Task SendAsync()
     {
-        var text = Input.Trim();
+        var text = WithAttachments(Input.Trim(), [.. Attachments]);
         Input = "";
+        Attachments.Clear();
+        OnAttachmentsChanged();
         Add(new AssistantItem(AssistantItemKind.User, text));
         IsBusy = true;
         _turn = new CancellationTokenSource();
@@ -415,4 +454,10 @@ public sealed partial class AssistantItem(AssistantItemKind kind, string text) :
         State = approve ? "Approved" : "Declined";
         OnPropertyChanged(nameof(AwaitingAnswer));
     }
+}
+
+/// <summary>A file attached to the next message (shown as a chip with its name).</summary>
+public sealed record AssistantAttachment(string Path)
+{
+    public string Name => System.IO.Path.GetFileName(Path);
 }

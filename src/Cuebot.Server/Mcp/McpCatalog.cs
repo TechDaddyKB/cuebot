@@ -249,6 +249,7 @@ public sealed class McpCatalog(ApiOperations ops, ServerServices services)
         | Alert box | get_alert_designs, update_alert_designs, then emulate_event to see it |
         | Sharing, gallery, StreamElements | export_overlay_package, import_overlay_package (.cuebot-overlay files); list_gallery, import_gallery_item; list_streamelements_overlays, import_streamelements_overlay |
         | Speech | speak, get_speech_settings / update_speech_settings, list_speech_voices, save_voice_alias, set_viewer_voice, control_speech |
+        | Pictures and videos (a logo as a VTube Studio throwable, a square avatar, a short clip for an alert) | media_info, edit_image, edit_video: they save an edited copy and never change the original |
         | Connections | list_connections, connect_service (uses the sign-in saved in Cuebot) |
         | Hotkeys, decks | save_hotkey; get_deck / save_deck |
         | Feature settings | get_feature_settings / update_feature_settings (points, media, polls, viewers) |

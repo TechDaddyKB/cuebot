@@ -8,6 +8,11 @@
     <ProjectReference Include="..\Cuebot.Assistant\Cuebot.Assistant.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The Assistant's picture editing (Media/MediaEditor.cs); the same SkiaSharp Avalonia ships. -->
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- The mod portal UI, built from portal/ui (npm run build in portal/). -->
     <EmbeddedResource Include="Web\portal-ui.js;Web\portal-ui.css" LogicalName="Cuebot.Portal.Web.%(Filename)%(Extension)" />
   </ItemGroup>

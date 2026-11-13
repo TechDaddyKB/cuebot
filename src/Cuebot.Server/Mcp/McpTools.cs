@@ -232,6 +232,7 @@ public static partial class McpTools
             .. CommunityTools(ops),
             .. OverlayTools(ops),
             .. SystemTools(ops),
+            .. MediaTools(ops),
         ];
     }
 

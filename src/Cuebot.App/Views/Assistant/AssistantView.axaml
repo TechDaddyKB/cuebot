@@ -87,11 +87,31 @@
     </StackPanel>
 
     <!-- Message box. Enter sends, Shift+Enter starts a new line. -->
-    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,10,0,0">
-      <TextBox Name="AssistantInput" Text="{Binding Input}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64" MaxHeight="200"
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" RowDefinitions="Auto,*" Margin="0,10,0,0">
+      <ItemsControl Name="AssistantAttachments" ItemsSource="{Binding Attachments}" IsVisible="{Binding HasAttachments}" Margin="0,0,0,6">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:AssistantAttachment">
+            <Border Classes="bubble" Padding="8,2" Margin="0,0,6,6" ToolTip.Tip="{Binding Path}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="📎" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                <Button Content="✕" Padding="5,0" MinHeight="0" Height="20" FontSize="11" VerticalContentAlignment="Center" VerticalAlignment="Center" ToolTip.Tip="Removes this file from the message."
+                        Command="{Binding $parent[ItemsControl].((vm:AssistantViewModel)DataContext).RemoveAttachmentCommand}" CommandParameter="{Binding}" />
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBox Grid.Row="1" Name="AssistantInput" Text="{Binding Input}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64" MaxHeight="200"
+               DragDrop.AllowDrop="True"
                PlaceholderText="e.g. Make a !lurk command that thanks the viewer in chat and plays a sound" />
-      <StackPanel Grid.Column="1" Spacing="6" Margin="8,0,0,0" VerticalAlignment="Bottom">
+      <StackPanel Grid.Column="1" Grid.Row="1" Spacing="6" Margin="8,0,0,0" VerticalAlignment="Bottom">
         <Button Name="AssistantSend" Content="Send" Classes="accent" Command="{Binding SendCommand}" HorizontalAlignment="Stretch" ToolTip.Tip="Sends your message to the AI. You can also press Enter." />
+        <Button Name="AssistantAttach" Content="Attach…" Click="OnAttach" HorizontalAlignment="Stretch"
+                ToolTip.Tip="Pick pictures, videos, sounds or other files to send with your message (or drop them on the message box). The AI gets where they are on this computer; nothing is uploaded." />
         <Button Content="Stop" Command="{Binding StopCommand}" HorizontalAlignment="Stretch" ToolTip.Tip="Stops the AI while it is still answering." />
         <Button Content="New chat" Command="{Binding NewChatCommand}" HorizontalAlignment="Stretch" ToolTip.Tip="Clears this conversation and starts a fresh one. The AI forgets what you talked about." />
       </StackPanel>

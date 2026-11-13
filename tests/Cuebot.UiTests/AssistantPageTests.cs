@@ -38,6 +38,8 @@ public sealed class AssistantPageTests : IAsyncDisposable
         public AssistantProviderKind Kind => AssistantProviderKind.ApiKey;
         public string? LastResult { get; private set; }
 
+        public List<string> Received { get; } = [];
+
         public Task<AssistantProviderStatus> GetStatusAsync(CancellationToken ct = default) =>
             Task.FromResult(AssistantProviderStatus.Available("ready"));
 
@@ -50,6 +52,7 @@ public sealed class AssistantPageTests : IAsyncDisposable
         {
             public async IAsyncEnumerable<AssistantUpdate> SendAsync(string text, [EnumeratorCancellation] CancellationToken ct = default)
             {
+                owner.Received.Add(text);
                 yield return new AssistantText("Deleting ");
                 yield return new AssistantText("it now.");
                 yield return new AssistantToolStarted("c1", "delete_action");
@@ -124,6 +127,41 @@ public sealed class AssistantPageTests : IAsyncDisposable
         Screenshot(window, "assistant-local");
         Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Attached_files_go_with_the_message_as_full_paths()
+    {
+        var vm = new MainWindowViewModel(_host);
+        var window = new MainWindow { DataContext = vm, Width = 1360, Height = 860 };
+        window.Show();
+        var page = Assert.IsType<AssistantViewModel>(vm.Pages.Single(p => p.Title == "Assistant"));
+        vm.SelectedPage = page;
+        page.SelectedChoice = page.Choices.Single(c => c.Id == "scripted");
+        PumpUntil(() => page.ProviderReady);
+        Assert.False(page.SendCommand.CanExecute(null));
+
+        var logo = Path.Combine(_dataDir, "Kick Icon (Green).png");
+        var clip = Path.Combine(_dataDir, "bonk.mp4");
+        page.Attach([logo, clip, logo]);   // the same file twice is attached once
+        Pump();
+        Assert.Equal(["Kick Icon (Green).png", "bonk.mp4"], page.Attachments.Select(a => a.Name));
+        Assert.True(page.SendCommand.CanExecute(null));   // files alone can be sent
+        Assert.Contains(window.GetVisualDescendants().OfType<ItemsControl>(), c => c.Name == "AssistantAttachments" && c.IsEffectivelyVisible);
+        page.Input = "Make this a VTube Studio throwable";
+        Screenshot(window, "assistant-attachments");
+
+        page.RemoveAttachmentCommand.Execute(page.Attachments[1]);
+        page.SendCommand.Execute(null);
+        PumpUntil(() => _ai.Received.Count == 1);
+        Assert.Equal($"Make this a VTube Studio throwable\n\nAttached files:\n- {logo}", _ai.Received[0]);
+        Assert.Equal(_ai.Received[0], page.Items[0].Text);
+        Assert.Empty(page.Attachments);
+        Assert.False(page.HasAttachments);
+        PumpUntil(() => page.Items.Any(i => i.AwaitingAnswer));
+        page.Items.Single(i => i.AwaitingAnswer).DenyCommand.Execute(null);
+        PumpUntil(() => !page.IsBusy);
+        Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
     }
 
     [AvaloniaFact]

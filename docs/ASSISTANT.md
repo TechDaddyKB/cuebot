@@ -26,6 +26,14 @@ Module: `src/Cuebot.Assistant`. Settings: `assistant.json` (data folder). UI: `C
   ends), and Cuebot's MCP server asks the page directly while the AI app's call waits (tool timeout raised to 15
   minutes for Codex and Claude Code; Grok's default is longer). Other MCP clients still get the confirmation token to
   relay. Turning off "require confirmation" on the Servers page turns this off too.
+- **Pictures and videos.** `media_info`, `edit_image` and `edit_video` (MCP, `ApiOperations.Media`) go through
+  `IMediaEditor`, which the app provides (`Cuebot.Portal/Media/MediaEditor.cs`). Pictures are edited in process with
+  SkiaSharp (first frame only; SVG refused with a hint); videos with ffmpeg through `MediaTools` (the portal's boxed-in
+  runner: time and memory limits, file protocol only, demuxer forced from the first bytes; Cuebot's own build has the
+  crop/transpose/hflip/vflip filters for this). Sources are full paths or http(s) addresses (50 MB cap); results are
+  always a new file (`<name>-edited.<ext>` next to the source, or `media/` in the data folder for web files), and a
+  call that would replace an existing file asks first (the tool's confirmation). The Assistant page attaches files
+  (**Attach…** or drop) as full paths appended to the message, so it works with every provider.
 - **Feature requests.** `request_feature` (MCP, `ApiOperations.RequestFeatureAsync`) files a public GitHub issue labelled
   `enhancement` through the report intake (`report/`, kind `feature`) via `IFeatureRequestSender`, which the app provides
   (`FeatureRequestSender`: scrubs secrets like Send report, adds a footer, falls back to a prefilled

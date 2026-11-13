@@ -7,7 +7,7 @@ An AI app connected to Cuebot's **MCP server** can use these tools. You do not c
 
 **Asks first** means the tool can delete or change something big, or send a message. While **Confirm destructive tools** is ticked on **Apps > Servers**, Cuebot asks you (or makes the AI ask) before it does it. **Always** means it asks even when that box is not ticked, because it publishes something (a feature request on GitHub).
 
-There are 119 tools.
+There are 122 tools.
 
 | Tool | What it does | Only reads | Asks first |
 | --- | --- | --- | --- |
@@ -45,6 +45,8 @@ There are 119 tools.
 | [`delete_voice_alias`](#delete-voice-alias) | Delete a voice alias |  | yes |
 | [`describe_subaction_type`](#describe-subaction-type) | Describe sub-action type | yes |  |
 | [`describe_trigger_type`](#describe-trigger-type) | Describe trigger type | yes |  |
+| [`edit_image`](#edit-image) | Edit a picture |  |  |
+| [`edit_video`](#edit-video) | Edit a video |  |  |
 | [`emulate_event`](#emulate-event) | Send a sample event |  |  |
 | [`end_poll`](#end-poll) | End the chat poll |  |  |
 | [`export_bundle`](#export-bundle) | Export bundle | yes |  |
@@ -93,6 +95,7 @@ There are 119 tools.
 | [`list_trigger_types`](#list-trigger-types) | List trigger types | yes |  |
 | [`list_widget_kinds`](#list-widget-kinds) | List widget kinds | yes |  |
 | [`manage_group`](#manage-group) | Create, rename, clear or delete a user group |  | yes |
+| [`media_info`](#media-info) | Look at a picture or video | yes |  |
 | [`points_leaderboard`](#points-leaderboard) | Points leaderboard | yes |  |
 | [`preview_import`](#preview-import) | Preview import | yes |  |
 | [`remove_layer`](#remove-layer) | Remove layer |  |  |
@@ -449,6 +452,39 @@ There are 119 tools.
 | Input | Type | What it is |
 | --- | --- | --- |
 | `type` (required) | text | Trigger type id, e.g. twitch.chatMessage |
+
+## edit_image
+
+**Edit a picture.** Make an edited copy of a picture (PNG, JPG, WebP, GIF's first frame, BMP, ICO), for example to turn a logo into a VTube Studio throwable, a square avatar or an overlay image. Steps run in order: resize {width, height, fit: contain|cover|stretch} (one side keeps the shape); maxSize {size} (longest side, never enlarges); crop {x, y, width, height} (pixels); trim {tolerance} (cuts see-through or one-colour edges); square {} (pads to a square); pad {pixels}; rotate {degrees: 90|180|270}; flip {direction: horizontal|vertical}; circle {} (round cut-out); makeTransparent {color: "#FFFFFF" or "corner", tolerance} (a background colour becomes see-through); background {color} (fills see-through parts). The source is never changed: the copy is saved next to it with "-edited" added (web pictures go to Cuebot's media folder), or to output. Replacing an existing file asks the streamer first. VTube Studio items and images: PNG with a see-through background, under 5 MB; about 512 pixels is plenty.
+
+| Input | Type | What it is |
+| --- | --- | --- |
+| `source` (required) | text | The file: a full path on this computer (e.g. one the streamer attached), or an http(s) web address |
+| `steps` (required) | list of object | e.g. [{"op": "trim"}, {"op": "square"}, {"op": "resize", "width": 512}] |
+| `format` | one of `png`, `jpg`, `webp` |  |
+| `output` | text | Where to save: a full path, or a file name next to the source (optional) |
+| `confirmationToken` | text | Only when a previous call answered confirmationRequired: the token it returned, after the user agreed |
+
+## edit_video
+
+**Edit a video.** Make an edited copy of a video (MP4, MOV, WebM, GIF): cut it (start, end or duration in seconds), shrink it (maxWidth, maxHeight), crop {x, y, width, height}, rotate (90|180|270), flip (horizontal|vertical), change fps, mute it, or convert it. format: webm (VP9, keeps transparency; for overlays and OBS), webp (animated picture, no sound), png (one frame, at start) or mp3 (only the sound). Saved next to the source with "-edited" added, or to output; replacing a file asks first. Needs ffmpeg (Cuebot's own comes with the app).
+
+| Input | Type | What it is |
+| --- | --- | --- |
+| `source` (required) | text | The file: a full path on this computer (e.g. one the streamer attached), or an http(s) web address |
+| `format` | one of `webm`, `webp`, `png`, `mp3` |  |
+| `start` | number | Start at this second |
+| `end` | number | End at this second |
+| `duration` | number | Seconds to keep (instead of end) |
+| `maxWidth` | whole number | Shrink to at most this width |
+| `maxHeight` | whole number | Shrink to at most this height |
+| `crop` | object | {x, y, width, height} in pixels |
+| `rotate` | whole number | 90, 180 or 270 |
+| `flip` | one of `horizontal`, `vertical` |  |
+| `fps` | number | Frames per second |
+| `mute` | true/false | Drop the sound |
+| `output` | text | Where to save: a full path, or a file name next to the source (optional) |
+| `confirmationToken` | text | Only when a previous call answered confirmationRequired: the token it returned, after the user agreed |
 
 ## emulate_event
 
@@ -823,6 +859,14 @@ It takes no inputs.
 | `command` (required) | one of `create`, `rename`, `clear`, `delete` |  |
 | `newName` | text | For rename |
 | `confirmationToken` | text | Only when a previous call answered confirmationRequired: the token it returned, after the user agreed |
+
+## media_info
+
+**Look at a picture or video.** Kind, format, width and height, frames, length and whether there is sound, for a picture, video or sound file (or web address).
+
+| Input | Type | What it is |
+| --- | --- | --- |
+| `source` (required) | text | The file: a full path on this computer (e.g. one the streamer attached), or an http(s) web address |
 
 ## points_leaderboard
 

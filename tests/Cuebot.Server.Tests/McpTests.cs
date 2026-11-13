@@ -371,7 +371,7 @@ public sealed class McpTests : IAsyncLifetime
     {
         // Guards against adding a tool without a test: the names here must match tools/list exactly.
         var tested = RequiredTools.Concat(["describe_trigger_type", "list_script_functions", "get_command", "delete_command", "update_timer",
-            "set_timer_state", "delete_timer", "delete_global", "request_feature", .. McpCoverageTests.Tools]).Order().ToArray();
+            "set_timer_state", "delete_timer", "delete_global", "request_feature", "media_info", "edit_image", "edit_video", .. McpCoverageTests.Tools]).Order().ToArray();
         var listed = (await _host.RequestAsync("tools/list"))["tools"]!.AsArray().Select(t => t!["name"]!.GetValue<string>()).Order().ToArray();
         Assert.Equal(tested, listed);
     }
@@ -434,6 +434,40 @@ public sealed class McpTests : IAsyncLifetime
         var (_, failed) = await ConfirmedAsync("request_feature", (JsonObject)args.DeepClone());
         Assert.False(failed["sent"]!.GetValue<bool>());
         Assert.StartsWith("https://github.com/", failed["openInBrowser"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Media_tools_edit_into_new_files_and_ask_before_replacing_one()
+    {
+        var dir = Directory.CreateTempSubdirectory("cuebot-mcp-media-").FullName;
+        try
+        {
+            var logo = Path.Combine(dir, "logo.png");
+            File.WriteAllText(logo, "png");
+            var (_, info) = await _host.CallAsync("media_info", Args(("source", logo)));
+            Assert.Equal("image", info["kind"]!.GetValue<string>());
+
+            var steps = new JsonArray(new JsonObject { ["op"] = "trim" });
+            var (error, made) = await _host.CallAsync("edit_image", Args(("source", logo), ("steps", steps.DeepClone())));
+            Assert.False(error, made.ToJsonString());   // a new file: no question
+            Assert.Equal(Path.Combine(dir, "logo-edited.png"), made["output"]!.GetValue<string>());
+
+            var (_, ask) = await _host.CallAsync("edit_image", Args(("source", logo), ("steps", steps.DeepClone())));
+            Assert.True(ask["confirmationRequired"]!.GetValue<bool>());   // logo-edited.png exists now
+            Assert.Contains("Replace the file", ask["action"]!.GetValue<string>());
+
+            var (videoError, video) = await _host.CallAsync("edit_video", Args(("source", Path.Combine(dir, "clip.mp4")), ("format", "webm"), ("maxWidth", 640)));
+            Assert.False(videoError, video.ToJsonString());
+            Assert.Equal(640, Bot.MediaEditor.LastVideoOptions!["maxWidth"]!.GetValue<int>());
+
+            var (bad, refused) = await _host.CallAsync("edit_image", Args(("source", "logo.png"), ("steps", steps.DeepClone())));
+            Assert.True(bad);
+            Assert.Contains("full path", refused.ToJsonString());
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
     }
 
     [Fact]

@@ -57,6 +57,29 @@ Type what you want and click **Send** (or press **Enter**). Some ideas:
 
 **Stop** stops an answer, **New chat** starts fresh.
 
+### Sending it files
+
+Click **Attach…** to pick pictures, videos or sounds, or drop them on the message box. They show above the box; click
+**✕** to take one off. When you send, the assistant gets where each file is on your computer. Nothing is uploaded
+anywhere by Cuebot, but an online AI gets the file's path in your message.
+
+![Two files attached to a message on the Assistant page](../../assets/screens/assistant-attachments.png)
+
+### Fixing pictures and videos
+
+The assistant can make an edited copy of a picture or video, so it fits where it goes:
+
+- **Pictures:** resize, crop, trim empty edges, make it square or round, turn or flip it, make a background colour
+  see-through, or fill see-through parts with a colour. Saves as PNG, JPG or WebP. Example: "Make this logo a VTube
+  Studio throwable" gives a trimmed, square, 512-pixel PNG with a see-through background.
+- **Videos:** cut a part out, shrink, crop, turn or flip it, change the frame rate, mute it, or turn it into a WebM
+  (for OBS and overlays), an animated WebP, one picture (PNG) or just the sound (MP3).
+
+It also works with a web address, like a logo from a brand page. The original is never changed: the copy is saved
+next to it with `-edited` in the name, or in the `media` folder in Cuebot's data folder for files from the web. If a
+file with that name is already there, the assistant asks before replacing it. SVG pictures can't be edited yet: save
+them as PNG first. Videos need ffmpeg, which comes with Cuebot's downloads.
+
 ### It asks before big changes
 
 Before the assistant deletes something, imports something, or writes in your chat, it shows **The assistant wants
@@ -89,6 +112,8 @@ filled in instead. That one needs a GitHub account.
 
 - **Can:** actions, triggers, sub-actions, commands, timers, variables, overlays, polls, quotes, points, giveaways,
   decks and more.
+- **Files:** it can read the pictures, videos and sounds you point it to and save edited copies. It cannot open or
+  change other files.
 - **Cannot:** your sign-ins, API keys, passwords, and the server settings. Those stay out of its reach.
 
 Cuebot logs only the *names* of what the assistant did, not the details. The last conversation is saved in your data

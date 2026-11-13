@@ -38,6 +38,7 @@ public sealed class ServerServices
     private Cuebot.Core.Transfer.TransferService? _transfer;
     private Cuebot.Core.Scripting.ScriptApi? _scripts;
     private Mcp.IFeatureRequestSender? _featureRequests;
+    private Mcp.IMediaEditor? _mediaEditor;
 
     public ServerServices()
     {
@@ -85,6 +86,13 @@ public sealed class ServerServices
     {
         get => _featureRequests ??= _provider?.GetService<Mcp.IFeatureRequestSender>();
         init => _featureRequests = value;
+    }
+
+    /// <summary>Edits pictures and videos for the Assistant (MCP media_info, edit_image, edit_video); the app provides it.</summary>
+    public Mcp.IMediaEditor? MediaEditor
+    {
+        get => _mediaEditor ??= _provider?.GetService<Mcp.IMediaEditor>();
+        init => _mediaEditor = value;
     }
 
     /// <summary>Timer runtime state (REST API / MCP).</summary>

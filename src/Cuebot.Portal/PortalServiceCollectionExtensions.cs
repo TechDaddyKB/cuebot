@@ -62,6 +62,9 @@ public static class PortalServiceCollectionExtensions
         services.AddSingleton(sp => new PortalControls(sp.GetRequiredService<ProfileService>(),
             sp.GetService<ChatHub>(), Later(sp), sp.GetService<ObsService>(), sp.GetService<QueueService>(),
             sp.GetService<SpeechService>(), sp.GetService<AudioService>(), sp.GetService<AppLog>()));
+        // The Assistant's picture and video editing (MCP media_info, edit_image, edit_video); videos need ffmpeg too.
+        services.AddSingleton<Cuebot.Server.Mcp.IMediaEditor>(sp => new Media.MediaEditor(
+            sp.GetRequiredService<AppPaths>().GetDirectory("media"), MediaTools.Find));
         // Uploads are off (and say so) when no ffmpeg is found.
         services.AddSingleton(sp => new PortalUploads(sp.GetRequiredService<PortalMediaStore>(), sp.GetRequiredService<PortalChanges>(),
             MediaTools.Find() is { } tools ? new MediaCleaner(tools) : null, sp.GetRequiredService<AppPaths>().File("portal-quarantine"),
