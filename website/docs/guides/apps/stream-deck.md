@@ -13,8 +13,9 @@ There are two ways to connect one. Pick **one**.
 
 Both are on **Input > Stream Deck**.
 
-On Linux there is a third way: keep using [StreamController](streamcontroller.md) for your Stream Deck and add Cuebot's
-plugin for it. Then Cuebot keys sit next to your other StreamController keys.
+On Linux there are two more ways, both with your Stream Deck run by another app and Cuebot keys next to your other
+keys: [StreamController](streamcontroller.md) with Cuebot's StreamController plugin, or
+[OpenDeck](#on-linux-opendeck) with the same plugin as the Stream Deck app.
 
 ## Way 1: the Stream Deck app and Cuebot's plugin
 
@@ -65,6 +66,35 @@ Cuebot lists connected Stream Deck apps under **Connected Stream Deck apps**.
 Each key has a **Button ID**: a name you choose, like `brb`. Cuebot's actions use it to find the key.
 
 ![The Connected Stream Deck apps card with Refresh](../../assets/screens/card-connected-stream-deck-apps.png)
+
+### On Linux: OpenDeck
+
+[OpenDeck](https://github.com/nekename/OpenDeck) runs Stream Deck app plugins on Linux, and Cuebot's plugin works in it.
+
+1. Close OpenDeck.
+2. Download `io.github.cuebot.streamdeck.streamDeckPlugin` from the
+   [Cuebot release](https://github.com/TechDaddyKB/cuebot/releases). It is a zip file. Unzip it into OpenDeck's
+   plugins folder:
+
+    ```bash
+    unzip io.github.cuebot.streamdeck.streamDeckPlugin -d ~/.config/opendeck/plugins/
+    ```
+
+3. Start OpenDeck. The **Cuebot** keys are in the list on the right. Drag one onto a key, then click the key: its
+   settings show **Host**, **Port** and **API token** like in Step 3 above.
+
+The plugin runs on Node.js, so `node` must be installed. In Cuebot, OpenDeck shows up as "Stream Deck 7.1.0 on
+Windows" under **Connected Stream Deck apps**, because that is what OpenDeck tells plugins.
+
+![OpenDeck with a Cuebot key: the key shows a title sent by Cuebot, and its settings are connected to Cuebot](../../assets/screens/opendeck-cuebot-key.png)
+
+!!! warning "Partly checked"
+    Tried with OpenDeck 2.14.1 and a real Stream Deck XL on Linux: connecting, the action list, a key press running
+    the action, and Cuebot changing the key's title. See [What's experimental](../help/experimental.md).
+
+!!! tip "Switching from StreamController"
+    StreamController takes the Stream Deck in a way that hides it from other programs even after it closes. If
+    OpenDeck (or Cuebot's direct USB) says no Stream Deck is found, unplug the Stream Deck and plug it back in.
 
 ## Way 2: direct USB
 

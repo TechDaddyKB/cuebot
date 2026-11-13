@@ -110,7 +110,7 @@
               <Button Grid.Column="1" Content="Show file" Command="{Binding OpenPluginFolderCommand}" ToolTip.Tip="Opens the folder that holds the plugin file, so you can double-click it to install." />
             </Grid>
             <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding IsLinux}"
-                       Text="The Stream Deck app only runs on Windows and macOS. On Linux, use StreamController with Cuebot's StreamController plugin (Cuebot-StreamController-plugin.zip from the Cuebot release; unzip it into StreamController's plugins folder). Or plug the deck into this computer and use Direct USB above, or run the Stream Deck app on another computer and point the plugin at this one: allow other computers on your network on the Servers page, set the REST API address to 0.0.0.0 (meaning any computer) and type this computer's IP address as the host." />
+                       Text="The Stream Deck app only runs on Windows and macOS. On Linux, use StreamController with Cuebot's StreamController plugin (Cuebot-StreamController-plugin.zip from the Cuebot release; unzip it into StreamController's plugins folder) or OpenDeck with the plugin file above. Or plug the deck into this computer and use Direct USB above, or run the Stream Deck app on another computer and point the plugin at this one: allow other computers on your network on the Servers page, set the REST API address to 0.0.0.0 (meaning any computer) and type this computer's IP address as the host." />
           </StackPanel>
 
           <StackPanel Spacing="4">

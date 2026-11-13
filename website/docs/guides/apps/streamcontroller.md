@@ -42,7 +42,8 @@ To update, close StreamController and unzip the new file over the old one.
 
 !!! warning "Only one program at a time"
     A Stream Deck can only listen to one program. While StreamController uses your Stream Deck, untick **Use Stream
-    Decks on USB** on Cuebot's **Input > Stream Deck** page.
+    Decks on USB** on Cuebot's **Input > Stream Deck** page. After you close StreamController, other programs (Cuebot's
+    direct USB, OpenDeck) only find the Stream Deck once you unplug it and plug it back in.
 
 ## Connect it to Cuebot
 
