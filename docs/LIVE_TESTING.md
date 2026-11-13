@@ -1,26 +1,174 @@
 # Live testing
 
+There are two kinds of live testing:
+
+1. The **[on-stream checklist](#on-stream-checklist)**: things to try by hand while you stream, in the order a stream
+   goes. These are the parts nobody has tried with real viewers, a real shop or real mods yet.
+2. The **[automated live tests](#automated-live-tests)**: opt-in tests that drive the real services through Cuebot's
+   own modules. Run the ones you need *before* the stream; they need no viewers.
+
+## On-stream checklist
+
+Work down the list from top to bottom. Each part stays on one page of the app as long as it can, so you are not
+jumping around. Note anything odd as you go (what you did, what you expected, what happened); the time it happened
+helps find it in the log.
+
+### 1. Before going live (nothing is public yet)
+
+**App and connections**
+
+- [ ] The title bar shows **Cuebot 0.1.0-rc.14**.
+- [ ] Every platform and service you use shows as connected in the top bar. With more than four, they are small
+      badges; hovering one shows its name and status. Nothing covers the search box, title or profile switcher.
+- [ ] Optional: run the automated tests for what you will use on stream (see [Running](#running)), for example
+      `build/run-live-tests.sh Kick`. Leave `CUEBOT_LIVE_STREAM` unset so nothing goes live.
+
+**Twitch rewards** (Platforms > Twitch)
+
+- [ ] **Rewards** tab: **Load from Twitch** lists your rewards, and "N of 50 rewards used" matches your Twitch
+      dashboard. Rewards made on the Twitch website show as read-only.
+- [ ] **+ Reward**: make "Cuebot test" (cost 1, enabled), **Save to Twitch**. It appears on your Twitch dashboard and
+      the count goes up by one.
+- [ ] Change its cost and colour, save, and check the dashboard again.
+- [ ] **Power-ups** tab: **Load from Twitch** lists your custom Power-ups with their bits price, and "N of 50" matches
+      your dashboard. They are read-only by design: Twitch does not let apps change them.
+
+**Kick rewards** (Platforms > Kick, **Channel rewards** card)
+
+- [ ] **Load from Kick** lists your rewards, and "N of 50 rewards used" matches kick.com.
+- [ ] **+ Reward**: make "Cuebot test" (cost 1, enabled), **Save to Kick**. It shows on kick.com. Change it, save,
+      check again.
+- [ ] Rewards you made on kick.com are read-only in Cuebot.
+
+**Actions for the test rewards** (Actions)
+
+- [ ] Make an action "Reward test" that sends a chat message, for example `Reward test: %user% redeemed %rewardTitle%`.
+- [ ] Give it the Twitch **Channel point reward** trigger. The reward title list offers your rewards; pick "Cuebot test".
+- [ ] Give it the Kick **Reward redemption** trigger. The list offers your Kick rewards; pick "Cuebot test".
+- [ ] Optional: a second action with the Twitch **Custom power-up redemption** trigger, if you have a custom Power-up
+      someone may buy.
+
+**Fourthwall** (Apps > Webhooks; skip this part if you do not use Fourthwall)
+
+- [ ] **Relay** tab: copy the Fourthwall address. **Services** tab: the shop's webhook secret is in the **Fourthwall**
+      card and **Enabled** is ticked.
+- [ ] **Fourthwall extras**: paste the Open API user name and password, click **Connect**. The shop, tiers, member count
+      and products show. (This is the first real check that Fourthwall accepts the sign-in for members and the event
+      list.)
+- [ ] Click **Set up webhook**, then in Fourthwall's admin click **Send test notification**. The card shows the last
+      delivery, marked as a test.
+- [ ] Gift draws: in Fourthwall's gifting settings pick **Open API** as the platform. The card's warning goes away.
+      Tick **Run gift draws from Twitch chat with** (`!enter`) and **Tell Fourthwall when I am live on Twitch**.
+- [ ] Give an action the **Gift Draw Started** trigger that posts `%fw.entryCommand%` in Twitch chat, and one with
+      **Gift Draw Ended** that posts `%fw.winners%`.
+
+**Mod portal** (Chat > Mod portal; you need a mod who can join from their own device)
+
+- [ ] **Assistant messages per mod per day** is set (30 by default; 0 turns it off).
+- [ ] Under **Roles**, the mod's role has **Use the Assistant (on your AI account)** and **Channel point rewards
+      (Twitch, Kick)**. Portals set up before these features have them unticked.
+- [ ] The **Assistant** page works for you first (Home > Assistant), so a problem there is not mistaken for a portal
+      problem.
+
+### 2. Going live
+
+Tell chat it is a test stream. Going live sends your followers a notification.
+
+- [ ] Start the stream. Each platform's **stream online** trigger runs, and the top bar badges stay connected.
+- [ ] A chat message from each platform (Twitch, Kick, YouTube, Rumble) shows in Cuebot's chat.
+- [ ] Rumble: an action that sends a Rumble chat message posts it. Sending to Rumble chat is not confirmed yet.
+- [ ] Fourthwall: the shop shows you as live (the streaming status Cuebot sets).
+
+### 3. While live: rewards
+
+Use a second account (a mod or an alt), because these are viewers' actions.
+
+- [ ] Twitch: redeem "Cuebot test". The "Reward test" action runs and its message appears in chat. The reward's counter
+      goes up.
+- [ ] Kick: redeem "Cuebot test". The action runs.
+- [ ] Optional: someone buys a custom Power-up. The **Custom power-up redemption** trigger runs.
+
+### 4. While live: mod portal
+
+The mod does these on their own device; you watch Cuebot.
+
+- [ ] **Rewards** page: Twitch and Kick are listed with "N of 50 used", the same counts as in the app. Rewards made on
+      the websites are read-only.
+- [ ] The mod adds a Twitch reward and a Kick reward, changes one, then deletes one. Each shows on the platform, and
+      under **Recent changes by mods** on your Mod portal page.
+- [ ] **Undo** one of them from **Recent changes by mods**: undoing a new reward deletes it; undoing a delete makes it
+      again.
+- [ ] If the role needs your approval, the change waits for it and only reaches the platform after you approve.
+- [ ] **Assistant** page: the mod attaches a short sound and asks *"Make a channel point redeem called Bonk that plays
+      this sound."* The Assistant uploads the sound, makes the reward and the action, and asks before playing anything
+      on stream. Redeem Bonk from a viewer account: the sound plays.
+- [ ] The mod's message count goes down by one per message, and the Assistant cannot do anything the role does not
+      allow (ask it for something outside the role, such as changing a setting it has no permission for).
+
+### 5. While live: Fourthwall
+
+These can only be confirmed with a real shop. Small real amounts are enough.
+
+- [ ] **Donation** with a name: it shows in the feed and alert, and counts in top spenders.
+- [ ] **Donation with the name left blank**: it shows as "Anonymous". Note whether `%isAnonymous%` is true.
+- [ ] **Unpaid donation**: start a donation and leave at checkout. Nothing shows in the feed or alerts. Note whether
+      Fourthwall sent anything at all (the card's last delivery).
+- [ ] **Order**: buy something cheap. The **Order Placed** trigger runs and it shows as a merch alert.
+- [ ] **Gift purchase and draw**: buy a stream gift. **Gift Purchase** runs. When the draw starts, the action posts the
+      entry command; type `!enter` from a viewer account. When it ends, **Gift Draw Ended** posts the winners.
+- [ ] **Claimed gift**: the winner claims it. It shows as "redeemed a gift" and does not count as money a second time.
+      Note the order kind in the trigger's variables.
+- [ ] **Product update**: edit a product's description in Fourthwall. **Product Updated** runs, and the Products
+      widget shows the change.
+- [ ] Optional: a samples order. It is not counted as money; note the order kind.
+- [ ] **Catch-up**: wait one catch-up interval (10 minutes by default) after the last event. No event runs a second
+      time, so Fourthwall's event list and its webhooks use the same ids.
+
+### 6. Ending the stream
+
+- [ ] Stop the stream. Each platform's **stream offline** trigger runs.
+- [ ] Fourthwall no longer shows you as live.
+
+### 7. Afterwards
+
+- [ ] Delete the "Cuebot test" and "Bonk" rewards on Twitch and Kick (from Cuebot, so it is also a delete test), and
+      any rewards the mod made.
+- [ ] Turn off or delete the test actions so a later redeem does not post test messages.
+- [ ] Write down what failed or looked odd, with the time. Leave out stream keys, tokens and emails.
+
+## Automated live tests
+
 The normal test suite never touches the network. A separate set of **opt-in** tests drives the real
-services end to end through Cuebot's own modules and action engine, exactly as the app does:
+services end to end through Cuebot's own modules and action engine, exactly as the app does. They are listed in the
+same order as their setup sections below: platforms first, then OBS and services, then other apps, then devices,
+and last Python and the community gallery.
 
 | Suite | What it checks | Needs |
 | --- | --- | --- |
 | `Cuebot.LiveTests` › Twitch chat | Sign-in (device code), EventSub connects, a Helix chat message comes back as a `channel.chat.message` event, `!cuebottest` → command trigger → action → chat reply | Twitch client ID |
 | `Cuebot.LiveTests` › Twitch going live | Cuebot starts the stream in OBS → `obs.streamStarted`, Twitch `stream.online` and the online trigger's chat message, healthy output for the configured duration, stop → `obs.streamStopped` and Twitch `stream.offline` | Twitch client ID + stream key, OBS, streaming enabled |
-| `Cuebot.LiveTests` › YouTube / Kick | The platform's ingest accepts a stream Cuebot starts and stops: live, data flowing, no reconnects, no dropped frames | Stream key (and Kick ingest URL), OBS, streaming enabled |
-| `Cuebot.LiveTests` › Rumble | The Live Stream API URL works (channel name, follower count); when streaming is enabled: Cuebot goes live on Rumble via OBS → `rumble.streamOnline` from the API, the live chat attaches, stop → `rumble.streamOffline` | Rumble API URL; for going live also the Rumble ingest URL + stream key, OBS, streaming enabled |
-| `Cuebot.LiveTests` › Community gallery | With `CUEBOT_LIVE_GALLERY=1`: lists github.com/TechDaddyKB/cuebot-gallery, downloads every item and its preview (size and SHA-256 checked against the index) and imports each into throwaway stores | Nothing (public, read only) |
 | `Cuebot.LiveTests` › YouTube API | Device-code sign-in (approved once), connection and channel info; the chat stream reaches YouTube (a made-up chat id, 5 units); with `CUEBOT_LIVE_YOUTUBE_CHAT=1` while live: a sent message comes back through the chat stream | Google OAuth client ID + secret; for chat a live broadcast |
 | `Cuebot.LiveTests` › Kick API | OAuth sign-in (browser, once), the official API reads the channel, a chat message sent through the API comes back through the real-time (Centrifugo) chat as `kick.chatMessage` | Kick app Client ID + Client Secret |
+| `Cuebot.LiveTests` › YouTube / Kick | The platform's ingest accepts a stream Cuebot starts and stops: live, data flowing, no reconnects, no dropped frames | Stream key (and Kick ingest URL), OBS, streaming enabled |
+| `Cuebot.LiveTests` › Rumble | The Live Stream API URL works (channel name, follower count); when streaming is enabled: Cuebot goes live on Rumble via OBS → `rumble.streamOnline` from the API, the live chat attaches, stop → `rumble.streamOffline` | Rumble API URL; for going live also the Rumble ingest URL + stream key, OBS, streaming enabled |
+| `Cuebot.Obs.Tests` › `LiveObsTests` | Scenes, sources, text, events and a trigger → action → OBS round trip against a running OBS (creates and removes "Cuebot Test" scenes) | OBS |
+| `Cuebot.LiveTests` › Webhook relay | A custom webhook posted to the relay's public address fires its trigger; a wrong hook token is rejected | A deployed relay |
+| `Cuebot.LiveTests` › Services | Streamlabs, StreamElements, VTube Studio and Voicemod connect and answer; nothing reaches viewers | Each service's token or key; VTube Studio and Voicemod running |
+| `Cuebot.LiveTests` › Donations | TipeeeStream, DonorDrive, TreatStream and Pally.gg connect and answer | Each service's key or id |
+| `Cuebot.LiveTests` › StreamLoots / Crowd Control | Read-only connections stay open; nothing is sent | Alert widget URL; overlay URL |
+| `Cuebot.LiveTests` › Streamlabs Desktop | Scenes, sources, filters, groups, transforms, mutes, studio mode on a scratch scene | Streamlabs Desktop with its API token |
+| `Cuebot.LiveTests` › Imported Streamer.bot setup | A real Streamer.bot export imported and run against OBS and Streamlabs Desktop | OBS and Streamlabs Desktop |
 | `Cuebot.LiveTests` › Meld Studio / PolyPop | Meld: WebChannel handshake, scene list, re-show the current scene, optionally toggle a named layer and restore it (the session update must come back). PolyPop: the WebSocket plugin connects to Cuebot and a test alert is delivered | Meld Studio with remote connections on; PolyPop with the WebSocket plugin |
+| `Cuebot.LiveTests` › Elgato | Lights (brightness step and back), Camera Hub / Facecam controls, Elgato Studio detected | A light's address, a webcam or the Elgato apps |
 | `Cuebot.LiveTests` › Wave Link | Version and port detection, channels and mixes, a request round trip, optionally a channel mute toggled and restored | Elgato Wave Link 3.x or 1.x/2.x on the same PC |
 | `Cuebot.LiveTests` › GoXLR | Status load, faders and volumes, a ping, optionally a fader mute toggled and restored through the utility's patches | The GoXLR Utility with a GoXLR or GoXLR Mini |
 | `Cuebot.LiveTests` › MIDI | Port listing (WinMM / ALSA sequencer); optionally notes, a controller and SysEx sent to an output, a loopback round trip through the MIDI Message trigger variables, and learning a control you press | Nothing for the listing; a MIDI output, a loopback cable (loopMIDI, Midi Through) or a controller for the rest |
 | `Cuebot.LiveTests` › Stream Deck over USB | Direct HID (no Elgato software): serial and firmware read, brightness changed, a test image drawn on every key, then the direct USB service: Connected/Info events, Set Title / Set Background / Show Ok by default button id through the hub, turning it off fires Disconnected; the deck is left reset at 60 % brightness. Optionally waits for a key press | Linux with a Stream Deck (tested on an XL) that no other program holds |
 | `Cuebot.LiveTests` › Game controllers | SDL3 loads and starts on its own thread, connected controllers are listed, optionally the first input arrives as a controller event | Optional: any game controller (works with none connected) |
 | `Cuebot.LiveTests` › Voice control | Text-to-speech says "start the countdown", the audio is fed to voice control as a microphone, and Whisper (and on Windows also Windows Speech Recognition) must fire the Voice Control Command and Dictation triggers. Downloads a Whisper model on the first run | A local TTS voice (Windows SAPI or espeak-ng); about 32 MB download |
-| `Cuebot.Obs.Tests` › `LiveObsTests` | Scenes, sources, text, events and a trigger → action → OBS round trip against a running OBS (creates and removes "Cuebot Test" scenes) | OBS |
+| `Cuebot.LiveTests` › Assistant AI CLIs | Each installed AI app finds an action through Cuebot's tool and cannot read a secret file | Codex, Claude Code, Grok CLI or Antigravity CLI, signed in |
 | `Cuebot.Scripting.Tests` › Python | The real Python worker: arguments, host calls, `print` capture, tracebacks, timeouts | A Python interpreter |
+| `Cuebot.LiveTests` › Community gallery | With `CUEBOT_LIVE_GALLERY=1`: lists github.com/TechDaddyKB/cuebot-gallery, downloads every item and its preview (size and SHA-256 checked against the index) and imports each into throwaway stores | Nothing (public, read only) |
 
 Every test **skips** unless its settings are present, so CI and normal `dotnet test` runs are unaffected. The
 `Cuebot.LiveTests` suite additionally runs only when `CUEBOT_LIVE_TESTS=1` is set by the caller (the runner scripts
@@ -47,23 +195,6 @@ of the solution go live. To run that suite directly, set `CUEBOT_LIVE_TESTS=1` y
    (that needs the Manage Broadcast dialog), and consider making it Unlisted.
 5. Going live is public, so nothing streams until you set `CUEBOT_LIVE_STREAM=1`.
 
-### Rumble
-
-Put your Live Stream API URL (rumble.com → Account → Live Stream API; it contains a private key) in
-`CUEBOT_LIVE_RUMBLE_API_URL`. That alone runs the read-only test. For the going-live test also set
-`CUEBOT_LIVE_RUMBLE_RTMP_URL` and `CUEBOT_LIVE_RUMBLE_STREAM_KEY` from Rumble's stream setup page. Rumble's API
-reports a stream going live or ending with a delay, so that test allows up to five minutes for each.
-
-**The stream and the API key must belong to the same owner.** Rumble API keys are scoped to either your user
-profile or one of your channels (the API response's `type` field says which). In the stream setup (Live Streams →
-Edit → Settings → *Channel*) pick that same profile or channel, and set Visibility to Public. Otherwise Rumble
-accepts the stream (the dashboard shows it LIVE) but the Live Stream API never lists it, so no
-`rumble.streamOnline` event or chat arrives. With a **static stream key**, Rumble starts every session as a new stream
-built from the key's template (Live Streams → Templates / Static Stream Keys), so set the channel and visibility on the
-template itself: editing one stream only fixes that session. The live
-chat endpoints Cuebot uses are unofficial (see `src/Cuebot.Rumble/PROTOCOL.md`); if the API works but the chat
-never attaches, Rumble has probably changed them.
-
 ### YouTube API
 
 Create an OAuth client of type **TVs and Limited Input devices** in your own Google Cloud project (YouTube Data
@@ -85,6 +216,23 @@ lookup, set `CUEBOT_LIVE_KICK_CHANNEL_ID` and `CUEBOT_LIVE_KICK_CHATROOM_ID`. Th
 and is often blocked; open `https://kick.com/api/v2/channels/<your slug>` in a browser and copy `id` and
 `chatroom.id`. The sign-in URL is also printed, in case the browser that opens is not the one you are signed in to.
 
+### Rumble
+
+Put your Live Stream API URL (rumble.com → Account → Live Stream API; it contains a private key) in
+`CUEBOT_LIVE_RUMBLE_API_URL`. That alone runs the read-only test. For the going-live test also set
+`CUEBOT_LIVE_RUMBLE_RTMP_URL` and `CUEBOT_LIVE_RUMBLE_STREAM_KEY` from Rumble's stream setup page. Rumble's API
+reports a stream going live or ending with a delay, so that test allows up to five minutes for each.
+
+**The stream and the API key must belong to the same owner.** Rumble API keys are scoped to either your user
+profile or one of your channels (the API response's `type` field says which). In the stream setup (Live Streams →
+Edit → Settings → *Channel*) pick that same profile or channel, and set Visibility to Public. Otherwise Rumble
+accepts the stream (the dashboard shows it LIVE) but the Live Stream API never lists it, so no
+`rumble.streamOnline` event or chat arrives. With a **static stream key**, Rumble starts every session as a new stream
+built from the key's template (Live Streams → Templates / Static Stream Keys), so set the channel and visibility on the
+template itself: editing one stream only fixes that session. The live
+chat endpoints Cuebot uses are unofficial (see `src/Cuebot.Rumble/PROTOCOL.md`); if the API works but the chat
+never attaches, Rumble has probably changed them.
+
 ### Webhook relay
 
 Deploy the relay once (`relay/setup.ps1` or `relay/setup.sh`, see `relay/README.md`) and put the three values it prints in
@@ -103,15 +251,6 @@ test, `CUEBOT_LIVE_STREAMLABS_ACCESS_TOKEN` (from "Connect with Streamlabs" with
 `CUEBOT_LIVE_VTS=1` and the API turned on (Settings → "Start API"); the first run waits up to two minutes for you to
 click **Allow** on VTube Studio's plugin popup, and the plugin token is kept for later runs.
 
-### StreamLoots, Crowd Control
-
-`InteractiveLiveTests` connects read-only and disconnects; nothing is sent. StreamLoots needs
-`CUEBOT_LIVE_STREAMLOOTS_ALERT_URL` (your Alerts widget URL); the test keeps the alerts stream open through one 30 s
-keep-alive. StreamLoots opens the stream for any id, so the test proves the endpoint, not your id: click **Test** on
-the StreamLoots alerts page while Cuebot is connected to see a real alert arrive. Crowd Control needs
-`CUEBOT_LIVE_CROWDCONTROL_OVERLAY_URL` (Overlays & Assets in the Crowd Control app); it passes only when Crowd Control
-accepts the overlay key for the private topic.
-
 ### TipeeeStream, DonorDrive, TreatStream, Pally.gg
 
 `CharityLiveTests` connects to each of these whose variable is set, checks it answers and disconnects; nothing reaches
@@ -121,6 +260,15 @@ for a team id, `CUEBOT_LIVE_DONORDRIVE_BASE_URL` for another DonorDrive charity)
 TreatStream needs `CUEBOT_LIVE_TREATSTREAM_TOKEN` (an access token from signing in on the Donations page) and
 `CUEBOT_LIVE_TREATSTREAM_CLIENT_ID` (your TreatStream app). Pally.gg needs `CUEBOT_LIVE_PALLY_API_KEY`; the test also asks
 Pally's server to echo a sample tip and checks it arrives as a test campaign tip.
+
+### StreamLoots, Crowd Control
+
+`InteractiveLiveTests` connects read-only and disconnects; nothing is sent. StreamLoots needs
+`CUEBOT_LIVE_STREAMLOOTS_ALERT_URL` (your Alerts widget URL); the test keeps the alerts stream open through one 30 s
+keep-alive. StreamLoots opens the stream for any id, so the test proves the endpoint, not your id: click **Test** on
+the StreamLoots alerts page while Cuebot is connected to see a real alert arrive. Crowd Control needs
+`CUEBOT_LIVE_CROWDCONTROL_OVERLAY_URL` (Overlays & Assets in the Crowd Control app); it passes only when Crowd Control
+accepts the overlay key for the private topic.
 
 ### Streamlabs Desktop
 
@@ -168,6 +316,22 @@ the test reads its controls and writes the brightness back unchanged; on Windows
 only checks that Cuebot detects the app. **Elgato Studio** runs with `CUEBOT_LIVE_ELGATO_STUDIO=1`: start the app; the
 test checks that Cuebot detects it. Camera Hub and Studio have no public control API (see `src/Cuebot.Elgato/PROTOCOL.md`).
 
+### Elgato Wave Link
+
+`WaveLinkLiveTests` runs with `CUEBOT_LIVE_WAVELINK=1` while Wave Link 3.x or 1.x/2.x runs on the same PC (Windows or
+macOS; on Linux the service reports "Wave Link is not available on Linux" and the test fails on purpose). Cuebot finds
+the port itself (Wave Link 3: `ws-info.json`, then 1884-1893; 1.x/2.x: 1824-1834); `CUEBOT_LIVE_WAVELINK_PORT` pins
+one. The test checks the detected API, the channel and mix lists and a request round trip; with
+`CUEBOT_LIVE_WAVELINK_CHANNEL=<channel name>` it also mutes that channel, waits for the state to change and restores it.
+Level meters are not exercised.
+
+### GoXLR
+
+`GoXlrLiveTests` runs with `CUEBOT_LIVE_GOXLR=1` while the GoXLR Utility runs (Linux, Windows or macOS) with a GoXLR or
+GoXLR Mini plugged in. It connects to `localhost:14564` (`CUEBOT_LIVE_GOXLR_HOST` / `CUEBOT_LIVE_GOXLR_PORT` override
+that), loads the status, checks the four faders and pings; with `CUEBOT_LIVE_GOXLR_FADER=<A-D or a channel name>` it
+also toggles that fader's mute, waits for the utility's status patch and restores it.
+
 ### MIDI
 
 `MidiLiveTests` (nothing goes live). `CUEBOT_LIVE_MIDI=1` lists the MIDI In and Out ports the real backend sees (WinMM on
@@ -190,22 +354,6 @@ the hub, 0 keys for an unknown id, turning the mode off fires Disconnected). The
 at 60 % brightness. Nobody has to press anything; `CUEBOT_LIVE_STREAMDECK_HID_PRESS=1` also waits 30 s for a key press.
 Close StreamController or OpenDeck first: they detach the kernel HID driver, and the test then fails with "No usable
 Stream Deck". Without seat access to `/dev/hidraw*` install `packaging/linux/70-cuebot-streamdeck.rules`.
-
-### Elgato Wave Link
-
-`WaveLinkLiveTests` runs with `CUEBOT_LIVE_WAVELINK=1` while Wave Link 3.x or 1.x/2.x runs on the same PC (Windows or
-macOS; on Linux the service reports "Wave Link is not available on Linux" and the test fails on purpose). Cuebot finds
-the port itself (Wave Link 3: `ws-info.json`, then 1884-1893; 1.x/2.x: 1824-1834); `CUEBOT_LIVE_WAVELINK_PORT` pins
-one. The test checks the detected API, the channel and mix lists and a request round trip; with
-`CUEBOT_LIVE_WAVELINK_CHANNEL=<channel name>` it also mutes that channel, waits for the state to change and restores it.
-Level meters are not exercised.
-
-### GoXLR
-
-`GoXlrLiveTests` runs with `CUEBOT_LIVE_GOXLR=1` while the GoXLR Utility runs (Linux, Windows or macOS) with a GoXLR or
-GoXLR Mini plugged in. It connects to `localhost:14564` (`CUEBOT_LIVE_GOXLR_HOST` / `CUEBOT_LIVE_GOXLR_PORT` override
-that), loads the status, checks the four faders and pings; with `CUEBOT_LIVE_GOXLR_FADER=<A-D or a channel name>` it
-also toggles that fader's mute, waits for the utility's status patch and restores it.
 
 ### Game controllers
 
