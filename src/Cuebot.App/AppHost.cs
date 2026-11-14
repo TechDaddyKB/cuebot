@@ -121,6 +121,7 @@ public sealed class AppHost : IAsyncDisposable
         Get<Cuebot.Core.Chat.Emotes.EmoteService>();   // indexes emote args from the first message on
         Get<Cuebot.Core.Overlays.Events.OverlayEventBridge>();   // chat and alerts for overlay widgets
         Get<Cuebot.Core.Overlays.Session.SessionDataStore>();   // stream totals for goals and labels
+        Get<Cuebot.Core.Points.PointsChatCommands>();   // !points, leaderboards, linking and the points games
         Get<Cuebot.Core.Polls.ChatPolls>();   // polls and predictions (with the tracker) for overlays
         Get<Cuebot.Core.Giveaways.Giveaways>();   // giveaways and the points store hear chat from the start
         Get<Cuebot.Core.Store.PointsStore>();

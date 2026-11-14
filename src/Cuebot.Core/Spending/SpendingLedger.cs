@@ -78,6 +78,9 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
     /// <summary>Raised after any change (a purchase, new rates, a new stream, settings).</summary>
     public event Action? Changed;
 
+    /// <summary>Linked accounts, so <c>combineLinked</c> lists count one viewer's platforms together.</summary>
+    public Users.AccountLinks? Links { get; set; }
+
     private SpendingFile Data => _file?.Value ?? _memory;
 
     private SpendingSession? Current => Data.Sessions.Count > 0 ? Data.Sessions[^1] : null;
@@ -187,9 +190,50 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
     /// The top spenders of a period, highest first, in the chosen currency. <paramref name="platform"/> empty means
     /// every platform together (each person is listed per platform: the same name on two platforms is two people).
     /// </summary>
-    public SpendingList Top(SpendingPeriod period, string platform = "", int count = 10)
+    /// <remarks>
+    /// With <paramref name="combineLinked"/> (and no platform) a viewer's linked accounts are one person; their
+    /// <see cref="TopSpender.Platform"/> then lists the platforms ("Twitch + Kick").
+    /// </remarks>
+    public SpendingList Top(SpendingPeriod period, string platform = "", int count = 10, bool combineLinked = false)
     {
-        lock (_gate) return TopCore(period, platform.Trim(), count);
+        var links = combineLinked && platform.Trim().Length == 0 ? LinkKeys() : null;
+        lock (_gate) return TopCore(period, platform.Trim(), count, links);
+    }
+
+    /// <summary>
+    /// What one viewer has given (all their linked accounts together unless <paramref name="combineLinked"/> is off):
+    /// the total in the chosen currency and, per kind (bits, gifted subs, Super Chats...), how many and their value.
+    /// </summary>
+    public SupportTally Tally(string platform, string user, SpendingPeriod period = SpendingPeriod.AllTime, bool combineLinked = true)
+    {
+        var links = combineLinked ? LinkKeys() : null;
+        var self = Key(platform, user);
+        var key = links?.GetValueOrDefault(self) ?? self;
+        lock (_gate)
+        {
+            var inPeriod = InPeriod(period);
+            var mine = Data.Entries.Where(e => e.Value is not null && inPeriod(e))
+                .Where(e => (links?.GetValueOrDefault(Key(e.Platform, e.User)) ?? Key(e.Platform, e.User)) == key)
+                .ToList();
+            var items = mine.GroupBy(e => e.Label, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new SupportItem(g.Key, g.First().Unit, g.Sum(e => e.Quantity), Math.Round(g.Sum(e => Shown(e.Value!.Value, e.Currency)), 2)))
+                .OrderByDescending(i => i.Value)
+                .ToList();
+            return new SupportTally(Data.Settings.Currency, Math.Round(items.Sum(i => i.Value), 2), items);
+        }
+    }
+
+    private static string Key(string platform, string user) => platform.Trim().ToLowerInvariant() + ":" + user.Trim().TrimStart('@').ToLowerInvariant();
+
+    /// <summary>"platform:name" → link group id for every linked account.</summary>
+    private Dictionary<string, string>? LinkKeys()
+    {
+        if (Links is not { } links) return null;
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var g in links.Groups)
+            foreach (var a in g.Accounts)
+                if (a.UserName.Length > 0) map[Key(a.Platform, a.UserName)] = "link:" + g.Id;
+        return map;
     }
 
     void IPeriodicService.Tick(DateTimeOffset now) => Tick(now);
@@ -407,7 +451,7 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
 
     // ---------------------------------------------------------------- lists
 
-    private SpendingList TopCore(SpendingPeriod period, string platform, int count)
+    private SpendingList TopCore(SpendingPeriod period, string platform, int count, Dictionary<string, string>? links = null)
     {
         var currency = Data.Settings.Currency;
         var inPeriod = InPeriod(period);
@@ -416,14 +460,15 @@ public sealed class SpendingLedger : IPeriodicService, IDisposable
         var pending = entries.Count(e => e.Value is null);
         var groups = entries
             .Where(e => e.Value is not null)
-            .GroupBy(e => (e.Platform.ToLowerInvariant(), e.User.ToLowerInvariant()))
+            .GroupBy(e => links?.GetValueOrDefault(Key(e.Platform, e.User)) ?? Key(e.Platform, e.User))
             .Select(g =>
             {
                 var values = g.Select(e => (e, Value: Shown(e.Value!.Value, e.Currency))).ToList();
                 var breakdown = values.GroupBy(v => v.e.Label, StringComparer.OrdinalIgnoreCase)
                     .ToDictionary(b => b.Key, b => Math.Round(b.Sum(v => v.Value), 2), StringComparer.OrdinalIgnoreCase);
                 var last = g.Last();
-                return (User: last.User, last.Platform, Total: Math.Round(values.Sum(v => v.Value), 2), Count: g.Count(),
+                var platforms = g.Select(e => e.Platform).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                return (User: last.User, Platform: platforms.Count > 1 ? string.Join(" + ", platforms) : last.Platform, Total: Math.Round(values.Sum(v => v.Value), 2), Count: g.Count(),
                     First: g.Min(e => e.Time), Breakdown: breakdown);
             })
             .OrderByDescending(g => g.Total)

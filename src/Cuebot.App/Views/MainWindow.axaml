@@ -125,6 +125,7 @@
     <DataTemplate DataType="xvm:TopSpendersViewModel"><xviews:TopSpendersView /></DataTemplate>
     <DataTemplate DataType="xvm:SubathonGoalsViewModel"><xviews:SubathonGoalsView /></DataTemplate>
     <DataTemplate DataType="xvm:PointsViewModel"><xviews:PointsView /></DataTemplate>
+    <DataTemplate DataType="xvm:PointsCommandsViewModel"><xviews:PointsCommandsView /></DataTemplate>
     <DataTemplate DataType="xvm:GiveawaysStoreViewModel"><xviews:GiveawaysStoreView /></DataTemplate>
     <DataTemplate DataType="xvm:DecksViewModel"><xviews:DecksView /></DataTemplate>
     <DataTemplate DataType="xvm:HotkeysViewModel"><xviews:HotkeysView /></DataTemplate>

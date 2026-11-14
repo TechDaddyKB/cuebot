@@ -9,6 +9,11 @@ A command has two halves:
 2. **The action** (on **Automation > Actions**): what happens. It is linked to the command with a **Command triggered**
    trigger.
 
+!!! tip "Commands Cuebot already answers"
+    `!points`, `!top`, `!give`, `!linkkick` and the other points commands, and the games `!gamble`, `!slots` and
+    `!duel`, work right away without a command or an action. See [Games and commands](games-and-commands.md). If you
+    make a command here with the same word, yours runs instead.
+
 If you have not made one yet, [Your first five minutes](../start/first-five-minutes.md#4-your-first-chat-command-hello)
 walks you through `!hello` step by step.
 

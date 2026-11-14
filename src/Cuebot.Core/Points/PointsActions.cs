@@ -20,9 +20,18 @@ public static class PointsFeatures
         services.AddSingleton(sp => new PointsService(sp.GetRequiredService<UserVariables>(),
             sp.GetRequiredService<Storage.JsonFile<PointsSettings>>(), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(),
             sp.GetRequiredService<UserRegistry>(), sp.GetServices<IChatEventAdapter>(), groups: sp.GetService<GroupStore>(),
-            liveSources: () => sp.GetServices<IStreamLiveStatus>()));
+            liveSources: () => sp.GetServices<IStreamLiveStatus>(), links: sp.GetService<AccountLinks>()));
         // Ticked by the timer service (presence payouts); resolving TimerService at start-up creates the service.
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<PointsService>());
+        services.AddSettingsFile<PointsCommandsSettings>("points-commands.json");
+        services.AddSingleton(sp =>
+        {
+            var chat = sp.GetService<ChatHub>();
+            return new PointsChatCommands(sp.GetRequiredService<PointsService>(), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(),
+                (platform, text) => chat is null ? Task.CompletedTask : chat.SendAsync(platform, text),
+                sp.GetRequiredService<Storage.JsonFile<PointsCommandsSettings>>(), sp.GetService<AccountLinks>(),
+                sp.GetService<Spending.SpendingLedger>(), sp.GetService<CommandStore>(), profile: sp.GetService<ProfileService>());
+        });
         services.AddSingleton<ITriggerProvider, PointsTriggers>();
         services.AddSingleton<ISubActionHandler, AddPointsSubAction>();
         services.AddSingleton<ISubActionHandler, RemovePointsSubAction>();

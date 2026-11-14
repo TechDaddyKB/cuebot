@@ -134,7 +134,7 @@
               ToolTip.Tip="Sets everyone's points on the chosen platform back to zero. This cannot be undone. Click a second time to confirm." />
       <TextBlock Grid.Column="6" Text="{Binding Status}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
     </Grid>
-    <Grid DockPanel.Dock="Top" ColumnDefinitions="60,*,100,160" Margin="12,4,12,4">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="60,*,140,160" Margin="12,4,12,4">
       <TextBlock Classes="muted" Text="RANK" />
       <TextBlock Grid.Column="1" Classes="muted" Text="USER" />
       <TextBlock Grid.Column="2" Classes="muted" Text="PLATFORM" />
@@ -144,7 +144,7 @@
       <ListBox ItemsSource="{Binding Leaderboard}">
         <ListBox.ItemTemplate>
           <DataTemplate DataType="vm:PointsRowViewModel">
-            <Grid ColumnDefinitions="60,*,100,160">
+            <Grid ColumnDefinitions="60,*,140,160">
               <TextBlock Text="{Binding Rank}" FontWeight="SemiBold" />
               <TextBlock Grid.Column="1" Text="{Binding UserName}" TextTrimming="CharacterEllipsis" />
               <TextBlock Grid.Column="2" Text="{Binding Platform}" Classes="muted" />

@@ -10,7 +10,7 @@ public sealed class PointsRowViewModel(PointsEntry entry, string formatted)
 {
     public string Rank => entry.Rank.ToString(CultureInfo.InvariantCulture);
     public string UserName => entry.UserName;
-    public string Platform => entry.Platform;
+    public string Platform => entry.Platforms.Length > 0 ? entry.Platforms : entry.Platform;
     public string Points => formatted;
     public long Value => entry.Points;
 }

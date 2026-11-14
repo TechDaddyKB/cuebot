@@ -71,6 +71,8 @@
     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
       <ComboBox ItemsSource="{x:Static vm:TopSpendersViewModel.Periods}" SelectedItem="{Binding Period}" Width="150" />
       <ComboBox ItemsSource="{Binding Platforms}" SelectedItem="{Binding Platform}" Width="170" />
+      <CheckBox Content="Count linked accounts as one" IsChecked="{Binding CombineLinked}" VerticalAlignment="Center"
+                ToolTip.Tip="With All platforms: a viewer who linked their accounts (Games &amp; Commands) is one row with all their support. Removing purchases works with this off." />
       <Button Content="Remove this person's purchases" Command="{Binding RemoveSelectedCommand}" IsEnabled="{Binding HasSelection}"
               ToolTip.Tip="Removes what the selected person bought in the period you picked, for example after a refund or a test." />
     </StackPanel>

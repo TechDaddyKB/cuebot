@@ -66,6 +66,34 @@ public sealed class SpendingTests : IDisposable
     }
 
     [Fact]
+    public async Task Linked_accounts_count_as_one_supporter_and_tally_what_they_gave()
+    {
+        using var ledger = Ledger();
+        var links = new Cuebot.Core.Users.AccountLinks(null, _log);
+        links.Link(new("Twitch", "1", "alice"), new("Rumble", "r1", "AliceR"));
+        ledger.Links = links;
+        Live(ledger);
+        await Settled(ledger);
+        ledger.Record(Item("Twitch", "Alice", FeedSpend.Units(SpendUnit.Bits, 500, "Bits")));
+        ledger.Record(Item("Rumble", "alicer", Money(10, "USD", "Rant")));
+        ledger.Record(Item("Rumble", "alicer", Money(2.5, "USD", "Rant")));
+        ledger.Record(Item("Twitch", "Bob", Money(12, "USD")));
+
+        var separate = ledger.Top(SpendingPeriod.AllTime);
+        Assert.Equal(["alicer", "Bob", "Alice"], separate.Spenders.Select(s => s.User));
+        var combined = ledger.Top(SpendingPeriod.AllTime, combineLinked: true);
+        Assert.Equal(2, combined.Spenders.Count);
+        Assert.Equal(12.5 + 5, combined.Spenders[0].Total);   // 500 bits at $0.01
+        Assert.Equal("Twitch + Rumble", combined.Spenders[0].Platform);
+
+        var tally = ledger.Tally("Twitch", "alice");
+        Assert.Equal(17.5, tally.Total);
+        Assert.Equal([("Rant", 12.5, 12.5), ("Bits", 500.0, 5.0)], tally.Items.Select(i => (i.Label, i.Quantity, i.Value)));
+        Assert.Equal(5, ledger.Tally("Twitch", "alice", combineLinked: false).Total);
+        Assert.Empty(ledger.Tally("Kick", "nobody").Items);
+    }
+
+    [Fact]
     public async Task Prices_bits_kicks_jewels_and_subscriptions_from_the_settings_and_converts_them()
     {
         using var ledger = Ledger();

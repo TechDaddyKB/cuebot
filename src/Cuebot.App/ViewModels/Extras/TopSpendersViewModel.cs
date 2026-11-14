@@ -58,6 +58,9 @@ public sealed partial class TopSpendersViewModel : PageViewModel
 
     [ObservableProperty] private string _period = SpendingPeriods.Choices[0];
     [ObservableProperty] private string _platform = AllPlatforms;
+
+    /// <summary>Count a viewer's linked accounts (Games &amp; Commands) as one person in "All platforms".</summary>
+    [ObservableProperty] private bool _combineLinked;
     [ObservableProperty] private TopSpenderRowViewModel? _selected;
     [ObservableProperty] private string _summary = "";
     [ObservableProperty] private string _ratesText = "";
@@ -79,10 +82,15 @@ public sealed partial class TopSpendersViewModel : PageViewModel
     [ObservableProperty] private DayOfWeek _weekStart = DayOfWeek.Monday;
 
     public bool IsEmpty => Rows.Count == 0;
-    public bool HasSelection => Selected is not null;
+    public bool HasSelection => Selected is not null && !CombineLinked;
 
     partial void OnPeriodChanged(string value) => Refresh();
     partial void OnPlatformChanged(string value) => Refresh();
+    partial void OnCombineLinkedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(HasSelection));
+        Refresh();
+    }
     partial void OnSelectedChanged(TopSpenderRowViewModel? value) => OnPropertyChanged(nameof(HasSelection));
 
     partial void OnCurrencyChanged(string value)
@@ -133,7 +141,7 @@ public sealed partial class TopSpendersViewModel : PageViewModel
         foreach (var p in _ledger.Platforms())
             if (!Platforms.Contains(p, StringComparer.OrdinalIgnoreCase)) Platforms.Add(p);
         var period = SpendingPeriods.Parse(Period);
-        var list = _ledger.Top(period, Platform == AllPlatforms ? "" : Platform, 50);
+        var list = _ledger.Top(period, Platform == AllPlatforms ? "" : Platform, 50, CombineLinked);
         Rows.Clear();
         foreach (var s in list.Spenders) Rows.Add(new TopSpenderRowViewModel(s, list.Currency));
         Summary = list.Spenders.Count == 0

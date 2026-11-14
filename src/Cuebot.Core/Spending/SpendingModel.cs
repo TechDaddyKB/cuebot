@@ -95,6 +95,12 @@ public sealed class SpendingFile
 /// <summary>One person's total in a top-spenders list.</summary>
 public sealed record TopSpender(int Rank, string User, string Platform, double Total, int Count, IReadOnlyDictionary<string, double> Breakdown);
 
+/// <summary>One kind of support in a viewer's tally: "Bits" 1200 worth 12.00, "Gift subs" 3 worth 14.97.</summary>
+public sealed record SupportItem(string Label, SpendUnit Unit, double Quantity, double Value);
+
+/// <summary>Everything one viewer has given, in the chosen currency.</summary>
+public sealed record SupportTally(string Currency, double Total, IReadOnlyList<SupportItem> Items);
+
 /// <summary>A top-spenders list: who, for which period and platform, in which currency.</summary>
 public sealed record SpendingList(SpendingPeriod Period, string Platform, string Currency, double Total, IReadOnlyList<TopSpender> Spenders)
 {

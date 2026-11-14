@@ -636,6 +636,11 @@ internal static class DocsDemoData
     /// <summary>Chat and activity from viewers, published like the Twitch module does.</summary>
     public static void Chat(AppHost host)
     {
+        // Games & Commands > Linked accounts: one viewer on Twitch and Kick.
+        var points = host.Get<Cuebot.Core.Points.PointsService>();
+        points.Add("Twitch", "id-pixelpanda", "PixelPanda", 1250);
+        points.Add("Kick", "k-pixelpanda", "pixel_panda", 340);
+        host.Get<Cuebot.Core.Users.AccountLinks>().Link(new("twitch", "id-pixelpanda", "PixelPanda"), new("kick", "k-pixelpanda", "pixel_panda"));
         var bus = host.Get<EventBus>();
         (string User, string Text)[] lines =
         [

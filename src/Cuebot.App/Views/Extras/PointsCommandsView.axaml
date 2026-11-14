@@ -1,0 +1,151 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Extras"
+             x:Class="Cuebot.App.Views.Extras.PointsCommandsView"
+             x:DataType="vm:PointsCommandsViewModel">
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="vm:PointsCommandRowViewModel">
+      <Border Classes="card" Margin="0,0,0,8">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="Auto,12,220,12,*,12,130,12,Auto,4,90,12,Auto,4,90">
+            <ToggleSwitch IsChecked="{Binding Enabled}" OnContent="" OffContent="" VerticalAlignment="Center"
+                          ToolTip.Tip="On: Cuebot answers this command in chat. Off: it stays quiet." />
+            <TextBlock Grid.Column="2" Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            <TextBox Grid.Column="4" Text="{Binding Words, UpdateSourceTrigger=LostFocus}" FontFamily="monospace"
+                     ToolTip.Tip="The words that run it. Separate several with commas, like !top, !leaderboard." />
+            <ComboBox Grid.Column="6" ItemsSource="{x:Static vm:PointsCommandRowViewModel.Roles}" SelectedItem="{Binding MinimumRole}"
+                      HorizontalAlignment="Stretch" ToolTip.Tip="Who may use it: everyone, or only subscribers, VIPs, moderators or you." />
+            <TextBlock Grid.Column="8" Text="Wait" Classes="muted" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="10" Value="{Binding CooldownSeconds}" Minimum="0" Increment="5" FormatString="0"
+                           ToolTip.Tip="Seconds before anyone can use it again. 0 means no wait." />
+            <TextBlock Grid.Column="12" Text="Per viewer" Classes="muted" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="14" Value="{Binding UserCooldownSeconds}" Minimum="0" Increment="5" FormatString="0"
+                           ToolTip.Tip="Seconds before the same viewer can use it again. 0 means no wait." />
+          </Grid>
+          <TextBlock Text="{Binding Description}" Classes="muted" TextWrapping="Wrap" />
+          <Expander Header="Replies" HorizontalAlignment="Stretch">
+            <StackPanel Spacing="6">
+              <TextBlock Classes="muted" TextWrapping="Wrap"
+                         Text="Words in braces are filled in: {user} is who typed it, {balance} their points. Leave a reply empty to say nothing in that case." />
+              <ItemsControl ItemsSource="{Binding Replies}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="vm:PointsReplyViewModel">
+                    <Grid ColumnDefinitions="140,8,*" Margin="0,0,0,4">
+                      <TextBlock Text="{Binding Key}" Classes="muted" VerticalAlignment="Center" FontFamily="monospace" />
+                      <TextBox Grid.Column="2" Text="{Binding Text, UpdateSourceTrigger=LostFocus}" TextWrapping="Wrap" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Button Content="Reset replies" Command="{Binding ResetRepliesCommand}" ToolTip.Tip="Puts this command's replies back to how Cuebot ships them." />
+            </StackPanel>
+          </Expander>
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <DockPanel Margin="24,24,24,16">
+    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+      <TextBlock Classes="h1" Text="Games &amp; Commands" />
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="Commands Cuebot answers by itself in every chat, with your points: balances, leaderboards, giving, linking accounts across platforms and games. Rename, limit or turn off any of them. If you make your own command with the same word (Commands page), yours runs instead." />
+      <TextBlock Text="{Binding Status}" Classes="muted" TextWrapping="Wrap"
+                 IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    </StackPanel>
+    <TabControl Classes="subpages" SelectedIndex="{Binding SelectedTab}">
+      <TabItem Header="Commands">
+        <ScrollViewer>
+          <StackPanel Spacing="8" Margin="0,8,0,0">
+            <Border Classes="card">
+              <Grid ColumnDefinitions="Auto,8,180,24,Auto,8,90,24,Auto,8,160">
+                <TextBlock Text="Currency" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="2" ItemsSource="{Binding CurrencyChoices}" SelectedItem="{Binding Currency}" HorizontalAlignment="Stretch"
+                          ToolTip.Tip="Which of your points the commands and games use." />
+                <TextBlock Grid.Column="4" Text="Leaderboard size" VerticalAlignment="Center" />
+                <NumericUpDown Grid.Column="6" Value="{Binding LeaderboardSize}" Minimum="1" Maximum="25" FormatString="0"
+                               ToolTip.Tip="How many people the leaderboard commands list." />
+                <TextBlock Grid.Column="8" Text="Support counts" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="10" ItemsSource="{x:Static vm:PointsCommandsViewModel.Periods}" SelectedItem="{Binding SupportPeriod}"
+                          HorizontalAlignment="Stretch" ToolTip.Tip="The period !support and !topsupporters add up: this stream, this week... or all time." />
+              </Grid>
+            </Border>
+            <ItemsControl ItemsSource="{Binding ChatCommands}" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Games">
+        <ScrollViewer>
+          <StackPanel Spacing="8" Margin="0,8,0,0">
+            <Border Classes="card">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="h2" Text="Rules" />
+                <Grid ColumnDefinitions="Auto,8,110,24,Auto,8,110,24,Auto,8,110" RowDefinitions="Auto,6,Auto,6,Auto">
+                  <TextBlock Text="Smallest bet" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Column="2" Value="{Binding MinimumBet}" Minimum="1" Increment="10" FormatString="0" ToolTip.Tip="The fewest points a viewer can bet." />
+                  <TextBlock Grid.Column="4" Text="Largest bet (0 = any)" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Column="6" Value="{Binding MaximumBet}" Minimum="0" Increment="100" FormatString="0" ToolTip.Tip="The most points a viewer can bet at once. 0 means no limit." />
+                  <TextBlock Grid.Column="8" Text="Duel wait (s)" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Column="10" Value="{Binding DuelSeconds}" Minimum="10" Maximum="600" Increment="10" FormatString="0" ToolTip.Tip="Seconds a duel waits for the other viewer to accept." />
+                  <TextBlock Grid.Row="2" Text="Gamble win %" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Row="2" Grid.Column="2" Value="{Binding GambleWinPercent}" Minimum="0" Maximum="100" FormatString="0" ToolTip.Tip="The chance that !gamble pays out: rolls above 100 minus this win." />
+                  <TextBlock Grid.Row="2" Grid.Column="4" Text="… of that, jackpot %" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Row="2" Grid.Column="6" Value="{Binding GambleJackpotPercent}" Minimum="0" Maximum="100" FormatString="0" ToolTip.Tip="The chance of the highest rolls, which triple the bet instead of doubling it." />
+                  <TextBlock Grid.Row="4" Text="Slots: 3 of a kind ×" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Row="4" Grid.Column="2" Value="{Binding SlotsTripleMultiplier}" Minimum="0" Increment="1" FormatString="0.##" ToolTip.Tip="Three matching reels pay back the bet times this." />
+                  <TextBlock Grid.Row="4" Grid.Column="4" Text="Slots: a pair ×" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Row="4" Grid.Column="6" Value="{Binding SlotsPairMultiplier}" Minimum="0" Increment="0.5" FormatString="0.##" ToolTip.Tip="Two matching reels pay back the bet times this. 1 gives the bet back." />
+                </Grid>
+                <TextBlock Text="Slot symbols (separated by spaces)" />
+                <TextBox Text="{Binding SlotSymbols, UpdateSourceTrigger=LostFocus}" ToolTip.Tip="The pictures on the reels. Fewer symbols make matches more likely." />
+                <TextBlock Text="{Binding GameOdds}" Classes="muted" TextWrapping="Wrap" />
+                <Button Content="Reset rules" Command="{Binding ResetGamesCommand}" ToolTip.Tip="Puts the bets, chances and payouts back to how Cuebot ships them." />
+              </StackPanel>
+            </Border>
+            <ItemsControl ItemsSource="{Binding GameCommands}" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Linked accounts">
+        <DockPanel Margin="0,8,0,0">
+          <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,8">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="muted" TextWrapping="Wrap"
+                         Text="Viewers link their own accounts from chat: on Twitch they type !linkkick and their Kick name, then on Kick !linktwitch and their Twitch name. Linked accounts share one points wallet and count as one person on the combined leaderboards. You can also link two accounts here." />
+              <Grid ColumnDefinitions="110,8,*,16,110,8,*,8,Auto">
+                <ComboBox ItemsSource="{x:Static vm:PointsCommandsViewModel.LinkPlatforms}" SelectedItem="{Binding LinkPlatformA}" HorizontalAlignment="Stretch" />
+                <TextBox Grid.Column="2" Text="{Binding LinkNameA}" PlaceholderText="Name" ToolTip.Tip="The viewer's name on the first platform." />
+                <ComboBox Grid.Column="4" ItemsSource="{x:Static vm:PointsCommandsViewModel.LinkPlatforms}" SelectedItem="{Binding LinkPlatformB}" HorizontalAlignment="Stretch" />
+                <TextBox Grid.Column="6" Text="{Binding LinkNameB}" PlaceholderText="Name" ToolTip.Tip="The same viewer's name on the second platform." />
+                <Button Grid.Column="8" Content="Link" Classes="accent" Command="{Binding LinkCommand}" ToolTip.Tip="Links the two accounts. Both must have chatted before." />
+              </Grid>
+              <Grid ColumnDefinitions="Auto,8,90,*">
+                <TextBlock Text="A request waits (minutes)" VerticalAlignment="Center" />
+                <NumericUpDown Grid.Column="2" Value="{Binding LinkRequestMinutes}" Minimum="1" Maximum="1440" FormatString="0"
+                               ToolTip.Tip="How long a viewer has to finish a link from the other platform." />
+              </Grid>
+            </StackPanel>
+          </Border>
+          <Grid>
+            <ListBox ItemsSource="{Binding Links}">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="vm:LinkGroupRowViewModel">
+                  <Grid ColumnDefinitions="*,12,140,12,140,12,Auto">
+                    <TextBlock Text="{Binding Accounts}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="2" Text="{Binding Balance}" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="4" Text="{Binding LinkedAt}" Classes="muted" VerticalAlignment="Center" />
+                    <Button Grid.Column="6" Content="Unlink"
+                            Command="{Binding $parent[UserControl].((vm:PointsCommandsViewModel)DataContext).UnlinkCommand}"
+                            CommandParameter="{Binding}" ToolTip.Tip="Separates these accounts again. Each keeps what is in it." />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Classes="muted" IsVisible="{Binding HasNoLinks}" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
+                       Text="No linked accounts yet." />
+          </Grid>
+        </DockPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

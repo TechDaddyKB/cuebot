@@ -19,7 +19,9 @@ every platform you connected:
 
 Pick the time at the top: **This stream**, **Today**, **This week**, **This month**, **This year** or **All time**.
 **Weeks start on** (under **Counting**) sets the first day of **This week**: Monday at first, or Sunday or Saturday.
-Pick one platform, or **All platforms** to see everyone together. The same name on two platforms counts as two people.
+Pick one platform, or **All platforms** to see everyone together. The same name on two platforms counts as two people,
+unless the viewer [linked their accounts](games-and-commands.md#linking-accounts) and you tick **Count linked accounts
+as one**: then they are one row with everything they gave on every platform. (Untick it to remove someone's purchases.)
 Under each name you see what they spent it on, like `Cheer $10.00, Subscription $4.99`.
 
 ## Your currency
@@ -82,3 +84,13 @@ shows one person per line, or everyone on one line.
 The trigger **New top spender this stream** runs when someone takes first place. Use it for a "new top spender!"
 alert. The trigger **Money spent** runs for every purchase, with the amount already in your currency.
 
+## In chat
+
+Two of Cuebot's [built-in commands](games-and-commands.md) use this list. Both are off until you turn them on in
+**Chat > Games & Commands**, because they show how much money people gave:
+
+- `!support` (or `!support bob`): what one viewer gave, all their linked accounts together, like
+  `alice has supported the stream with $52.30: 1,200 bits, 3 gifted subs, $25.33 in Super Chat. Thank you!`
+- `!topsupporters`: the top supporters, like `Top supporters: 1. alice $52.30 · 2. bob $20.00`.
+
+They count the period you pick under **Support counts** (all time at first).

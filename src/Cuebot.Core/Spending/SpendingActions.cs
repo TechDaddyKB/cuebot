@@ -20,7 +20,10 @@ public static class SpendingFeatures
     {
         services.AddSingleton<IExchangeRateSource>(sp => new WebExchangeRateSource(sp.GetRequiredService<HttpClient>()));
         services.AddSingleton(sp => new SpendingLedger(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<ChatHub>(),
-            sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(), sp.GetRequiredService<IExchangeRateSource>()));
+            sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(), sp.GetRequiredService<IExchangeRateSource>())
+        {
+            Links = sp.GetService<Users.AccountLinks>(),
+        });
         // Ticked by the timer service (rate retries); resolving TimerService at start-up creates the ledger.
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<SpendingLedger>());
         services.AddSingleton<ISessionDataSource>(sp => new SpendingSessionData(sp.GetRequiredService<SpendingLedger>()));

@@ -92,7 +92,14 @@ public sealed class PointsSettings : PointsCurrency
     public List<PointsCurrency> Currencies { get; set; } = [];
 }
 
-public sealed record PointsEntry(int Rank, string Platform, string UserId, string UserName, long Points);
+/// <summary>
+/// One leaderboard row. On a combined board a viewer's linked accounts are one row: <see cref="Platform"/>,
+/// <see cref="UserId"/> and <see cref="UserName"/> are the account holding most of it and <see cref="Platforms"/> lists them all.
+/// </summary>
+public sealed record PointsEntry(int Rank, string Platform, string UserId, string UserName, long Points, string Platforms = "");
+
+/// <summary>One linked account's share of a wallet.</summary>
+public sealed record PointsShare(string Platform, string UserId, string UserName, long Points);
 
 public sealed record PointsChange(string Platform, string UserId, string UserName, long OldPoints, long NewPoints, string Reason,
     string Currency = "");
@@ -125,6 +132,7 @@ public sealed class PointsService : IPeriodicService, IDisposable
     private readonly AppLog _log;
     private readonly UserRegistry? _users;
     private readonly GroupStore? _groups;
+    private readonly AccountLinks? _links;
     private readonly IReadOnlyList<IChatEventAdapter> _adapters;
     private readonly TimeProvider _time;
     private readonly IDisposable _subscription;
@@ -139,8 +147,9 @@ public sealed class PointsService : IPeriodicService, IDisposable
 
     public PointsService(UserVariables vars, JsonFile<PointsSettings>? settings, EventBus bus, AppLog log,
         UserRegistry? users = null, IEnumerable<IChatEventAdapter>? adapters = null, TimeProvider? time = null, GroupStore? groups = null,
-        Func<IEnumerable<IStreamLiveStatus>>? liveSources = null)
+        Func<IEnumerable<IStreamLiveStatus>>? liveSources = null, AccountLinks? links = null)
     {
+        _links = links;
         _liveSourcesFactory = liveSources;
         _vars = vars;
         _file = settings;
@@ -415,7 +424,7 @@ public sealed class PointsService : IPeriodicService, IDisposable
         string? toName, long amount, string? currency = null)
     {
         if (amount <= 0) throw new InvalidOperationException("The amount to give must be above zero");
-        if (string.Equals(platform, toPlatform, StringComparison.OrdinalIgnoreCase) && fromId == toId)
+        if (string.Equals(platform, toPlatform, StringComparison.OrdinalIgnoreCase) && fromId == toId || SameWallet(platform, fromId, toPlatform, toId))
             throw new InvalidOperationException("Cannot give points to yourself");
         PointsChange from, to;
         PointsCurrency c;
@@ -435,34 +444,78 @@ public sealed class PointsService : IPeriodicService, IDisposable
         return (from.NewPoints, to.NewPoints);
     }
 
-    /// <summary>Top balances (highest first; ties by name), optionally of one platform. Count 0 = everyone.</summary>
+    /// <summary>
+    /// Top balances (highest first; ties by name). With a platform: what each account on it holds itself (its platform
+    /// points). Without: whole wallets, so a viewer's linked accounts are one row. Count 0 = everyone.
+    /// </summary>
     public IReadOnlyList<PointsEntry> Leaderboard(string? platform = null, int count = 10, string? currency = null)
     {
         string name;
         lock (_gate) name = Resolve(currency).VariableName;
-        var rows = _vars.Snapshot(string.IsNullOrWhiteSpace(platform) ? null : platform)
+        var accounts = _vars.Snapshot(string.IsNullOrWhiteSpace(platform) ? null : platform)
             .Where(v => string.Equals(v.Name, name, StringComparison.OrdinalIgnoreCase))
             .Select(v => (v.Platform, v.UserId, v.UserName, Points: ToLong(v.Value)))
-            .OrderByDescending(v => v.Points)
-            .ThenBy(v => v.UserName, StringComparer.OrdinalIgnoreCase)
             .ToList();
+        var rows = new List<(string Platform, string UserId, string UserName, long Points, string Platforms)>();
+        if (!string.IsNullOrWhiteSpace(platform) || _links is null)
+        {
+            rows.AddRange(accounts.Select(a => (a.Platform, a.UserId, a.UserName, a.Points, "")));
+        }
+        else
+        {
+            var groups = _links.Groups;
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var a in accounts)
+            {
+                var key = UserKey(a.Platform, a.UserId);
+                if (seen.Contains(key)) continue;
+                var group = groups.FirstOrDefault(g => g.Accounts.Any(x => UserKey(x.Platform, x.UserId) == key));
+                if (group is null)
+                {
+                    rows.Add((a.Platform, a.UserId, a.UserName, a.Points, ""));
+                    continue;
+                }
+                var members = accounts.Where(x => group.Accounts.Any(g => UserKey(g.Platform, g.UserId) == UserKey(x.Platform, x.UserId))).ToList();
+                foreach (var m in members) seen.Add(UserKey(m.Platform, m.UserId));
+                var top = members.OrderByDescending(m => m.Points).First();
+                rows.Add((top.Platform, top.UserId, top.UserName, members.Sum(m => m.Points),
+                    string.Join(" + ", group.Accounts.Select(g => AccountLinks.DisplayName(g.Platform)))));
+            }
+        }
+        rows = rows.OrderByDescending(v => v.Points).ThenBy(v => v.UserName, StringComparer.OrdinalIgnoreCase).ToList();
         var result = new List<PointsEntry>();
         for (var i = 0; i < rows.Count && (count <= 0 || i < count); i++)
         {
             // Equal balances share a rank (1, 2, 2, 4).
             var rank = i > 0 && rows[i].Points == rows[i - 1].Points ? result[i - 1].Rank : i + 1;
-            result.Add(new PointsEntry(rank, rows[i].Platform, rows[i].UserId, rows[i].UserName, rows[i].Points));
+            result.Add(new PointsEntry(rank, rows[i].Platform, rows[i].UserId, rows[i].UserName, rows[i].Points, rows[i].Platforms));
         }
         return result;
     }
 
-    /// <summary>1-based rank of a user among everyone (0 when they have no balance).</summary>
+    /// <summary>1-based rank of a user's whole wallet among everyone (0 when they have no balance).</summary>
     public int Rank(string platform, string userId, string? currency = null)
     {
         var board = Leaderboard(null, 0, currency);
-        var key = UserVariables.NormalizePlatform(platform);
-        return board.FirstOrDefault(e => e.Platform == key && e.UserId == userId)?.Rank ?? 0;
+        var keys = Wallet(platform, userId).Select(a => UserKey(a.Platform, a.UserId)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return board.FirstOrDefault(e => keys.Contains(UserKey(e.Platform, e.UserId)))?.Rank ?? 0;
     }
+
+    /// <summary>What each account sharing this user's wallet holds itself (this account first).</summary>
+    public IReadOnlyList<PointsShare> Shares(string platform, string userId, string? currency = null)
+    {
+        lock (_gate)
+        {
+            var c = Resolve(currency);
+            return Wallet(platform, userId).Select(a => new PointsShare(UserVariables.NormalizePlatform(a.Platform), a.UserId,
+                a.UserName.Length > 0 ? a.UserName : _vars.Snapshot(a.Platform, a.UserId).FirstOrDefault()?.UserName ?? "",
+                ReadOwn(c, a.Platform, a.UserId))).ToArray();
+        }
+    }
+
+    /// <summary>True when both accounts share one wallet (the same account, or linked).</summary>
+    public bool SameWallet(string platform, string userId, string otherPlatform, string otherId) =>
+        Wallet(platform, userId).Any(a => UserKey(a.Platform, a.UserId) == UserKey(otherPlatform, otherId));
 
     /// <summary>Deletes every balance (optionally of one platform). Returns how many were removed.</summary>
     public int ResetAll(string? platform = null, string? currency = null)
@@ -922,16 +975,45 @@ public sealed class PointsService : IPeriodicService, IDisposable
 
     // ---- storage (call under _gate) ----
 
-    private long Read(PointsCurrency c, string platform, string userId) => ToLong(_vars.Get(platform, userId, c.VariableName));
+    /// <summary>The whole wallet: this account plus every account linked to it.</summary>
+    private long Read(PointsCurrency c, string platform, string userId) =>
+        Wallet(platform, userId).Sum(a => ReadOwn(c, a.Platform, a.UserId));
+
+    /// <summary>What one account holds itself (its variable).</summary>
+    private long ReadOwn(PointsCurrency c, string platform, string userId) => ToLong(_vars.Get(platform, userId, c.VariableName));
+
+    private IReadOnlyList<LinkedAccount> Wallet(string platform, string userId) =>
+        _links?.LinkedTo(platform, userId) ?? [new LinkedAccount(platform, userId, "")];
 
     private PointsChange Write(PointsCurrency c, string platform, string userId, string? userName, long value, string reason)
     {
         if (string.IsNullOrWhiteSpace(platform)) throw new InvalidOperationException("No platform for the points user");
         if (string.IsNullOrEmpty(userId)) throw new InvalidOperationException("No user id for the points user");
-        var old = Read(c, platform, userId);
+        var wallet = Wallet(platform, userId);
+        var old = wallet.Sum(a => ReadOwn(c, a.Platform, a.UserId));
         if (value < 0) value = 0;
         if (c.MaxBalance > 0 && value > c.MaxBalance) value = c.MaxBalance;
-        _vars.Set(platform, userId, userName, c.VariableName, value, persist: true);
+        var delta = value - old;
+        if (delta >= 0 || wallet.Count == 1)
+        {
+            // Earnings stay on the account that earned them; a lone account just takes the new value.
+            _vars.Set(platform, userId, userName, c.VariableName, ReadOwn(c, platform, userId) + delta, persist: true);
+        }
+        else
+        {
+            // Spending takes from this account first, then from the linked ones.
+            var owed = -delta;
+            foreach (var a in wallet)
+            {
+                if (owed == 0) break;
+                var own = ReadOwn(c, a.Platform, a.UserId);
+                var take = Math.Min(own, owed);
+                if (take == 0) continue;
+                var self = UserKey(a.Platform, a.UserId) == UserKey(platform, userId);
+                _vars.Set(a.Platform, a.UserId, self ? userName : null, c.VariableName, own - take, persist: true);
+                owed -= take;
+            }
+        }
         var name = string.IsNullOrWhiteSpace(userName) ? userId : userName;
         return new PointsChange(UserVariables.NormalizePlatform(platform), userId, name, old, value, reason, c.Name);
     }

@@ -22,6 +22,8 @@ internal static class CommandAndUserFeatures
             sp.GetRequiredService<EventBus>()));
         services.AddSingleton(sp => new UserRegistry(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<EventBus>(),
             sp.GetRequiredService<AppLog>(), presentViewersArgs: sp.GetServices<IPresentViewersArgs>));
+        services.AddSettingsFile<AccountLinksData>("account-links.json");
+        services.AddSingleton(sp => new AccountLinks(sp.GetRequiredService<Storage.JsonFile<AccountLinksData>>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton(sp => new CommandService(sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<GroupStore>(),
             sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<UserRegistry>());
