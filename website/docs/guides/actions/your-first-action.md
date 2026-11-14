@@ -100,7 +100,7 @@ You don't need a real raid. **Test trigger…** starts the action as if the trig
 
 1. Click **Test trigger…** (or press ++f5++).
 2. **Run as if this trigger fired** already shows **Twitch › Raid**.
-3. In **Arguments**, replace the example lines with:
+3. **Arguments** already has made-up values for the raid (`user`, `viewers` and so on). Change the two that matter to:
 
     ```
     user=Bob

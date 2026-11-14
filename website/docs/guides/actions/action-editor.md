@@ -256,9 +256,14 @@ Right-click a step (it gets selected first) for:
 
 ## Testing: Run and Test trigger
 
-- **Run** starts the action now, without trigger values. `%user%` and friends stay empty, so text shows them as typed.
+- **Run** starts the action now, without trigger values. `%user%` and friends stay empty, so text shows them as typed,
+  and a step that needs a number from them (like `$math(%bits% / 10)$`) fails. So does a deck button, unless you give it
+  the values under its **Variables** (for example `bits=100`). Use **Test trigger…** to try such an action.
 - **Test trigger…** (++f5++) opens a window. Pick a trigger under **Run as if this trigger fired** (or **Custom
-  arguments only**), type one `name=value` per line under **Arguments**, and click **Run test**.
+  arguments only**), check the `name=value` lines under **Arguments**, and click **Run test**.
+  - **Arguments** starts with a made-up value for each of the chosen trigger's variables: a cheer gets `bits=100`
+    (or the trigger's **Minimum bits**, if higher), a Super Chat gets `amount=5` and `currency=USD`. Change them as
+    you like; picking another trigger starts again from its own values.
   - The values become `%name%` variables. Numbers become real numbers.
   - Cuebot also adds the trigger's own values (`%triggerName%`, `%triggerCategory%`, `%eventType%`, ...) and
     `%isTest%` = `true`.

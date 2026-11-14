@@ -45,6 +45,9 @@ public sealed partial class TriggerItemViewModel : EditorItemViewModel
 
     protected override HelpEntry? Help { get; }
 
+    /// <summary>The variables this trigger gives the action (name → meaning), for the Test trigger overlay.</summary>
+    public IReadOnlyDictionary<string, string> VariableHelp => Help?.Variables ?? new Dictionary<string, string>();
+
     public TriggerDefinition Definition { get; }
     public ITriggerType? Type { get; }
     public override IReadOnlyList<ParameterViewModel> Parameters { get; }

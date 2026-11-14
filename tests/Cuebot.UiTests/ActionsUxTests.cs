@@ -264,6 +264,25 @@ public sealed class ActionsUxTests : IAsyncDisposable
         window.Close();
     }
 
+    [Fact]
+    public void Test_trigger_fills_in_the_triggers_own_variables()
+    {
+        static IReadOnlyDictionary<string, object?> Sample(string type, params (string Key, string Value)[] settings)
+        {
+            var text = TriggerSamples.Arguments(ActionHelp.Trigger(type)!.Variables, settings.ToDictionary(s => s.Key, s => s.Value));
+            var args = TestTriggerViewModel.ParseArguments(text, out var error);
+            Assert.Null(error);
+            return args;
+        }
+
+        var cheer = Sample("twitch.cheer", ("minBits", "500"), ("maxBits", "0"));
+        Assert.Equal((500L, "TestUser", false), (Convert.ToInt64(cheer["bits"]), cheer["user"], cheer["isAnonymous"]));   // raised to minBits
+        Assert.Equal(100L, Convert.ToInt64(Sample("kick.kicksGifted", ("minKicks", "10"))["kicks"]));
+        var superChat = Sample("youtube.superChat");
+        Assert.Equal((5L, "USD", "$5.00"), (Convert.ToInt64(superChat["amount"]), superChat["currency"], superChat["amountText"]));
+        Assert.Equal(TestTriggerViewModel.DefaultArguments, TriggerSamples.Arguments(new Dictionary<string, string>(), new Dictionary<string, string>()));
+    }
+
     private ActionDefinition AddGroupedAction(string name = "Grouped")
     {
         var group = Step(GroupSubAction.Id, ("name", "Greeting"));
