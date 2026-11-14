@@ -78,6 +78,38 @@ public sealed class DecksPageTests : IAsyncDisposable
         Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
 
     [AvaloniaFact]
+    public void Decks_saved_elsewhere_show_up_change_and_go()
+    {
+        var vm = CreatePage();
+        var window = Open(new DecksView(), vm);
+        vm.AddDeckCommand.Execute(null);
+        var own = vm.SelectedDeck!;
+
+        // Saved by the Assistant or the REST API, not on this page.
+        var made = new DeckDefinition { Name = "All Actions" };
+        Decks.Save(made);
+        Pump();
+        Assert.Contains(vm.Decks, d => d.Id == made.Id && d.Name == "All Actions");
+        Assert.Same(own, vm.SelectedDeck);   // the deck being edited stays selected
+
+        var changed = Decks.Find(made.Id.ToString())!;
+        changed.Name = "Renamed";
+        Decks.Save(changed);
+        Pump();
+        Assert.Equal("Renamed", vm.Decks.Single(d => d.Id == made.Id).Name);
+
+        own.Name = "Mine";   // this page's own edits keep their editor
+        Pump();
+        Assert.Same(own, vm.Decks.Single(d => d.Id == own.Id));
+
+        Decks.Remove(made.Id);
+        Pump();
+        Assert.DoesNotContain(vm.Decks, d => d.Id == made.Id);
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void Empty_page_offers_to_add_a_deck_and_says_when_http_is_off()
     {
         var vm = CreatePage(httpEnabled: false);

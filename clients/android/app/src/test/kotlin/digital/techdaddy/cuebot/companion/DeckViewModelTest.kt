@@ -93,6 +93,12 @@ class DeckViewModelTest {
         cuebot.pair()
         eventually("pair again") { cuebot.connection.status.value == ConnectionStatus.Unauthorized }
         assertNull(vm.state.value.view)
+        // The API token still works, so the next connection check says "online" again: the Deck tab itself must keep
+        // saying why it cannot show the deck instead of loading for ever.
+        cuebot.connection.check()
+        eventually("online again") { cuebot.connection.status.value is ConnectionStatus.Online }
+        assertTrue(vm.state.value.deckError?.contains("deck token") == true)
+        assertTrue(vm.state.value.deckNeedsPairing)
     }
 
     @Test fun theStreamClosesInTheBackground() {

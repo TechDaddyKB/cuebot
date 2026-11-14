@@ -31,6 +31,36 @@ public sealed partial class DecksViewModel : PageViewModel
         ActionNames = actionNames;
         foreach (var d in decks.Decks) Decks.Add(new DeckEditorViewModel(this, d));
         SelectedDeck = Decks.FirstOrDefault();
+        // Decks are also made and changed outside this page (the Assistant, the REST API, MCP): show those too.
+        decks.Changed += () => { if (!_saving) OnUi(Sync); };
+    }
+
+    /// <summary>Set while this page itself saves, so its own edits do not rebuild the editor being typed in.</summary>
+    private bool _saving;
+
+    /// <summary>Brings the list in line with the saved decks: new ones added, removed ones dropped, changed ones reloaded.</summary>
+    internal void Sync()
+    {
+        var saved = _decks.Decks;
+        var selected = SelectedDeck?.Id;
+        foreach (var gone in Decks.Where(d => saved.All(s => s.Id != d.Id)).ToArray()) Decks.Remove(gone);
+        foreach (var deck in saved)
+        {
+            var index = Decks.ToList().FindIndex(d => d.Id == deck.Id);
+            if (index < 0) Decks.Add(new DeckEditorViewModel(this, deck));
+            else if (!SameDesign(Decks[index].Definition, deck)) Decks[index] = new DeckEditorViewModel(this, deck);
+        }
+        SelectedDeck = Decks.FirstOrDefault(d => d.Id == selected) ?? Decks.FirstOrDefault();
+    }
+
+    private static bool SameDesign(DeckDefinition a, DeckDefinition b) =>
+        System.Text.Json.JsonSerializer.Serialize(a, Cuebot.Core.Storage.Json.Options) == System.Text.Json.JsonSerializer.Serialize(b, Cuebot.Core.Storage.Json.Options);
+
+    private void SaveOwn(Action save)
+    {
+        _saving = true;
+        try { save(); }
+        finally { _saving = false; }
     }
 
     public ObservableCollection<DeckEditorViewModel> Decks { get; } = [];
@@ -55,7 +85,7 @@ public sealed partial class DecksViewModel : PageViewModel
     {
         var deck = new DeckDefinition { Name = $"Deck {Decks.Count + 1}" };
         deck.Pages[0].Items.Add(new DeckItem { Name = "Button 1", States = [new DeckItemState { Title = "Button 1", Background = "#3a7bd5" }] });
-        _decks.Save(deck);
+        SaveOwn(() => _decks.Save(deck));
         var vm = new DeckEditorViewModel(this, deck);
         Decks.Add(vm);
         SelectedDeck = vm;
@@ -65,13 +95,13 @@ public sealed partial class DecksViewModel : PageViewModel
     private void RemoveDeck()
     {
         if (SelectedDeck is not { } deck) return;
-        _decks.Remove(deck.Id);
+        SaveOwn(() => _decks.Remove(deck.Id));
         var index = Decks.IndexOf(deck);
         Decks.Remove(deck);
         SelectedDeck = Decks.Count == 0 ? null : Decks[Math.Clamp(index, 0, Decks.Count - 1)];
     }
 
-    internal void Save(DeckDefinition deck) => _decks.Save(deck);
+    internal void Save(DeckDefinition deck) => SaveOwn(() => _decks.Save(deck));
 
     internal void ResetRuntime(Guid id) => _decks.ResetRuntime(id);
 

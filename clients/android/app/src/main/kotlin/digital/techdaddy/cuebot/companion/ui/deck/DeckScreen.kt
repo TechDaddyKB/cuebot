@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -109,6 +110,10 @@ fun DeckScreen(vm: DeckViewModel, container: AppContainer, streamMode: Boolean, 
                 when {
                     view != null -> DeckContent(vm, container, view, state, streamMode, onStreamMode)
                     state.decksError != null -> Unavailable(Icons.Filled.GridView, "No deck", state.decksError!!)
+                    state.deckError != null -> Unavailable(Icons.Filled.GridView, "Can't open the deck", state.deckError!!,
+                        if (state.deckNeedsPairing) {
+                            { Button(onClick = goToSettings, modifier = Modifier.testTag("deck-pair-again")) { Text("Pair again") } }
+                        } else null)
                     state.needsChoice -> DeckChooser(state, vm)
                     else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {

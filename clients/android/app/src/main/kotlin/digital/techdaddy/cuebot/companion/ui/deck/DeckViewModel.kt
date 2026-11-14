@@ -36,6 +36,10 @@ class DeckViewModel(
     data class UiState(
         val decks: List<DeckSummary> = emptyList(),
         val decksError: String? = null,
+        /** Why the chosen deck cannot be shown (a deck token Cuebot no longer accepts, a deck that is gone). */
+        val deckError: String? = null,
+        /** The deck error is a rejected deck token: pairing again fixes it. */
+        val deckNeedsPairing: Boolean = false,
         val loaded: Boolean = false,
         val deckId: String? = null,
         val view: DeckView? = null,
@@ -97,7 +101,7 @@ class DeckViewModel(
         try {
             s.client.deckEvents(id) { st -> _state.update { it.copy(streamState = st) } }.collect { event ->
                 when (event.type) {
-                    "state" -> DeckView.from(event.json)?.let { view -> _state.update { it.copy(view = view) } }
+                    "state" -> DeckView.from(event.json)?.let { view -> _state.update { it.copy(view = view, deckError = null) } }
                     "notify" -> DeckNotification.from(event.json)?.let(::show)
                 }
             }
@@ -105,7 +109,15 @@ class DeckViewModel(
             throw e
         } catch (e: CuebotException) {
             connection.report(e)
-            _state.update { it.copy(streamState = StreamState.Reconnecting(0.0, e.message ?: "")) }
+            // The stream only gives up on a 401 or 404, which retrying cannot fix: say so instead of loading for ever.
+            val why = when (e) {
+                CuebotException.Unauthorized -> "Cuebot did not accept this device's deck token. It changes when someone makes a " +
+                    "new one on Cuebot's Servers page. Pair again with a fresh code."
+                CuebotException.NotFound -> "Cuebot no longer has this deck, or it is turned off."
+                else -> e.message ?: e.toString()
+            }
+            _state.update { it.copy(streamState = StreamState.Reconnecting(0.0, e.message ?: ""), deckError = why,
+                deckNeedsPairing = e == CuebotException.Unauthorized) }
         }
     }
 
@@ -115,7 +127,7 @@ class DeckViewModel(
     private fun choose(id: String?) {
         if (chosen.value == id) return
         store.put(DECK_KEY, id)
-        _state.update { it.copy(deckId = id, view = null, streamState = StreamState.Connecting) }
+        _state.update { it.copy(deckId = id, view = null, deckError = null, streamState = StreamState.Connecting) }
         chosen.value = id
     }
 
