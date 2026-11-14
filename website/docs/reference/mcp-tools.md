@@ -947,7 +947,7 @@ It takes no inputs.
 
 ## save_deck
 
-**Create or change a deck.** Create a deck or replace one (the full definition, in get_deck's shape).
+**Create or change a deck.** Create a deck or replace one (the full definition, in get_deck's shape). A button's action is the action's name, as list_actions shows it.
 
 | Input | Type | What it is |
 | --- | --- | --- |

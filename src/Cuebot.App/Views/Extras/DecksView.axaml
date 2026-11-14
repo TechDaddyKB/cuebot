@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Cuebot.App.ViewModels.Extras"
+             xmlns:c="using:Cuebot.App.Controls"
              x:Class="Cuebot.App.Views.Extras.DecksView"
              x:DataType="vm:DecksViewModel">
   <DockPanel Margin="24,24,24,16">
@@ -59,7 +60,7 @@
                       </StackPanel>
                       <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="Background" VerticalAlignment="Center" />
-                        <TextBox Text="{Binding Background}" PlaceholderText="#16161c" Width="120" ToolTip.Tip="The colour behind all buttons, as a colour code like #16161c or a colour name like black." />
+                        <c:ColorField Value="{Binding Background}" Placeholder="#16161c" Width="160" ToolTip.Tip="The colour behind all buttons: pick one, or type a colour code like #16161c or a colour name like black." />
                       </StackPanel>
                       <Button Content="Reset runtime changes" Command="{Binding ResetRuntimeCommand}"
                               ToolTip.Tip="Undoes the changes your actions made while Cuebot ran (titles, colours, button states, current page) and goes back to what you set up here." />
@@ -101,23 +102,22 @@
                           </Grid>
                           <Grid ColumnDefinitions="Auto,8,*,12,Auto">
                             <TextBlock Text="Action" VerticalAlignment="Center" />
-                            <AutoCompleteBox Grid.Column="2" Text="{Binding Action}" ItemsSource="{Binding ActionSuggestions}"
-                                             FilterMode="ContainsOrdinal" MinimumPrefixLength="0" PlaceholderText="Action to run (optional)"
-                                             ToolTip.Tip="The action that runs when someone presses this button. Leave empty to only fire the Deck item pressed trigger." />
+                            <ComboBox x:Name="ItemAction" Grid.Column="2" ItemsSource="{Binding ActionChoices}" SelectedItem="{Binding SelectedAction}" HorizontalAlignment="Stretch"
+                                      ToolTip.Tip="The action that runs when someone presses this button. Choose (none) to only fire the Deck item pressed trigger." />
                             <CheckBox Grid.Column="4" Content="Toggle state on press" IsChecked="{Binding ToggleOnPress}" ToolTip.Tip="Ticked: each press switches the button between its normal look and its active look, like a light switch." />
                           </Grid>
                           <WrapPanel ItemSpacing="12" LineSpacing="8">
                             <TextBox Text="{Binding Title}" PlaceholderText="Title" Width="170" ToolTip.Tip="The words shown on the button." />
-                            <TextBox Text="{Binding TitleColor}" PlaceholderText="Title colour" Width="110" ToolTip.Tip="Colour of the words, as a colour code like #ffffff or a name like white." />
-                            <TextBox Text="{Binding Background}" PlaceholderText="Background colour" Width="140" ToolTip.Tip="Colour of the button, as a colour code like #333333 or a name like gray." />
-                            <TextBox Text="{Binding Icon}" PlaceholderText="Icon (mdi:home)" Width="140" ToolTip.Tip="A small picture on the button. Write mdi: and an icon name from the Material Design Icons list, like mdi:home." />
-                            <TextBox Text="{Binding IconColor}" PlaceholderText="Icon colour" Width="110" ToolTip.Tip="Colour of the little picture." />
+                            <c:ColorField Value="{Binding TitleColor}" Placeholder="Title colour" Width="165" ToolTip.Tip="Colour of the words: pick one, or type a colour code like #ffffff or a name like white." />
+                            <c:ColorField Value="{Binding Background}" Placeholder="Background colour" Width="200" ToolTip.Tip="Colour of the button: pick one, or type a colour code like #333333 or a name like gray." />
+                            <ComboBox IsEditable="True" Text="{Binding Icon}" ItemsSource="{Binding IconChoices}" PlaceholderText="Icon" Width="190" ToolTip.Tip="A small picture on the button. Pick a common one, or type any Iconify name, like mdi:home (Material Design Icons)." />
+                            <c:ColorField Value="{Binding IconColor}" Placeholder="Icon colour" Width="165" ToolTip.Tip="Colour of the little picture: pick one, or type a colour code or name." />
                             <TextBox Text="{Binding BackgroundImage}" PlaceholderText="Background image URL" Width="220" ToolTip.Tip="A web link to a picture to show behind the button. Optional." />
                           </WrapPanel>
                           <WrapPanel ItemSpacing="12" LineSpacing="8">
                             <TextBlock Classes="muted" Text="Active state (1):" VerticalAlignment="Center" ToolTip.Tip="How the button looks when it is switched on (by Toggle state on press or by an action). Empty fields keep the normal look." />
                             <TextBox Text="{Binding ActiveTitle}" PlaceholderText="Title" Width="170" ToolTip.Tip="The words shown while the button is switched on." />
-                            <TextBox Text="{Binding ActiveBackground}" PlaceholderText="Background colour" Width="140" ToolTip.Tip="The button colour while it is switched on." />
+                            <c:ColorField Value="{Binding ActiveBackground}" Placeholder="Background colour" Width="200" ToolTip.Tip="The button colour while it is switched on: pick one, or type a colour code or name." />
                           </WrapPanel>
                           <TextBox Text="{Binding Arguments}" AcceptsReturn="True" PlaceholderText="Variables for the action, name=value per line" MinHeight="36"
                                    ToolTip.Tip="Extra variables for this button's action, one per line, like mood=happy. The action reads it as %mood%." />

@@ -97,7 +97,7 @@ public static partial class McpTools
         new("list_decks", "List decks", "Web decks (button pages for a phone or tablet that run actions).", Schema([]), ReadOnlyHints, (_, _) => Done(ops.Decks())),
         new("get_deck", "Get deck", "A deck's full definition: pages, buttons, their actions and looks.", Schema(["deck"], ("deck", Str("Deck id or name"))), ReadOnlyHints,
             (a, _) => Done(ops.GetDeck(ReqStr(a, "deck")))),
-        new("save_deck", "Create or change a deck", "Create a deck or replace one (the full definition, in get_deck's shape).",
+        new("save_deck", "Create or change a deck", "Create a deck or replace one (the full definition, in get_deck's shape). A button's action is the action's name, as list_actions shows it.",
             Schema(["deck"], ("deck", new JsonObject { ["type"] = "object" })), WriteHints, (a, _) => Done(ops.SaveDeck(a["deck"] as JsonObject ?? throw Missing("deck")))),
         new("delete_deck", "Delete a deck", "Delete a deck.", Schema(["deck"], ("deck", Str("Deck id or name")), Confirm()), DestructiveHints,
             (a, _) => Done(ops.DeleteDeck(ReqStr(a, "deck"))))

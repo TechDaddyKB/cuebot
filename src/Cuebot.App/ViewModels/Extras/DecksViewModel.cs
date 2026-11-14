@@ -20,10 +20,12 @@ public sealed partial class DecksViewModel : PageViewModel
     /// <param name="baseUrl">The HTTP server's base address, e.g. http://127.0.0.1:7474.</param>
     /// <param name="httpEnabled">Whether the HTTP server is on (decks need it).</param>
     /// <param name="deckToken">The deck token other devices need (empty = none); deck links include it.</param>
+    /// <param name="actionName">The name of the action a button refers to by name or id; null when there is no such action.</param>
     public DecksViewModel(DeckService decks, Func<string> baseUrl, Func<bool> httpEnabled, Func<IEnumerable<string>> actionNames,
-        Func<string>? deckToken = null)
+        Func<string>? deckToken = null, Func<string, string?>? actionName = null)
         : base("Decks")
     {
+        ActionName = actionName ?? (a => actionNames().FirstOrDefault(n => string.Equals(n, a, StringComparison.OrdinalIgnoreCase)));
         _decks = decks;
         _baseUrl = baseUrl;
         _deckToken = deckToken;
@@ -65,8 +67,11 @@ public sealed partial class DecksViewModel : PageViewModel
 
     public ObservableCollection<DeckEditorViewModel> Decks { get; } = [];
 
-    /// <summary>Action names for the button editors' suggestions.</summary>
+    /// <summary>Action names for the button editors' action dropdowns.</summary>
     public Func<IEnumerable<string>> ActionNames { get; }
+
+    /// <summary>The name of the action a button refers to (by name or id), or null.</summary>
+    internal Func<string, string?> ActionName { get; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]
@@ -197,7 +202,7 @@ public sealed partial class DeckEditorViewModel : ObservableObject
     {
         Items.Clear();
         if (Page is { } page)
-            foreach (var item in page.Items) Items.Add(new DeckItemEditorViewModel(this, item, _owner.ActionNames));
+            foreach (var item in page.Items) Items.Add(new DeckItemEditorViewModel(this, item, _owner.ActionNames, _owner.ActionName));
     }
 
     [RelayCommand]
@@ -234,7 +239,7 @@ public sealed partial class DeckEditorViewModel : ObservableObject
         var name = $"Button {number}";
         var item = new DeckItem { Name = name, Row = cell.Row, Column = cell.Column, States = [new DeckItemState { Title = name }] };
         page.Items.Add(item);
-        Items.Add(new DeckItemEditorViewModel(this, item, _owner.ActionNames));
+        Items.Add(new DeckItemEditorViewModel(this, item, _owner.ActionNames, _owner.ActionName));
         Save();
     }
 
@@ -263,16 +268,63 @@ public sealed partial class DeckItemEditorViewModel : ObservableObject
 {
     private readonly DeckEditorViewModel _deck;
 
-    internal DeckItemEditorViewModel(DeckEditorViewModel deck, DeckItem definition, Func<IEnumerable<string>> actions)
+    /// <summary>The action dropdown's first entry: the button runs no action (it only fires the Deck item pressed trigger).</summary>
+    public const string NoAction = "(none)";
+
+    /// <summary>Common icons for the icon dropdown; any other Iconify name can still be typed.</summary>
+    public static readonly IReadOnlyList<string> CommonIcons =
+    [
+        "mdi:play", "mdi:pause", "mdi:stop", "mdi:record-rec", "mdi:broadcast", "mdi:broadcast-off",
+        "mdi:microphone", "mdi:microphone-off", "mdi:volume-high", "mdi:volume-off", "mdi:music", "mdi:headphones",
+        "mdi:video", "mdi:video-off", "mdi:camera", "mdi:monitor", "mdi:monitor-off", "mdi:image",
+        "mdi:chat", "mdi:chat-off", "mdi:message-text", "mdi:bullhorn", "mdi:bell", "mdi:bell-off",
+        "mdi:heart", "mdi:star", "mdi:trophy", "mdi:gift", "mdi:cash", "mdi:diamond-stone",
+        "mdi:account", "mdi:account-group", "mdi:hand-wave", "mdi:emoticon-happy", "mdi:party-popper", "mdi:fire",
+        "mdi:timer", "mdi:clock", "mdi:dice-6", "mdi:gamepad-variant", "mdi:robot", "mdi:lightning-bolt",
+        "mdi:home", "mdi:arrow-left", "mdi:arrow-right", "mdi:refresh", "mdi:check", "mdi:close",
+        "mdi:twitch", "mdi:youtube", "mdi:discord", "mdi:twitter", "mdi:instagram", "mdi:spotify",
+    ];
+
+    internal DeckItemEditorViewModel(DeckEditorViewModel deck, DeckItem definition, Func<IEnumerable<string>> actions,
+        Func<string, string?> actionName)
     {
         _deck = deck;
         Definition = definition;
+        _actionName = actionName;
         if (Definition.States.Count == 0) Definition.States.Add(new DeckItemState());
-        ActionSuggestions = actions().ToArray();
+        var choices = new List<string> { NoAction };
+        choices.AddRange(actions().Where(n => !string.IsNullOrWhiteSpace(n)).Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(n => n, StringComparer.OrdinalIgnoreCase));
+        // A button whose action was deleted (or renamed) keeps it, marked, until another one is chosen.
+        if (MissingAction is { } missing) choices.Add(missing);
+        ActionChoices = choices;
     }
 
+    private readonly Func<string, string?> _actionName;
+
     public DeckItem Definition { get; }
-    public IReadOnlyList<string> ActionSuggestions { get; }
+
+    public IReadOnlyList<string> IconChoices => CommonIcons;
+
+    /// <summary>"(none)", then every action by name, then the button's own action if it no longer exists.</summary>
+    public IReadOnlyList<string> ActionChoices { get; }
+
+    private string? MissingAction =>
+        string.IsNullOrWhiteSpace(Definition.Action) || _actionName(Definition.Action.Trim()) is not null ? null : $"Missing: {Definition.Action.Trim()}";
+
+    /// <summary>
+    /// The action dropdown's choice. Buttons saved with an action id (the Assistant writes ids) show the action's name;
+    /// choosing a name stores the name, as the editor always has.
+    /// </summary>
+    public string SelectedAction
+    {
+        get => string.IsNullOrWhiteSpace(Definition.Action) ? NoAction : _actionName(Definition.Action.Trim()) ?? MissingAction!;
+        set
+        {
+            if (value is null || value == SelectedAction || value.StartsWith("Missing: ", StringComparison.Ordinal)) return;
+            Edit(() => Definition.Action = value == NoAction ? "" : value);
+        }
+    }
     private DeckItemState Default => Definition.States[0];
 
     private DeckItemState Active
@@ -287,7 +339,15 @@ public sealed partial class DeckItemEditorViewModel : ObservableObject
     public string Name { get => Definition.Name; set => Edit(() => Definition.Name = value); }
     public decimal? Row { get => Definition.Row + 1; set => Edit(() => Definition.Row = Math.Max(0, (int)(value ?? 1) - 1)); }
     public decimal? Column { get => Definition.Column + 1; set => Edit(() => Definition.Column = Math.Max(0, (int)(value ?? 1) - 1)); }
-    public string Action { get => Definition.Action; set => Edit(() => Definition.Action = value ?? ""); }
+    public string Action
+    {
+        get => Definition.Action;
+        set
+        {
+            Edit(() => Definition.Action = value ?? "");
+            OnPropertyChanged(nameof(SelectedAction));
+        }
+    }
     public string Arguments { get => Definition.Arguments; set => Edit(() => Definition.Arguments = value); }
     public bool ToggleOnPress { get => Definition.ToggleOnPress; set => Edit(() => Definition.ToggleOnPress = value); }
     public string Title { get => Default.Title; set => Edit(() => Default.Title = value); }

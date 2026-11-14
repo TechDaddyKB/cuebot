@@ -122,6 +122,60 @@ public sealed class DecksPageTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public void Actions_icons_and_colours_are_chosen_from_dropdowns()
+    {
+        var goLive = Guid.NewGuid();
+        var vm = new DecksViewModel(Decks, () => "http://127.0.0.1:7474", () => true, () => ["Mute mic", "Go live"],
+            actionName: a => a == goLive.ToString() || a == "Go live" ? "Go live" : a == "Mute mic" ? "Mute mic" : null);
+        var deck = new DeckDefinition { Name = "Made elsewhere" };
+        deck.Pages[0].Items.Add(new DeckItem { Name = "By id", Action = goLive.ToString() });    // as the Assistant saves it
+        deck.Pages[0].Items.Add(new DeckItem { Name = "Gone", Action = "Deleted action" });
+        deck.Pages[0].Items.Add(new DeckItem { Name = "Nothing", Column = 2 });
+        Decks.Save(deck);
+        vm.Sync();
+        var window = Open(new DecksView(), vm);
+        var editor = vm.Decks.Single(d => d.Id == deck.Id);
+        vm.SelectedDeck = editor;
+        Pump();
+
+        var (byId, gone, nothing) = (editor.Items[0], editor.Items[1], editor.Items[2]);
+        Assert.Equal(["(none)", "Go live", "Mute mic"], nothing.ActionChoices);
+        Assert.Equal("(none)", nothing.SelectedAction);
+        Assert.Equal("Go live", byId.SelectedAction);   // the id shows as the action's name
+        Assert.Equal("Missing: Deleted action", gone.SelectedAction);
+        Assert.Contains("Missing: Deleted action", gone.ActionChoices);
+        Assert.Equal(3, window.GetVisualDescendants().OfType<ComboBox>().Count(c => c.Name == "ItemAction"));
+
+        nothing.SelectedAction = "Mute mic";
+        gone.SelectedAction = "Missing: Deleted action";   // re-picking the marker changes nothing
+        byId.SelectedAction = "(none)";
+        Pump();
+        var saved = Decks.Find(deck.Id.ToString())!.Pages[0].Items;
+        Assert.Equal(("", "Deleted action", "Mute mic"), (saved[0].Action, saved[1].Action, saved[2].Action));
+        Assert.Contains("mdi:microphone-off", nothing.IconChoices);
+
+        // Colours: a swatch sets the colour; a typo is marked; Default clears it.
+        var field = window.GetVisualDescendants().OfType<Cuebot.App.Controls.ColorField>().First(f => f.Placeholder == "Background colour");
+        var item = (DeckItemEditorViewModel)field.DataContext!;
+        field.Value = Cuebot.App.Controls.ColorField.Colors[1];
+        Pump();
+        Assert.Equal("#9333ea", item.Background);
+        var input = field.GetVisualDescendants().OfType<TextBox>().Single();
+        input.Text = "#12345";   // one digit short
+        Pump();
+        Assert.Contains("error", input.Classes);
+        Assert.False(Cuebot.App.Controls.ColorField.IsColor("blu"));
+        Assert.True(Cuebot.App.Controls.ColorField.IsColor("blue"));
+        field.Value = "";
+        Pump();
+        Assert.Equal("", item.Background);
+        Assert.DoesNotContain("error", input.Classes);
+        SaveBothThemes(window, "decks-dropdowns");
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void Editing_a_deck_writes_through_to_the_service()
     {
         var vm = CreatePage();

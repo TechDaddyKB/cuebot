@@ -256,6 +256,10 @@
     <Setter Property="Foreground" Value="{DynamicResource CuebotBad}" />
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
+  <!-- A text box whose text is not valid (a colour field with a typo, say). -->
+  <Style Selector="TextBox.error /template/ Border#PART_BorderElement">
+    <Setter Property="BorderBrush" Value="{DynamicResource CuebotBad}" />
+  </Style>
   <Style Selector="TextBlock.warning">
     <Setter Property="Foreground" Value="{DynamicResource CuebotWarn}" />
     <Setter Property="TextWrapping" Value="Wrap" />
