@@ -17,7 +17,7 @@ helps find it in the log.
 
 **App and connections**
 
-- [ ] The title bar shows **Cuebot 0.1.0-rc.16**.
+- [ ] The title bar shows **Cuebot 0.1.0-rc.17**.
 - [ ] Every platform and service you use shows as connected in the top bar. With more than four, they are small
       badges; hovering one shows its name and status. Nothing covers the search box, title or profile switcher.
 - [ ] Optional: run the automated tests for what you will use on stream (see [Running](#running)), for example
@@ -88,6 +88,20 @@ helps find it in the log.
       no "which does not exist" line).
 - [ ] Click **New deck token** on the Servers page: the Deck tab says the deck token was not accepted and offers
       **Pair again** (it does not spin on "Loading the deck…"). Pair again and the deck comes back.
+
+**Points, games and linked accounts** (Chat > Points and Chat > Games & Commands; a second account on another
+platform helps)
+
+- [ ] Start Cuebot after you are already live: within a minute the **Earning** card on **Points** says
+      **Live on** your platforms (no stream-online event needed), and chatting earns points.
+- [ ] `!points`, `!top` and `!toptwitch` (or your platform) answer in the chat you typed them in. Make a command
+      called `!points` on **Automation > Commands**: Cuebot's own `!points` goes quiet; delete it again.
+- [ ] `!give` someone a few points, then `!gamble 10`, `!slots 10` and `!duel name 10` + `!accept`: each answers,
+      balances change, and a second `!gamble` straight away is ignored (30-second per-viewer wait).
+- [ ] Link two accounts: on one platform `!linkkick yourKickName`, then on Kick `!linktwitch yourTwitchName`. Both
+      chats say **Linked!**, `!points` shows the total with each platform's share, and the pair shows on **Games &
+      Commands > Linked accounts**. `!unlink kick` separates them.
+- [ ] Optional: turn on `!support` and `!topsupporters`; they answer with money totals from **Top Spenders**.
 
 **Mod portal** (Chat > Mod portal; you need a mod who can join from their own device)
 
