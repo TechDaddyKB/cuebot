@@ -17,7 +17,7 @@ helps find it in the log.
 
 **App and connections**
 
-- [ ] The title bar shows **Cuebot 0.1.0-rc.15**.
+- [ ] The title bar shows **Cuebot 0.1.0-rc.16**.
 - [ ] Every platform and service you use shows as connected in the top bar. With more than four, they are small
       badges; hovering one shows its name and status. Nothing covers the search box, title or profile switcher.
 - [ ] Optional: run the automated tests for what you will use on stream (see [Running](#running)), for example
@@ -74,6 +74,20 @@ helps find it in the log.
 - [ ] Ask the Assistant for something Cuebot cannot do. It says so and offers a feature request. If you say yes, it
       shows the whole text with **Approve**/**Deny**: **Deny** files nothing; **Approve** files a public GitHub issue
       labelled `enhancement` and the Assistant gives you the link.
+
+**Decks and the phone app** (Input > Decks; Cuebot Companion on a phone or tablet)
+
+- [ ] Ask the Assistant to make a deck of a few actions. It appears on the **Decks** page straight away (no restart),
+      and each button's **Action** dropdown shows the action's name.
+- [ ] On a button, pick an action from the dropdown, a colour from a swatch dropdown and an icon from the **Icon**
+      list. Type `#12345` in a colour box: it gets a red edge. Choose **Default (no colour)** to clear it.
+- [ ] Phone app: **Settings > Pair a Cuebot** opens the camera (no crash) and pairs with the code from **Servers >
+      REST API > Pair a phone**. The REST API and the HTTP server listen on `0.0.0.0`, and the computer's firewall lets
+      in 7475 and 7474 (see the phone app guide).
+- [ ] The **Deck** tab shows the deck within 15 seconds; pressing a harmless button runs its action (Cuebot's log has
+      no "which does not exist" line).
+- [ ] Click **New deck token** on the Servers page: the Deck tab says the deck token was not accepted and offers
+      **Pair again** (it does not spin on "Loading the deck…"). Pair again and the deck comes back.
 
 **Mod portal** (Chat > Mod portal; you need a mod who can join from their own device)
 
