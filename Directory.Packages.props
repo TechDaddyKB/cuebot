@@ -1,11 +1,11 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <AvaloniaVersion>12.1.5</AvaloniaVersion>
+    <AvaloniaVersion>12.1.6</AvaloniaVersion>
   </PropertyGroup>
   <ItemGroup>
     <!-- Assistant: the official Anthropic SDK (MIT) for the Anthropic API-key provider. -->
-    <PackageVersion Include="Anthropic" Version="13.6.0" />
+    <PackageVersion Include="Anthropic" Version="13.8.0" />
     <!-- UI -->
     <PackageVersion Include="Avalonia" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
@@ -24,13 +24,13 @@
     <PackageVersion Include="SkiaSharp" Version="3.119.4" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
     <!-- Infrastructure -->
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.15" />
     <!-- Scripting / speech -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="5.9.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="5.12.0" />
     <!-- Newtonsoft.Json (MIT): Streamer.bot ships it, so pasted C# code that uses it compiles in Cuebot too. -->
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.14" />
-    <PackageVersion Include="System.Speech" Version="10.0.14" />
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.15" />
+    <PackageVersion Include="System.Speech" Version="10.0.15" />
     <!-- Audio: SoundFlow (MIT) wraps miniaudio (MIT or public domain/Unlicense) and ships its native libraries for
          win-x64/x86/arm64 and linux-x64/arm/arm64; NVorbis (MIT) decodes Ogg Vorbis in managed code. -->
     <PackageVersion Include="SoundFlow" Version="1.4.2" />
@@ -54,7 +54,7 @@
     <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
     <PackageVersion Include="Grpc.Tools" Version="2.85.0" />
     <!-- Tests -->
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
