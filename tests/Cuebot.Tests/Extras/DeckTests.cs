@@ -107,6 +107,26 @@ public sealed class DeckTests : IDisposable
     }
 
     [Fact]
+    public async Task A_button_that_names_its_action_by_id_runs_it()
+    {
+        var profile = new ProfileService(null, _log);
+        var capture = new CaptureArgs();
+        using var engine = new ActionEngine(_bus, profile, new Registry([capture], []), new GlobalVariables(null, _log), _log);
+        var decks = new DeckService(null, _bus, _log, () => engine);
+        var action = new ActionDefinition { Name = "Throw Bits at Avatar", SubActions = [new SubActionDefinition { Type = CaptureArgs.Id }] };
+        profile.Profile.Actions.Add(action);
+        profile.NotifyChanged();
+        _deck.Pages[0].Items[0].Action = action.Id.ToString();   // as save_deck from the Assistant writes it
+        decks.Save(_deck);
+        var completed = new TaskCompletionSource<ActionRunRecord>();
+        engine.RunCompleted += r => completed.TrySetResult(r);
+
+        Assert.True(decks.Press(_deck.Id, _deck.Pages[0].Items[0].Id));
+        var run = await completed.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal("Throw Bits at Avatar", run.ActionName);
+    }
+
+    [Fact]
     public async Task Item_sub_actions_change_the_look_per_state()
     {
         var p = new Dictionary<string, string> { ["deck"] = "Main", ["item"] = "Live" };

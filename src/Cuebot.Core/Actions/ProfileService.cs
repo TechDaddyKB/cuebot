@@ -9,8 +9,13 @@ public sealed record ProfileSnapshot(IReadOnlyList<ActionDefinition> Actions, IR
     /// <summary>User-created queues (the built-in "Default" queue is not listed).</summary>
     public IReadOnlyList<QueueDefinition> Queues { get; init; } = [];
 
+    /// <summary>
+    /// The action with this name, or else with this id: references are names in the editors, but the Assistant and
+    /// the REST API often write the id (a deck button saved with save_deck, say), and both should run the action.
+    /// </summary>
     public ActionDefinition? FindAction(string name) =>
-        Actions.FirstOrDefault(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase));
+        Actions.FirstOrDefault(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase))
+        ?? (Guid.TryParse(name, out var id) ? FindAction(id) : null);
 
     public ActionDefinition? FindAction(Guid id) => Actions.FirstOrDefault(a => a.Id == id);
 
