@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Lan
 import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Wifi
@@ -245,6 +246,7 @@ private fun UnreachableCard(container: AppContainer, message: String) {
         Check(Icons.Filled.Computer, "Is Cuebot running on your computer?")
         Check(Icons.Filled.Lan, "Is \"Allow LAN\" on in Cuebot (Servers page)?")
         Check(Icons.Filled.Wifi, "Are the phone and the computer on the same Wi-Fi?")
+        Check(Icons.Filled.Security, "Does the computer's firewall let in Cuebot's REST API and HTTP server ports (7475 and 7474 at the start)?")
         if (Build.VERSION.SDK_INT >= LOCAL_NETWORK_SDK) Check(Icons.Filled.PanTool, "Is local network access allowed for Cuebot Companion (Nearby devices)?")
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(onClick = { container.connection.check() }, modifier = Modifier.testTag("retry")) { Text("Retry") }

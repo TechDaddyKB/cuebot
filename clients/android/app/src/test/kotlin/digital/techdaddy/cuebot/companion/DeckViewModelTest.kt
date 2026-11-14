@@ -74,6 +74,18 @@ class DeckViewModelTest {
         eventually("error") { vm.state.value.decksError?.contains("Input > Decks") == true }
     }
 
+    @Test fun theDecksLoadOnceCuebotCanBeReachedAgain() {
+        cuebot.route("GET /api/v1/decks", json("unreachable", 503))
+        val vm = viewModel()
+        cuebot.pair()
+        eventually("error") { vm.state.value.decksError != null }
+        eventually("connection check") { cuebot.connection.status.value is ConnectionStatus.Online }
+        oneDeck()
+        cuebot.connection.check()   // what Retry does
+        eventually("deck view") { vm.state.value.view != null }
+        assertNull(vm.state.value.decksError)
+    }
+
     @Test fun aMissingDeckTokenAsksToPairAgain() {
         oneDeck()
         cuebot.route("GET /deck/d1/events", json("Deck token required", 401))

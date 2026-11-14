@@ -3,6 +3,7 @@ package digital.techdaddy.cuebot.companion.ui.deck
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import digital.techdaddy.cuebot.companion.data.Connection
+import digital.techdaddy.cuebot.companion.data.ConnectionStatus
 import digital.techdaddy.cuebot.companion.data.KeyValueStore
 import digital.techdaddy.cuebot.companion.data.Session
 import digital.techdaddy.cuebot.core.CuebotException
@@ -18,8 +19,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** The Deck tab: the list of decks, the chosen one's live view, presses, pages and notifications. */
 class DeckViewModel(
@@ -56,14 +60,20 @@ class DeckViewModel(
                     _state.update { UiState(deckId = chosen.value) }
                 }
                 if (s == null || !fg) return@collectLatest
-                loadDecks(s)
+                // Without a deck to show (Cuebot was unreachable, or has no decks yet), try again as soon as the
+                // connection check passes again (Retry, or coming back online) and every RETRY_MS meanwhile; the
+                // session stays the same through all of that, so nothing else would reload the list.
+                while (!loadDecks(s)) {
+                    withTimeoutOrNull(RETRY_MS) { connection.status.drop(1).first { it is ConnectionStatus.Online } }
+                }
                 chosen.collectLatest { id -> if (id != null) stream(s, id) }
             }
         }
     }
 
-    private suspend fun loadDecks(s: Session) {
-        try {
+    /** True when there is at least one enabled deck to show. */
+    private suspend fun loadDecks(s: Session): Boolean {
+        return try {
             val decks = s.client.decks().filter { it.enabled }
             _state.update {
                 it.copy(decks = decks, loaded = true,
@@ -75,9 +85,11 @@ class DeckViewModel(
                 decks.size == 1 -> choose(decks[0].id)
                 else -> choose(null)
             }
+            decks.isNotEmpty()
         } catch (e: CuebotException) {
             connection.report(e)
             _state.update { it.copy(decks = emptyList(), loaded = true, decksError = e.message) }
+            false
         }
     }
 
@@ -139,5 +151,6 @@ class DeckViewModel(
 
     private companion object {
         const val DECK_KEY = "deckId"
+        const val RETRY_MS = 15_000L
     }
 }

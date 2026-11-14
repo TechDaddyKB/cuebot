@@ -139,7 +139,11 @@ Open **Settings > Troubleshooting** in the app. It goes through the usual causes
 - Is the phone on the same Wi-Fi as the computer? (Not on mobile data, and not on a guest network.)
 - On the computer: are the **REST API** and **HTTP server** on, with **Allow LAN connections** ticked, and listening
   on `0.0.0.0`? See [Cuebot's servers](../developers/servers.md).
-- Is a firewall on the computer blocking Cuebot? On Windows, allow Cuebot on **private networks** when Windows asks.
+- Is a firewall on the computer blocking Cuebot? The phone needs the **REST API** and **HTTP server** ports (7475 and
+  7474 at the start). On Windows, allow Cuebot on **private networks** when Windows asks. On Linux with ufw, allow them
+  from your home network, for example `sudo ufw allow from 192.168.1.0/24 to any port 7474:7475 proto tcp` (use your
+  own network's range); with firewalld, `sudo firewall-cmd --permanent --add-port=7474-7475/tcp`, then
+  `sudo firewall-cmd --reload`.
 - On Android 17 and newer, the app needs **local network access** (**Nearby devices** in the app's settings). It
   asks for it once you have paired.
 - Did the computer get a new address? Pair again with a fresh code.
