@@ -22,7 +22,7 @@ namespace Cuebot.Kick;
 /// The Kick connection. Official API (OAuth 2.1 + PKCE sign-in, channel info and polling, title/category, chat,
 /// moderation) plus event sources: the unofficial real-time websocket now, and the webhook relay later.
 /// </summary>
-public sealed class KickService : IConnectable, IAsyncDisposable
+public sealed class KickService : IConnectable, IAsyncDisposable, Cuebot.Core.Chat.IStreamLiveStatus
 {
     private readonly JsonFile<KickSettings> _settings;
     private readonly AppCredentials _builtInApp;
@@ -179,6 +179,10 @@ public sealed class KickService : IConnectable, IAsyncDisposable
 
     public bool IsConnected => _connected;
     public bool IsLive => _hub.IsLive ?? _channel?.IsLive ?? false;
+
+    string Cuebot.Core.Chat.IStreamLiveStatus.Platform => KickChatAdapter.PlatformName;
+
+    bool? Cuebot.Core.Chat.IStreamLiveStatus.IsLive => _hub.IsLive ?? _channel?.IsLive;
     public bool IsRealtimeConnected => _realtime.IsConnected;
 
     /// <summary>The Kick app signed in with: the user's own (Advanced) or the one built into Cuebot.</summary>

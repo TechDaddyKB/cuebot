@@ -12,7 +12,7 @@ namespace Cuebot.Rumble;
 /// The Rumble connection: polls the user's Live Stream API for channel activity, reads the live chat while a
 /// stream is live, and (after an explicit sign-in) sends chat messages.
 /// </summary>
-public sealed class RumbleService : IConnectable, IAsyncDisposable
+public sealed class RumbleService : IConnectable, IAsyncDisposable, Cuebot.Core.Chat.IStreamLiveStatus
 {
     private readonly JsonFile<RumbleSettings> _settings;
     private readonly EventBus _bus;
@@ -63,6 +63,10 @@ public sealed class RumbleService : IConnectable, IAsyncDisposable
 
     /// <summary>True while connected and the Live Stream API reports a live stream.</summary>
     public bool IsLive => _connection?.LiveStream is not null;
+
+    string Cuebot.Core.Chat.IStreamLiveStatus.Platform => RumbleChatAdapter.PlatformName;
+
+    bool? Cuebot.Core.Chat.IStreamLiveStatus.IsLive => _connection is null ? null : IsLive;
 
     /// <summary>Channel (or user) name of the Live Stream API key while connected.</summary>
     public string? ChannelName => _connection?.Snapshot.DisplayName;

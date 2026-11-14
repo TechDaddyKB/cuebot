@@ -44,6 +44,48 @@ public sealed class PointsTests : IDisposable
         Assert.Equal("2 cookies", _points.Format(2));
     }
 
+    private sealed class FakeLiveStatus(string platform) : IStreamLiveStatus
+    {
+        public string Platform => platform;
+        public bool? IsLive { get; set; }
+    }
+
+    [Fact]
+    public void A_stream_that_was_already_live_when_Cuebot_started_still_earns()
+    {
+        var twitch = new FakeLiveStatus("Twitch");
+        var kick = new FakeLiveStatus("Kick");
+        using var points = new PointsService(_vars, null, _bus, _log, _users, [new FakeAdapter()], _clock,
+            liveSources: () => [twitch, kick]);
+        points.UpdateSettings(s => { s.MessageAmount = 5; s.MessageCooldownSeconds = 0; });
+
+        points.Tick(_clock.Now);                       // nothing known yet: not live
+        Assert.Empty(points.LivePlatforms);
+
+        twitch.IsLive = true;                          // first check finds Twitch already live, no online event
+        kick.IsLive = false;
+        points.Tick(_clock.Now);
+        Assert.Equal(["Twitch"], points.LivePlatforms);
+        _bus.Publish(Chat.Message("hi", "alice", "1"));
+        Assert.Equal(5, points.Get("Twitch", "1"));
+
+        _bus.Publish(CreditsTests.Activity(FeedKind.StreamOffline, "Streamer", "Stream ended", "Twitch"));
+        points.Tick(_clock.Now);                       // a lagging "still live" never overrides the offline event
+        Assert.Empty(points.LivePlatforms);
+
+        twitch.IsLive = false;
+        points.Tick(_clock.Now);
+        GoLive("Twitch");
+        points.Tick(_clock.Now);                       // a lagging "offline" never overrides the online event either
+        Assert.Equal(["Twitch"], points.LivePlatforms);
+
+        twitch.IsLive = true;
+        points.Tick(_clock.Now);
+        twitch.IsLive = false;                         // the platform itself saw the stream end
+        points.Tick(_clock.Now);
+        Assert.Empty(points.LivePlatforms);
+    }
+
     [Fact]
     public void Chat_earns_only_while_live_and_respects_the_cooldown()
     {

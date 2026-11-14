@@ -19,7 +19,8 @@ public static class PointsFeatures
         services.AddSettingsFile<PointsSettings>("points.json");
         services.AddSingleton(sp => new PointsService(sp.GetRequiredService<UserVariables>(),
             sp.GetRequiredService<Storage.JsonFile<PointsSettings>>(), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(),
-            sp.GetRequiredService<UserRegistry>(), sp.GetServices<IChatEventAdapter>(), groups: sp.GetService<GroupStore>()));
+            sp.GetRequiredService<UserRegistry>(), sp.GetServices<IChatEventAdapter>(), groups: sp.GetService<GroupStore>(),
+            liveSources: () => sp.GetServices<IStreamLiveStatus>()));
         // Ticked by the timer service (presence payouts); resolving TimerService at start-up creates the service.
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<PointsService>());
         services.AddSingleton<ITriggerProvider, PointsTriggers>();

@@ -15,7 +15,7 @@ namespace Cuebot.Twitch;
 /// WebSocket for incoming events, Helix (<see cref="Api"/>) for everything Cuebot does on Twitch, and the periodic
 /// token validation Twitch requires.
 /// </summary>
-public sealed class TwitchService : IConnectable, IAsyncDisposable
+public sealed class TwitchService : IConnectable, IAsyncDisposable, Cuebot.Core.Chat.IStreamLiveStatus
 {
     private static readonly TimeSpan ValidationInterval = TimeSpan.FromHours(1);
     private static readonly TimeSpan SignOutGrace = TimeSpan.FromSeconds(5);
@@ -418,6 +418,8 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable
         }).ConfigureAwait(false);
         if (Settings.Scopes.Contains(TwitchScopes.ReadRedemptions) || Settings.Scopes.Contains(TwitchScopes.ManageRedemptions))
             await SeedAsync("rewards", async () => _router.SeedRewards(await Api.GetRewardsAsync(ct).ConfigureAwait(false))).ConfigureAwait(false);
+        await SeedAsync("stream status", async () => SetStreamLive(await Api.GetStreamAsync(null, ct).ConfigureAwait(false) is not null))
+            .ConfigureAwait(false);
         await SeedAsync("chat badges", async () => ChatBadges = await Api.GetChatBadgesAsync(ct).ConfigureAwait(false)).ConfigureAwait(false);
         await SeedAsync("shared chat session", async () =>
         {
@@ -460,9 +462,20 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable
         }
     }
 
+    private int _streamLive;   // 0 = not checked yet, 1 = live, 2 = offline
+
+    string Cuebot.Core.Chat.IStreamLiveStatus.Platform => TwitchChatAdapter.PlatformName;
+
+    /// <summary>Live per Helix when the broadcaster connected, then per stream online/offline events; null until checked.</summary>
+    public bool? IsLive => Volatile.Read(ref _streamLive) switch { 1 => true, 2 => false, _ => null };
+
+    private void SetStreamLive(bool live) => Volatile.Write(ref _streamLive, live ? 1 : 2);
+
     /// <summary>Publishes an event through the router, which adds Streamer.bot's argument names and memory-based values.</summary>
     private void Publish(BotEvent e)
     {
+        if (e.Type == TwitchEventTypes.StreamOnline) SetStreamLive(true);
+        else if (e.Type == TwitchEventTypes.StreamOffline) SetStreamLive(false);
         foreach (var routed in _router.Route(e)) _bus.Publish(routed);
     }
 

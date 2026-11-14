@@ -38,6 +38,7 @@ public static class KickServiceCollectionExtensions
             return kick;
         });
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<KickService>());
+        services.AddSingleton<Cuebot.Core.Chat.IStreamLiveStatus>(sp => sp.GetRequiredService<KickService>());
         services.AddSingleton<Cuebot.Core.Rewards.IChannelRewards>(sp => new KickChannelRewards(sp.GetRequiredService<KickService>()));
         services.AddSingleton<IEmoteChannelSource>(sp => new KickEmoteChannelSource(sp.GetRequiredService<KickService>()));
         services.AddSingleton<IChatEventAdapter, KickChatAdapter>();

@@ -15,7 +15,7 @@ Under **Earning** (these are the starting values; change any of them):
 | Setting | Starts at | Means |
 | --- | --- | --- |
 | **Earning on** | on | Points are handed out at all. |
-| **Only while live** | on | Only while you stream. |
+| **Only while live** | on | Only while you stream. Cuebot checks each platform when it connects, so this works even if you start Cuebot after you go live. |
 | **Watching** | 1 every 1 min | Viewers who are watching get 1 point a minute. |
 | **Chat message** | 1, at most every 60 s | Chatting gives a point, but not more than once a minute. |
 | **Follow bonus** | 10 | Extra points for following. |

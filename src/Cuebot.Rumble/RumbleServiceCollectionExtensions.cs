@@ -25,6 +25,7 @@ public static class RumbleServiceCollectionExtensions
             sp.GetRequiredService<EventBus>(),
             sp.GetRequiredService<AppLog>()));
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<RumbleService>());
+        services.AddSingleton<Cuebot.Core.Chat.IStreamLiveStatus>(sp => sp.GetRequiredService<RumbleService>());
         services.AddSingleton<IChatEventAdapter, RumbleChatAdapter>();
         services.AddSingleton<Cuebot.Core.Overlays.Events.IOverlayEventAdapter, RumbleOverlayAdapter>();
         services.AddSingleton<IChatSender, RumbleChatSender>();

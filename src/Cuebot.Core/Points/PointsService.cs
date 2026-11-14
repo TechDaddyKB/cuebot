@@ -108,7 +108,8 @@ public static class PointsEvents
 /// variable sub-actions see the same numbers. Earns from chat (with cooldown), presence while live (ticked by the timer
 /// service, using the <see cref="UserRegistry"/>'s present viewers) and follow/sub/gift/raid bonuses (recognized through
 /// the platform modules' <see cref="IChatEventAdapter"/>s, which carry the user id); automatic earnings are multiplied
-/// by <see cref="Multiplier"/>. Live state comes from chat.activity StreamOnline/StreamOffline.
+/// by <see cref="Multiplier"/>. Live state comes from chat.activity StreamOnline/StreamOffline, plus each platform's
+/// <see cref="IStreamLiveStatus"/> (checked every tick) so a stream that was already live when Cuebot started still counts.
 /// <para>
 /// Every method taking a <c>currency</c> accepts a currency's name, variable name or singular name; null or empty is
 /// the default currency, so callers that predate multiple currencies keep working unchanged.
@@ -132,10 +133,15 @@ public sealed class PointsService : IPeriodicService, IDisposable
     private readonly Dictionary<string, DateTimeOffset> _lastMessagePay = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, DateTimeOffset> _nextPresentPay = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, int> _tiers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Func<IEnumerable<IStreamLiveStatus>>? _liveSourcesFactory;
+    private IStreamLiveStatus[]? _liveSources;
+    private readonly Dictionary<string, bool> _sourceLive = new(StringComparer.OrdinalIgnoreCase);
 
     public PointsService(UserVariables vars, JsonFile<PointsSettings>? settings, EventBus bus, AppLog log,
-        UserRegistry? users = null, IEnumerable<IChatEventAdapter>? adapters = null, TimeProvider? time = null, GroupStore? groups = null)
+        UserRegistry? users = null, IEnumerable<IChatEventAdapter>? adapters = null, TimeProvider? time = null, GroupStore? groups = null,
+        Func<IEnumerable<IStreamLiveStatus>>? liveSources = null)
     {
+        _liveSourcesFactory = liveSources;
         _vars = vars;
         _file = settings;
         _settings = settings?.Value ?? new PointsSettings();
@@ -304,6 +310,46 @@ public sealed class PointsService : IPeriodicService, IDisposable
         {
             if (live) _live.Add(platform);
             else _live.Remove(platform);
+        }
+    }
+
+    /// <summary>
+    /// Follows each platform's own live state: when it turns live (including the first time it is known, which covers a
+    /// stream that was live before Cuebot started) the platform is marked live; when it turns offline it is marked
+    /// offline. Only changes count, so a status that lags the stream online/offline events never overrides them.
+    /// </summary>
+    public void SyncLiveStatus()
+    {
+        var sources = _liveSources ??= _liveSourcesFactory?.Invoke().ToArray() ?? [];
+        foreach (var source in sources)
+        {
+            bool? now;
+            string platform;
+            try
+            {
+                now = source.IsLive;
+                platform = source.Platform;
+            }
+            catch (Exception ex)
+            {
+                _log.Debug("Points", $"Could not read the live state: {ex.Message}");
+                continue;
+            }
+            if (now is not { } live || platform.Length == 0) continue;
+            bool picked;
+            lock (_gate)
+            {
+                var known = _sourceLive.TryGetValue(platform, out var before);
+                if (known && before == live) continue;
+                _sourceLive[platform] = live;
+                if (live) picked = _live.Add(platform);
+                else
+                {
+                    if (known) _live.Remove(platform);
+                    continue;
+                }
+            }
+            if (picked) _log.Info("Points", $"{platform} is live, so viewers there earn points");
         }
     }
 
@@ -645,6 +691,7 @@ public sealed class PointsService : IPeriodicService, IDisposable
     /// <summary>Pays present viewers for each currency whose interval is due.</summary>
     public void Tick(DateTimeOffset now)
     {
+        SyncLiveStatus();
         if (_users is null) return;
         var due = new List<(string Currency, long Amount, bool OnlyLive, string[] Ignored)>();
         string[] live;

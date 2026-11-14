@@ -17,7 +17,7 @@ namespace Cuebot.YouTube;
 /// account, broadcast monitoring, live chat polling, sending and moderation, and broadcast/video updates through the
 /// YouTube Data API v3. All calls count against the user's own Google Cloud project quota (see YOUTUBE.md).
 /// </summary>
-public sealed class YouTubeService : IConnectable, IAsyncDisposable
+public sealed class YouTubeService : IConnectable, IAsyncDisposable, Cuebot.Core.Chat.IStreamLiveStatus
 {
     private const int QuotaSaveStep = 25;
 
@@ -113,6 +113,10 @@ public sealed class YouTubeService : IConnectable, IAsyncDisposable
     public YouTubeBroadcast? LatestBroadcast => _connection?.Broadcasts.Latest;
 
     public bool IsLive => LatestBroadcast is not null;
+
+    string Cuebot.Core.Chat.IStreamLiveStatus.Platform => YouTubeChatAdapter.PlatformName;
+
+    bool? Cuebot.Core.Chat.IStreamLiveStatus.IsLive => IsConnected ? IsLive : null;
 
     public BroadcastStatistics? StatisticsOf(string broadcastId) => _connection?.StatisticsOf(broadcastId);
 
