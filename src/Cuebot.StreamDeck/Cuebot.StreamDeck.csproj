@@ -6,6 +6,7 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Direct USB mode renders key images (titles, pictures) to JPEG. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" />
     <PackageReference Include="SkiaSharp" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
   </ItemGroup>
