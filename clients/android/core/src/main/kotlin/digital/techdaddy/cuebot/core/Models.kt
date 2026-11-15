@@ -243,6 +243,9 @@ data class PendingChange(
     val id: String, val member: String, val area: String, val kind: String, val target: String, val summary: String,
     val at: Long, val expires: Long,
 ) {
+    /** Cuebot's own request (e.g. switch the category to the game being played), not a mod's change. */
+    val isRequest: Boolean get() = area == "request"
+
     companion object {
         fun from(o: JsonObject) = PendingChange(o.str("id"), o.str("member"), o.str("area"), o.str("kind"), o.str("target"),
             o.str("summary").ifEmpty { "${o.str("member")} changed '${o.str("target")}'" }, o.num("at")?.toLong() ?: 0, o.num("expires")?.toLong() ?: 0)
@@ -285,10 +288,12 @@ data class ChangeDecision(val result: Result, val pending: List<PendingChange>) 
         /** The thing changed since the mod asked: nothing was applied; approving with force uses the mod's version. */
         Conflict,
         /** Someone decided it already, or it expired. */
-        NotPending;
+        NotPending,
+        /** Cuebot tried and it did not work (a request whose action failed). */
+        Failed;
 
         companion object {
-            fun of(text: String) = when (text) { "applied" -> Applied; "rejected" -> Rejected; "conflict" -> Conflict; else -> NotPending }
+            fun of(text: String) = when (text) { "applied" -> Applied; "rejected" -> Rejected; "conflict" -> Conflict; "failed" -> Failed; else -> NotPending }
         }
     }
 }

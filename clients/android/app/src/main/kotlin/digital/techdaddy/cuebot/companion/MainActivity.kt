@@ -1,6 +1,10 @@
 package digital.techdaddy.cuebot.companion
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
 import android.os.Bundle
 import android.graphics.Color
 import androidx.activity.ComponentActivity
@@ -19,6 +23,10 @@ import digital.techdaddy.cuebot.companion.ui.theme.CuebotTheme
 import digital.techdaddy.cuebot.companion.ui.theme.isDark
 
 class MainActivity : ComponentActivity() {
+    private companion object {
+        const val ASKED_NOTIFICATIONS = "askedNotifications"
+    }
+
     /** A cuebot://pair link this activity was opened with, waiting for the user to confirm it. */
     private var pendingLink by mutableStateOf<String?>(null)
 
@@ -30,6 +38,7 @@ class MainActivity : ComponentActivity() {
         val startTab = Tab.entries.firstOrNull { it.name.equals(intent.getStringExtra("tab"), ignoreCase = true) } ?: Tab.Deck
         intent.getStringExtra("appearance")?.let { Appearance.of(it) }?.let { container.store.put(Appearance.STORAGE_KEY, it.key) }
         if (savedInstanceState == null) takeLink(intent)
+        askForNotifications()
         setContent {
             val settings by container.store.values.collectAsStateWithLifecycle()
             val dark = Appearance.of(settings[Appearance.STORAGE_KEY]).isDark()
@@ -61,6 +70,15 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         container.activityStopped()
         super.onStop()
+    }
+
+    /** Android 13+: asks once whether requests waiting for a yes may show as notifications. */
+    private fun askForNotifications() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
+        if (container.store.values.value[ASKED_NOTIFICATIONS] == "1") return
+        container.store.put(ASKED_NOTIFICATIONS, "1")
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {}.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     private fun takeLink(intent: Intent?) {

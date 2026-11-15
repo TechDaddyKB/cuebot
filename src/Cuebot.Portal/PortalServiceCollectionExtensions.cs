@@ -58,10 +58,11 @@ public static class PortalServiceCollectionExtensions
                 sp.GetRequiredService<RewardArea>()];
             return new PortalChanges(file.Value, file.ScheduleSave, sp.GetRequiredService<PortalDirectory>(), areas);
         });
-        services.AddSingleton<Cuebot.Core.Portal.IPortalApprovals>(sp => new PortalApprovals(sp.GetRequiredService<PortalChanges>()));
+        services.AddSingleton<Cuebot.Core.Portal.IPortalApprovals>(sp => new PortalApprovals(sp.GetRequiredService<PortalChanges>(), sp.GetService<Cuebot.Core.Requests.StreamRequests>()));
         services.AddSingleton(sp => new PortalControls(sp.GetRequiredService<ProfileService>(),
             sp.GetService<ChatHub>(), Later(sp), sp.GetService<ObsService>(), sp.GetService<QueueService>(),
-            sp.GetService<SpeechService>(), sp.GetService<AudioService>(), sp.GetService<AppLog>()));
+            sp.GetService<SpeechService>(), sp.GetService<AudioService>(), sp.GetService<AppLog>(),
+            requests: sp.GetService<Cuebot.Core.Requests.StreamRequests>()));
         // The Assistant's picture and video editing (MCP media_info, edit_image, edit_video); videos need ffmpeg too.
         services.AddSingleton<Cuebot.Server.Mcp.IMediaEditor>(sp => new Media.MediaEditor(
             sp.GetRequiredService<AppPaths>().GetDirectory("media"), MediaTools.Find));

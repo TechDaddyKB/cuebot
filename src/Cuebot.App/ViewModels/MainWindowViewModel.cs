@@ -27,7 +27,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         new("Chat & Events", "Chat", "message-square", ["Chat", "History", "Users & Groups", ModPortalViewModel.PageTitle, "Points", Extras.PointsCommandsViewModel.PageTitle, Extras.GiveawaysStoreViewModel.PageTitle, "Quotes", "Credits", Extras.TopSpendersViewModel.PageTitle, Extras.SubathonGoalsViewModel.PageTitle]),
         new("Audio", "Audio", "audio-lines", ["Speech", MediaRequestsViewModel.PageTitle, MusicViewModel.PageTitle, "Voice Control"]),
         new("Decks & Input", "Input", "layout-grid", ["Decks", "Stream Deck", "Input"]),
-        new("Platforms", "Platforms", "radio", ["Twitch", "YouTube", "Kick", "Rumble"]),
+        new("Platforms", "Platforms", "radio", ["Twitch", "YouTube", "Kick", "Rumble", GameCategoriesViewModel.PageTitle]),
         new("Overlays & Widgets", "Overlays", "layers", [OverlaysViewModel.PageTitle]),
         new("Integrations", "Apps", "plug", ["Stream apps", "Apps & devices", "Donations", "Webhooks", "Servers"]),
         new("Settings", "Settings", "settings", ["Settings", "Import / Export", "Support"], Bottom: true),
@@ -71,6 +71,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ["YouTube"] = "Your YouTube channel, chat and settings.",
         ["Kick"] = "Your Kick account, channel and settings.",
         ["Rumble"] = "Your Rumble channel and chat.",
+        [GameCategoriesViewModel.PageTitle] = "The Steam game you play, and switching your stream category to it after someone says yes.",
         [OverlaysViewModel.PageTitle] = "Overlays for OBS browser sources, with widgets, alerts and the designer.",
         ["Stream apps"] = "OBS Studio, Streamlabs Desktop and other streaming apps.",
         ["Apps & devices"] = "VTube Studio, lights, mixers, Stream Deck and other apps.",
@@ -115,6 +116,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new WatchersViewModel(host.Get<Cuebot.Core.SystemTools.WatcherService>()),
             new TwitchViewModel(host.Get<TwitchService>()),
             new RumbleViewModel(host.Get<Cuebot.Rumble.RumbleService>()),
+            new GameCategoriesViewModel(host.Get<Cuebot.Core.Games.CategorySwitcher>(),
+                host.Get<Cuebot.Core.Storage.JsonFile<Cuebot.Integrations.IntegrationsSettings>>(), host.Get<EventBus>(),
+                host.Get<Cuebot.Integrations.Steam.SteamGameWatcher>()),
             new Cuebot.App.ViewModels.YouTube.YouTubeViewModel(host.Get<Cuebot.YouTube.YouTubeService>()),
             new Cuebot.App.ViewModels.Kick.KickViewModel(host.Get<Cuebot.Kick.KickService>(), host.Get<Cuebot.Obs.ObsService>()),
             new Cuebot.App.ViewModels.Donations.DonationsViewModel(host.Get<Cuebot.Donations.DonationServices>()),
@@ -212,6 +216,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Status.ProblemsRequested += () => SelectedPage = Support;
         SyncGroupSelection(Dashboard);
         WatchModApprovals(host);
+        WatchRequests(host);
 
         PageViewModel Page(string title) => Pages.First(p => p.Title == title);
         ShortcutCommands = new Dictionary<string, System.Windows.Input.ICommand>
@@ -375,6 +380,59 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 && string.Equals(e.Args.GetValueOrDefault("toastId") as string, ApprovalToastId, StringComparison.Ordinal))
                 Avalonia.Threading.Dispatcher.UIThread.Post(ReviewApprovals);
         });
+    }
+
+    // ---- Cuebot's own requests (e.g. switch the category to the game being played) ----
+
+    private Cuebot.Core.Requests.StreamRequests? _requests;
+
+    /// <summary>The oldest request waiting for a yes, shown in a strip above every page.</summary>
+    public Cuebot.Core.Requests.StreamRequest? CurrentRequest => _requests?.Pending.FirstOrDefault();
+
+    public bool HasRequest => CurrentRequest is not null;
+
+    public string RequestText => CurrentRequest is { } r ? (r.Detail.Length > 0 ? $"{r.Title}  {r.Detail}" : r.Title) : "";
+
+    public string RequestAcceptLabel => CurrentRequest?.AcceptLabel ?? "Allow";
+
+    public string RequestRememberLabel => CurrentRequest?.Remember ?? "";
+
+    public bool HasRequestRemember => RequestRememberLabel.Length > 0;
+
+    [RelayCommand]
+    private Task AcceptRequest() => AnswerRequestAsync(Cuebot.Core.Requests.RequestAnswer.Accept);
+
+    [RelayCommand]
+    private Task AlwaysRequest() => AnswerRequestAsync(Cuebot.Core.Requests.RequestAnswer.AcceptAndRemember);
+
+    [RelayCommand]
+    private Task DeclineRequest() => AnswerRequestAsync(Cuebot.Core.Requests.RequestAnswer.Decline);
+
+    private async Task AnswerRequestAsync(Cuebot.Core.Requests.RequestAnswer answer)
+    {
+        if (_requests is null || CurrentRequest is not { } r) return;
+        var outcome = await _requests.AnswerAsync(r.Id, answer, "You (desktop)");
+        // The strip goes away with the answer, so say how it went in a short in-app notice.
+        var toast = _host.Get<Cuebot.Core.Desktop.Notifications.IToastPresenter>();
+        if (toast.IsAvailable)
+            toast.Show(new Cuebot.Core.Desktop.Notifications.DesktopNotification("Cuebot", outcome.Message) { DurationSeconds = 4 }, () => { });
+    }
+
+    private void RequestsChanged()
+    {
+        foreach (var name in (string[])[nameof(CurrentRequest), nameof(HasRequest), nameof(RequestText), nameof(RequestAcceptLabel),
+                     nameof(RequestRememberLabel), nameof(HasRequestRemember)])
+            OnPropertyChanged(name);
+    }
+
+    private void WatchRequests(AppHost host)
+    {
+        _requests = host.Get<Cuebot.Core.Requests.StreamRequests>();
+        var log = host.Get<AppLog>();
+        _requests.Changed += () => Avalonia.Threading.Dispatcher.UIThread.Post(RequestsChanged);
+        _requests.Added += r => _ = NotifyAsync(host, new Cuebot.Core.Desktop.Notifications.DesktopNotification("Cuebot needs a yes",
+            r.Detail.Length > 0 ? $"{r.Title} {r.Detail}" : r.Title) { Id = "cuebot-request", DurationSeconds = 15 }, log);
+        RequestsChanged();
     }
 
     private static async Task NotifyAsync(AppHost host, Cuebot.Core.Desktop.Notifications.DesktopNotification notification, AppLog log)

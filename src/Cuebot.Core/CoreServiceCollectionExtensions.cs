@@ -1,3 +1,4 @@
+using Cuebot.Core.Games;
 using Cuebot.Core.Actions;
 using Cuebot.Core.BuiltIn;
 using Cuebot.Core.Chat;
@@ -49,7 +50,8 @@ public static class CoreServiceCollectionExtensions
             .AddOverlayFeatures()
             .AddPollFeatures()
             .AddGiveawayAndStoreFeatures()
-            .AddMediaFeatures();
+            .AddMediaFeatures()
+            .AddGameFeatures();
     }
 
     /// <summary>Registers a module's settings file (e.g. "twitch.json") as a singleton JsonFile.</summary>

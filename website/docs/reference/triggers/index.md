@@ -21,6 +21,7 @@ A **trigger** is the "when" of an action: *when* someone follows, *when* a scene
 | [Elgato Control Center](elgato-control-center.md) | 12 |
 | [Fourthwall](fourthwall.md) | 17 |
 | [Game Controller](game-controller.md) | 6 |
+| [Games](games.md) | 3 |
 | [Giveaways](giveaways.md) | 5 |
 | [Goals](goals.md) | 3 |
 | [GoXLR](goxlr.md) | 17 |

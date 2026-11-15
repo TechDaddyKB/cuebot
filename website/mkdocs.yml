@@ -114,6 +114,7 @@ nav:
           - YouTube: guides/platforms/youtube.md
           - Kick: guides/platforms/kick.md
           - Rumble: guides/platforms/rumble.md
+          - Game categories: guides/platforms/game-categories.md
           - More than one persona (profiles): guides/platforms/profiles.md
       - Actions and automation:
           - guides/actions/index.md

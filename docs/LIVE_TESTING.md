@@ -108,6 +108,17 @@ platform helps)
 - [ ] Settings > Backups > **Back up now**: the new zip is small (no `piper`, `models` or `cache` folder inside), even
       with Piper voices downloaded.
 
+**Game categories** (Platforms > Game categories)
+
+- [ ] Start VTube Studio (or another Steam tool) from Steam: the page still says **No game running**. Start a Steam
+      game: within a few seconds it says **Playing now:** with the game's name.
+- [ ] A strip at the top of Cuebot asks to switch the category, with the Twitch and Kick categories, and a notification
+      shows. The paired tablet lists it under **Waiting for your OK** (with a notification); a Lead Mod sees it under
+      **Needs a yes** on the portal's Home page.
+- [ ] Answer **Ignore** in one place: it disappears everywhere and nothing changes. Restart the game and answer
+      **Switch** from the tablet or the portal: the category changes on Twitch and Kick, and the log says who answered.
+- [ ] Optional: **Try it** with a game's name, then close the game with **switch back to** set to Just Chatting.
+
 **Mod portal** (Chat > Mod portal; you need a mod who can join from their own device)
 
 - [ ] **Assistant messages per mod per day** is set (30 by default; 0 turns it off).

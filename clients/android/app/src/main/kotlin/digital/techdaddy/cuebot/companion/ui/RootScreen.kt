@@ -103,9 +103,9 @@ fun RootScreen(container: AppContainer, startTab: Tab, pendingLink: String?, onL
     val deck: DeckViewModel = viewModel(factory = viewModelFactory { initializer { DeckViewModel(container.connection, container.store, container.foreground) } })
     val dashboard: DashboardViewModel = viewModel(factory = viewModelFactory { initializer { DashboardViewModel(container.connection, container.store, container.foreground) } })
     val settings: SettingsViewModel = viewModel(factory = viewModelFactory { initializer { SettingsViewModel(container.paired, container.connection, container.store) } })
-    val mods: ModViewModel = viewModel(factory = viewModelFactory { initializer { ModViewModel(container.memberships) } })
+    val mods: ModViewModel = viewModel(factory = viewModelFactory { initializer { ModViewModel(container.memberships, foreground = container.foreground, alert = container.alert) } })
     // The approval queue is checked while the app is on screen, so the Mods tab can show how many changes wait.
-    val approvals: ApprovalsViewModel = viewModel(factory = viewModelFactory { initializer { ApprovalsViewModel(container.connection, container.foreground) } })
+    val approvals: ApprovalsViewModel = viewModel(factory = viewModelFactory { initializer { ApprovalsViewModel(container.connection, container.foreground, alert = container.alert) } })
     val colors = LocalCuebotColors.current
 
     LocalNetworkPermission(container)

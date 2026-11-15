@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.GameCategoriesView"
+             x:DataType="vm:GameCategoriesViewModel">
+  <ScrollViewer>
+    <StackPanel Spacing="12" Margin="0,0,0,24" MaxWidth="900" HorizontalAlignment="Left">
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Game detection" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="Cuebot sees which Steam game you are playing. The triggers Game started (Steam) and Game stopped (Steam) run your actions, and the category switch below uses it." />
+          <CheckBox Name="DetectSteam" Content="Watch Steam for games" IsChecked="{Binding DetectSteam}" />
+          <TextBlock Text="{Binding Playing}" FontWeight="SemiBold" />
+          <TextBlock Text="Never a game (one per line, * as a wildcard, or a Steam app id)" Margin="0,4,0,0" />
+          <TextBox Name="Excluded" Text="{Binding Excluded, UpdateSourceTrigger=LostFocus}" AcceptsReturn="True" TextWrapping="NoWrap"
+                   MinHeight="120" MaxHeight="220"
+                   ToolTip.Tip="Streaming tools such as VTube Studio and VBridger come from Steam too, and Steam reports them as running just like a game. Anything listed here is never treated as the game you play." />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Switch the stream category" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="When a game starts and your platforms have a category for it, Cuebot asks first: a strip at the top of this window, a notification, the Home page of the mod portal (for mods who may control the stream) and the companion app's approvals. The first answer wins. Nothing changes until someone says yes, and an unanswered request expires." />
+          <CheckBox Name="CategoryEnabled" Content="Ask to switch the category when a game starts" IsChecked="{Binding Enabled}" />
+          <StackPanel Orientation="Horizontal" Spacing="16" IsEnabled="{Binding Enabled}">
+            <CheckBox Content="Twitch" IsChecked="{Binding Twitch}" ToolTip.Tip="Sets the game's Twitch category." />
+            <CheckBox Content="Kick" IsChecked="{Binding Kick}" ToolTip.Tip="Sets the game's Kick category." />
+            <CheckBox Content="YouTube (Gaming)" IsChecked="{Binding YouTube}"
+                      ToolTip.Tip="YouTube only has broad categories, so a game sets Gaming on the live (or next upcoming) broadcast." />
+          </StackPanel>
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="Rumble has no way to change the category from another app, so it is not listed." />
+          <CheckBox Content="Only while live" IsChecked="{Binding OnlyWhileLive}" IsEnabled="{Binding Enabled}"
+                    ToolTip.Tip="Off: also asks before you go live, so the category is right from the first minute." />
+          <Grid ColumnDefinitions="Auto,8,110" IsEnabled="{Binding Enabled}">
+            <TextBlock Text="A request waits for an answer for (minutes)" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="2" Value="{Binding RequestMinutes}" Minimum="1" Maximum="120" FormatString="0" />
+          </Grid>
+          <TextBlock Text="When the game closes, ask to switch back to (empty: do not ask)" />
+          <TextBox Text="{Binding ReturnCategory, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. Just Chatting" IsEnabled="{Binding Enabled}" />
+          <Grid ColumnDefinitions="*,12,*" IsEnabled="{Binding Enabled}">
+            <StackPanel Spacing="4">
+              <TextBlock Text="Always switch, without asking" />
+              <TextBox Text="{Binding AlwaysSwitch, UpdateSourceTrigger=LostFocus}" AcceptsReturn="True" MinHeight="80"
+                       ToolTip.Tip="One game per line. Answering a request with Always for this game adds it here." />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="4">
+              <TextBlock Text="Never ask for" />
+              <TextBox Text="{Binding NeverAsk, UpdateSourceTrigger=LostFocus}" AcceptsReturn="True" MinHeight="80"
+                       ToolTip.Tip="One game per line. These still run the Game started trigger." />
+            </StackPanel>
+          </Grid>
+          <TextBlock Text="When the platform's name differs (one per line: Game = Category)" />
+          <TextBox Text="{Binding Overrides, UpdateSourceTrigger=LostFocus}" AcceptsReturn="True" MinHeight="60" IsEnabled="{Binding Enabled}"
+                   PlaceholderText="e.g. Counter-Strike 2 = Counter-Strike" />
+          <TextBlock Classes="error" Text="{Binding OverridesError}" IsVisible="{Binding OverridesError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Try it" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="Acts as if this game just started, without launching it. Answer Ignore if you do not want the category changed." />
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Content="Ask now" Command="{Binding TestCommand}" Margin="8,0,0,0" />
+            <TextBox Text="{Binding TestGame}" PlaceholderText="A game's name, e.g. Helldivers 2" />
+          </DockPanel>
+          <TextBlock Classes="muted" Text="{Binding Status}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -61,6 +61,9 @@ p { margin: .3rem 0 1rem; }
 .muted { color: var(--muted); }
 .page-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: .75rem; padding: 1rem 1.1rem; margin: 0 0 1rem; }
+.card.attention { border: 2px solid var(--warn); }
+li.request { display: flex; align-items: center; justify-content: space-between; gap: .8rem; flex-wrap: wrap; }
+li.request .buttons { display: flex; gap: .5rem; flex-wrap: wrap; }
 
 button { font: inherit; color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: .5rem;
   padding: .5rem .9rem; cursor: pointer; }

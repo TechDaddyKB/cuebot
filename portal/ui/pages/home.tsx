@@ -3,11 +3,22 @@ import { LoadError } from "../widgets.js";
 
 interface FeedItem { platform: string; kind: string; user: string; title: string; detail?: string; amount?: string; time: string }
 interface Connection { name: string; state: string; message: string }
-interface Dashboard extends Answer { feed?: FeedItem[]; connections?: Connection[]; quickActions?: { id: string; name: string; group: string; risk?: number }[] }
+interface StreamRequest { id: string; title: string; detail: string; accept: string; remember: string; expires: number }
+interface Dashboard extends Answer {
+  feed?: FeedItem[];
+  connections?: Connection[];
+  quickActions?: { id: string; name: string; group: string; risk?: number }[];
+  requests?: StreamRequest[];
+}
 
 export function HomePage() {
   const { me, call, notify } = usePortal();
-  const [data] = useLoad<Dashboard>("dashboard", 5000);
+  const [data, reload] = useLoad<Dashboard>("dashboard", 5000);
+  const answer = async (id: string, how: "accept" | "always" | "decline") => {
+    const result = await call("requests.answer", { id, answer: how });
+    if (result.ok) notify(String((result as { message?: string }).message ?? "Done."));
+    reload();
+  };
   const run = async (id: string, name: string, risk?: number) => {
     if (!confirmRun(name, risk)) return;
     if ((await call("actions.run", { id })).ok) notify(`Started "${name}".`);
@@ -21,6 +32,27 @@ export function HomePage() {
         You're a <strong>{me.role}</strong>.{" "}
         {me.changes === "NeedsApproval" ? "Your changes wait for the streamer's approval." : "Your changes go live straight away."}
       </p>
+
+      {data?.requests && data.requests.length > 0 && (
+        <section class="card attention">
+          <h2>Needs a yes</h2>
+          <ul class="rows">
+            {data.requests.map((r) => (
+              <li key={r.id} class="request">
+                <div>
+                  <strong>{r.title}</strong>
+                  {r.detail && <div class="muted">{r.detail}</div>}
+                </div>
+                <div class="buttons">
+                  <button type="button" class="primary" onClick={() => void answer(r.id, "accept")}>{r.accept || "Allow"}</button>
+                  {r.remember && <button type="button" onClick={() => void answer(r.id, "always")}>{r.remember}</button>}
+                  <button type="button" onClick={() => void answer(r.id, "decline")}>Ignore</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {data?.quickActions && (
         <section class="card">

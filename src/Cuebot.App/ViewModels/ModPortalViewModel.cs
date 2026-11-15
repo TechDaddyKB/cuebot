@@ -108,7 +108,23 @@ public sealed partial class ModPortalViewModel : PageViewModel
     [ObservableProperty] private string _message = "";
 
     public bool HasNewInvite => NewInviteLink.Length > 0;
-    partial void OnNewInviteLinkChanged(string value) => OnPropertyChanged(nameof(HasNewInvite));
+
+    /// <summary>The new invite as a QR code: a mod scans it with the companion app (or their camera, for the browser).</summary>
+    public Avalonia.Media.Imaging.Bitmap? InviteQr { get; private set; }
+
+    partial void OnNewInviteLinkChanged(string value)
+    {
+        InviteQr?.Dispose();
+        InviteQr = value.Length > 0 ? Servers.PairingCode.Render(value) : null;
+        OnPropertyChanged(nameof(HasNewInvite));
+        OnPropertyChanged(nameof(InviteQr));
+    }
+
+    /// <summary>Where a mod downloads the companion app (Android APK, with the desktop downloads).</summary>
+    public static string AppDownloadUrl => Cuebot.App.Diagnostics.SupportLinks.ReleasesUrl + "/latest";
+
+    [RelayCommand]
+    private void OpenAppDownload() => Cuebot.App.Shell.UrlLauncher.Open(AppDownloadUrl);
 
     internal PortalDirectory Directory => _directory;
     internal PortalChanges Changes => _changes;

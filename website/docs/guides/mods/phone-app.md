@@ -113,9 +113,29 @@ If you changed the same thing yourself since the mod asked, the app says so: tap
 version. A change nobody answers expires after 7 days. The list only shows up while something is waiting. An older
 Cuebot shows nothing here: update it first.
 
+Cuebot's own questions show up in the same list, from **Cuebot**: for example *Switch the stream category to
+Helldivers 2?* when you start a game (see [Game categories](../platforms/game-categories.md)). **Approve** does it,
+**Reject** leaves everything as it is.
+
+**Notifications.** Something new waiting for a yes also shows as a notification, so you see it while the Deck fills the
+screen. Tapping it opens the Mods tab. On Android 13 and newer, the app asks once whether it may show notifications.
+The app only checks while it is open (or was just put aside); it doesn't run in the background.
+
+!!! warning "Pair only your own phone or tablet"
+    A paired phone has full control of your Cuebot, more than any mod role. Never pair a mod's phone. Send them an
+    [invite](#for-mods) instead: they get the same app, with only what their role allows.
+
 ## For mods
 
-A streamer can make you a mod in their Cuebot with an invite (a link or a QR code). In the app:
+A streamer can make you a mod in their Cuebot with an invite (a link or a QR code). Everything the
+[mod portal](mod-portal.md) has is in the app, too: it shows the streamer's own portal pages, with only what your role
+allows. It works from anywhere, not only on the streamer's network.
+
+**Streamer:** on the **Mod portal** page, choose the role and click **Make invite link**. Cuebot shows the link and a
+QR code, with a **Get the Companion app** button for the download. Send the link privately, or let your mod scan the
+code.
+
+**Mod**, in the app:
 
 1. Open the **Mods** tab and tap **Join with an invite**.
 2. Scan the invite's QR code, choose a picture of it, or copy the link and tap **Paste the invite link**.
@@ -128,6 +148,9 @@ their portal again without signing in. **Rename** gives it the streamer's name, 
 it (⋮ on Android, swipe on iPhone). **Sign out on this phone** (⋮ in the portal) removes you from this phone.
 
 You don't need to pair the app with a Cuebot of your own for this; the portal goes through the streamer's Cuebot over the internet, encrypted end to end.
+
+While the portal is open, the app also tells you when Cuebot asks for a yes that your role may give, like switching
+the stream category to the game being played. Answer on the portal's **Home** page, under **Needs a yes**.
 
 The iPhone app has the same **Mods** tab, for approving and for modding. It comes with the iPhone app (not available
 yet, see [Get the app](#get-the-app)).

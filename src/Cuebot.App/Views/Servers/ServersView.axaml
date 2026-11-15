@@ -218,6 +218,8 @@
             <TextBlock Text="Pair a phone" FontWeight="SemiBold" Margin="0,8,0,0" />
             <TextBlock Classes="muted" TextWrapping="Wrap"
                        Text="Scan this code with the Cuebot Companion app on your Android phone or tablet (or the phone's Camera) to use your decks and see the dashboard. The phone must be on the same network as this computer." />
+            <TextBlock Classes="warning" TextWrapping="Wrap"
+                       Text="Pair only your own phone or tablet. A paired device has full control of Cuebot, more than any mod role. For a mod, make an invite on the Mod portal page instead: they get the same app with only what their role allows." />
             <CheckBox Content="Show pairing code" IsChecked="{Binding ShowPairing}"
                       ToolTip.Tip="The code holds your API token, like a password. Keep it hidden while you stream." />
             <StackPanel Spacing="8" IsVisible="{Binding ShowPairing}">

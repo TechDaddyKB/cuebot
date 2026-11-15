@@ -68,6 +68,9 @@ public sealed partial class TwitchApi
     /// <summary>True when the bot account is signed in.</summary>
     public bool IsBotReady => _botTokens.HasToken && _botTokens.UserId.Length > 0;
 
+    /// <summary>True when the broadcaster account is signed in.</summary>
+    public bool IsSignedIn => _tokens.ClientId.Length > 0 && _tokens.HasToken && _tokens.UserId.Length > 0;
+
     // ---------------------------------------------------------------- chat
 
     /// <summary>

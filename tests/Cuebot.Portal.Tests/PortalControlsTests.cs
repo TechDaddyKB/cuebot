@@ -158,4 +158,50 @@ public sealed class PortalControlsTests : IDisposable
         Assert.Contains("OBS", (string?)(await Call(lead, "scenes.list"))["error"]);
         Assert.Contains("not available", (string?)(await Call(lead, "tts.state"))["error"]);
     }
+
+    [Fact]
+    public async Task Mods_who_may_control_the_stream_see_and_answer_cuebots_requests()
+    {
+        var requests = new Cuebot.Core.Requests.StreamRequests(_bus, _log, _time);
+        var controls = new PortalControls(_profile, _chat, [], obs: null, _queues, speech: null, audio: null, _log, _time, requests);
+        var switched = 0;
+        var request = requests.Add("category", "Switch the stream category to Helldivers 2?", "Twitch: Helldivers 2", TimeSpan.FromMinutes(10),
+            (_, _) => { switched++; return Task.FromResult("Category switched on Twitch (Helldivers 2)."); }, remember: "Always for this game");
+
+        var standard = Member(DefaultRoles.StandardModId);
+        Assert.Null((await controls.HandleAsync(standard.Member, standard.Role, "dashboard", new JsonObject()))["requests"]);
+        Assert.Contains("role", (string?)(await controls.HandleAsync(standard.Member, standard.Role, "requests.list", new JsonObject()))["error"]);
+
+        var lead = Member(DefaultRoles.LeadModId);
+        var dashboard = await controls.HandleAsync(lead.Member, lead.Role, "dashboard", new JsonObject());
+        var listed = Assert.Single(dashboard["requests"]!.AsArray())!.AsObject();
+        Assert.Equal("Twitch: Helldivers 2", (string?)listed["detail"]);
+        Assert.Equal("Always for this game", (string?)listed["remember"]);
+
+        var answer = await controls.HandleAsync(lead.Member, lead.Role, "requests.answer",
+            new JsonObject { ["id"] = request.Id.ToString(), ["answer"] = "accept" });
+        Assert.True((bool)answer["ok"]!);
+        Assert.Equal(1, switched);
+        Assert.Empty(answer["requests"]!.AsArray());
+        var again = await controls.HandleAsync(lead.Member, lead.Role, "requests.answer",
+            new JsonObject { ["id"] = request.Id.ToString(), ["answer"] = "accept" });
+        Assert.Contains("already answered", (string?)again["error"]);
+        Assert.Equal(1, switched);
+    }
+
+    [Fact]
+    public async Task Cuebots_requests_reach_the_paired_app_through_the_approval_list()
+    {
+        var requests = new Cuebot.Core.Requests.StreamRequests(_bus, _log, _time);
+        var changes = new Cuebot.Portal.Changes.PortalChanges(new Cuebot.Portal.Changes.PortalChangeLog(), () => { }, _dir, [], _time);
+        var approvals = new Cuebot.Portal.Changes.PortalApprovals(changes, requests);
+        var request = requests.Add("category", "Switch the stream category to Helldivers 2?", "Kick: HELLDIVERS 2", TimeSpan.FromMinutes(10),
+            (_, _) => Task.FromResult("done"));
+        var item = Assert.Single(approvals.Pending()["changes"]!.AsArray())!.AsObject();
+        Assert.Equal("request", (string?)item["area"]);
+        Assert.Equal("Switch the stream category to Helldivers 2? Kick: HELLDIVERS 2", (string?)item["summary"]);
+        Assert.Equal("rejected", await approvals.DecideAsync(request.Id, approve: false, force: false));
+        Assert.Empty(requests.Pending);
+        Assert.Equal("notFound", await approvals.DecideAsync(request.Id, approve: true, force: false));
+    }
 }

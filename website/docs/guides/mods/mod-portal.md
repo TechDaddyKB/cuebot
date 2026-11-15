@@ -40,7 +40,7 @@ Mods open `portal.techdaddydigital.com` on their phone or computer, or use the *
 
 | Page | What it does | Who (default roles) |
 |---|---|---|
-| **Home** | Quick buttons for the actions they may run, and live activity (follows, subs, raids, tips) | Everyone |
+| **Home** | Quick buttons for the actions they may run, live activity (follows, subs, raids, tips), and **Needs a yes**: Cuebot's questions, like switching the stream category to the game you play (see [Game categories](../platforms/game-categories.md)) | Everyone; **Needs a yes** for roles that may control the stream (Lead Mod, Tech Lead) |
 | **Assistant** | Ask your Assistant to set things up for them, with only what their role allows (see [The Assistant for mods](#the-assistant-for-mods)) | Lead Mod, Tech Lead (new portals; see below) |
 | **Actions** | Run actions, and change or add them, with the steps their level allows | Everyone runs; Lead Mod and Tech Lead change |
 | **Commands** | Add and change chat commands | Everyone |
@@ -265,6 +265,11 @@ paired with this Cuebot, lists the changes waiting for you on its **Mods** tab, 
 
 - An invite works **once**, for the hours you choose under **Works for (hours)** (24 by default, at most 30 days).
   The link is shown only once, so copy it with **Copy link** right away.
+- Next to the link is a **QR code**. A mod sitting next to you scans it with the [phone app](phone-app.md#for-mods)
+  (**Mods > Join with an invite**) or with their phone's camera, which opens the portal in the browser.
+  **Get the Companion app** opens the download page.
+- Never pair a mod's phone on **Apps > Servers** instead: pairing gives full control of Cuebot. An invite gives only
+  what the mod's role allows.
 - **Only for this account** locks it to one Twitch name, Google email or Discord user name, so a leaked link is
   useless to anyone else.
 - **Withdraw** stops an open invite at once.

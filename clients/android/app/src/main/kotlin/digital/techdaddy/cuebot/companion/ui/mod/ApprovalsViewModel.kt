@@ -2,6 +2,8 @@ package digital.techdaddy.cuebot.companion.ui.mod
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import digital.techdaddy.cuebot.companion.Alert
+import digital.techdaddy.cuebot.companion.AlertMemory
 import digital.techdaddy.cuebot.companion.data.Connection
 import digital.techdaddy.cuebot.core.ChangeDecision
 import digital.techdaddy.cuebot.core.CuebotException
@@ -24,7 +26,11 @@ class ApprovalsViewModel(
     private val connection: Connection,
     visible: StateFlow<Boolean>,
     private val interval: Long = 5_000,
+    alert: (Alert) -> Unit = {},
 ) : ViewModel() {
+    /** Each new item alerts once (a notification), also while the deck fills the screen. */
+    private val alerts = AlertMemory(alert)
+
     data class UiState(
         val pending: List<PendingChange> = emptyList(),
         /** False until the first answer (and for a Cuebot without the mod portal). */
@@ -56,6 +62,10 @@ class ApprovalsViewModel(
         val client = connection.session.value?.client ?: return
         try {
             val pending = client.portalChanges()
+            alerts.update(pending, { it.id }) { c ->
+                if (c.isRequest) Alert("request-${c.id}", "Cuebot needs a yes", c.summary)
+                else Alert("change-${c.id}", "A mod's change is waiting for you", c.summary)
+            }
             _state.update { s -> s.copy(pending = pending, loaded = true, tooOld = false, conflicts = s.conflicts.filterTo(mutableSetOf()) { id -> pending.any { it.id == id } }) }
         } catch (e: CancellationException) {
             throw e
@@ -79,7 +89,8 @@ class ApprovalsViewModel(
             try {
                 val d = client.decideChange(change.id, approve, force)
                 val message = when (d.result) {
-                    ChangeDecision.Result.Applied -> "Approved: it is live now."
+                    ChangeDecision.Result.Applied -> if (change.isRequest) "Done." else "Approved: it is live now."
+                    ChangeDecision.Result.Failed -> "Cuebot tried, but it did not work. The desktop log says why."
                     ChangeDecision.Result.Rejected -> "Rejected. Nothing changed."
                     ChangeDecision.Result.Conflict -> "'${change.target}' changed since ${change.member} asked. Approve again to use their version anyway."
                     ChangeDecision.Result.NotPending -> "That change was already decided, or it expired."

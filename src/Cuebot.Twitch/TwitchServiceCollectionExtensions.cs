@@ -23,6 +23,7 @@ public static class TwitchServiceCollectionExtensions
             sp.GetRequiredService<AppLog>()));
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<TwitchService>());
         services.AddSingleton<Cuebot.Core.Chat.IStreamLiveStatus>(sp => sp.GetRequiredService<TwitchService>());
+        services.AddSingleton<Cuebot.Core.Games.IStreamCategoryTarget>(sp => new TwitchCategoryTarget(sp.GetRequiredService<TwitchService>()));
         services.AddSingleton<Cuebot.Core.Rewards.IChannelRewards>(sp => new TwitchChannelRewards(sp.GetRequiredService<TwitchService>()));
         services.AddSingleton<ITriggerProvider>(sp =>
             new TwitchTriggers(TimeProvider.System, () => sp.GetRequiredService<TwitchService>().CustomPowerUpTitles,

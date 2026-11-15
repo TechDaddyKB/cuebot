@@ -28,6 +28,7 @@ public static class YouTubeServiceCollectionExtensions
             sp.GetRequiredService<AppLog>()));
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<YouTubeService>());
         services.AddSingleton<Cuebot.Core.Chat.IStreamLiveStatus>(sp => sp.GetRequiredService<YouTubeService>());
+        services.AddSingleton<Cuebot.Core.Games.IStreamCategoryTarget>(sp => new YouTubeCategoryTarget(sp.GetRequiredService<YouTubeService>()));
         services.AddSingleton<IChatEventAdapter, YouTubeChatAdapter>();
         services.AddSingleton<Cuebot.Core.Overlays.Events.IOverlayEventAdapter, YouTubeOverlayAdapter>();
         services.AddSingleton<Cuebot.Core.Polls.IPollAdapter, YouTubePollAdapter>();

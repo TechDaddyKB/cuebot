@@ -12,6 +12,7 @@ public sealed class IntegrationsSettings
     public CrowdControlSettings CrowdControl { get; set; } = new();
     public NowPlaying.NowPlayingSettings NowPlaying { get; set; } = new();
     public Spotify.SpotifySettings Spotify { get; set; } = new();
+    public Steam.SteamSettings Steam { get; set; } = new();
 }
 
 public sealed class VTubeStudioSettings

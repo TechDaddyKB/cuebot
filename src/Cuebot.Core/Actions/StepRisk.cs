@@ -181,6 +181,7 @@ public static class StepRiskCatalog
         ["shopify.*"] = L1, ["pally.*"] = L1, ["streamloots.*"] = L1,
         ["core.timer"] = L1, ["core.cron"] = L1, ["core.appStarted"] = L1, ["core.profileStarted"] = L1, ["core.profileStopping"] = L1,
         ["obs.*"] = L1, ["slobs.*"] = L1, ["meldstudio.*"] = L1,
+        ["steam.*"] = L1, ["requests.*"] = L1,
 
         // Devices, integrations, the network and variables.
         ["elgato.*"] = L4, ["wavelink.*"] = L4, ["goxlr.*"] = L4, ["vtubestudio.*"] = L4, ["voicemod.*"] = L4,

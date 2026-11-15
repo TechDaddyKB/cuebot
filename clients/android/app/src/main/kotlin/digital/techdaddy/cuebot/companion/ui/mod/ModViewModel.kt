@@ -13,11 +13,15 @@ import digital.techdaddy.cuebot.core.portal.deviceProof
 import digital.techdaddy.cuebot.core.portal.error
 import digital.techdaddy.cuebot.core.portal.ok
 import digital.techdaddy.cuebot.core.portal.string
+import digital.techdaddy.cuebot.companion.Alert
+import digital.techdaddy.cuebot.companion.AlertMemory
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -48,7 +52,13 @@ class ModViewModel(
     private val memberships: ModMemberships,
     private val open: suspend (PortalTarget) -> PortalLink = { PortalLink.open(it) },
     private val now: () -> Long = System::currentTimeMillis,
+    /** True while the app is on screen: requests are checked only then. */
+    private val foreground: StateFlow<Boolean> = MutableStateFlow(true),
+    /** Shows a notification for a request waiting for a yes. */
+    alert: (Alert) -> Unit = {},
+    private val requestInterval: Long = 10_000,
 ) : ViewModel() {
+    private val alerts = AlertMemory(alert)
     private val _state = MutableStateFlow<ModState>(ModState.Home)
     val state: StateFlow<ModState> = _state
     val all: StateFlow<List<Membership>> = memberships.all
@@ -163,6 +173,30 @@ class ModViewModel(
         val portal = ModState.Portal(membership, link, me, ui.string("js")?.takeIf { ui.ok }, ui.string("css")?.takeIf { ui.ok })
         link.onClosed { reason -> if (_state.value === portal) _state.value = ModState.Problem(reason) { resume(membership) } }
         _state.value = portal
+        watchRequests(portal)
+    }
+
+    /**
+     * While this portal is open and the app on screen, asks Cuebot every few seconds for its requests (e.g. "Switch
+     * the category to Helldivers 2?") and alerts new ones, so the mod sees them from any page. The mod answers on the
+     * portal's Home page. A role without stream control gets an error answer here, and nothing is shown.
+     */
+    private fun watchRequests(portal: ModState.Portal) {
+        viewModelScope.launch {
+            while (_state.value === portal) {
+                if (foreground.value) {
+                    val answer = runCatching { portal.link.request("requests.list") }.getOrNull()
+                    val list = (answer?.takeIf { it.ok }?.get("requests") as? JsonArray)?.mapNotNull { it as? JsonObject } ?: emptyList()
+                    alerts.update(list, { it.string("id") ?: "" }) { r ->
+                        val detail = r.string("detail").orEmpty()
+                        Alert("mod-request-${r.string("id")}", "${portal.membership.name}: Cuebot needs a yes",
+                            listOf(r.string("title").orEmpty(), detail).filter { it.isNotEmpty() }.joinToString(" ") +
+                                " Answer on the Home page.")
+                    }
+                }
+                delay(requestInterval)
+            }
+        }
     }
 
     /** Signs this phone out of the open portal and forgets the membership and its key. */

@@ -71,6 +71,17 @@
             <StackPanel Spacing="6">
               <TextBlock Text="Send this link to your mod privately. It is shown only now." FontWeight="SemiBold" />
               <SelectableTextBlock Text="{Binding NewInviteLink}" TextWrapping="Wrap" FontSize="12" />
+              <StackPanel Orientation="Horizontal" Spacing="12">
+                <Border Background="White" Padding="6" CornerRadius="6" VerticalAlignment="Top" IsVisible="{Binding InviteQr, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <Image Source="{Binding InviteQr}" Width="180" Height="180" RenderOptions.BitmapInterpolationMode="None" />
+                </Border>
+                <StackPanel Spacing="6" MaxWidth="360" VerticalAlignment="Center">
+                  <TextBlock TextWrapping="Wrap"
+                             Text="Sitting next to you? Your mod can scan this code: with the Cuebot Companion app (Mods, then Join with an invite), or with their phone's camera to open the portal in the browser. Either way they sign in with their own account and get only what their role allows. It works from anywhere, not just your network." />
+                  <Button Content="Get the Companion app (Android)" HorizontalAlignment="Left" Command="{Binding OpenAppDownloadCommand}"
+                          ToolTip.Tip="Opens the download page. Your mod installs the Cuebot-Companion APK from the newest release." />
+                </StackPanel>
+              </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <Button Content="Copy link" Command="{Binding CopyInviteCommand}" />
                 <Button Content="Done" Command="{Binding HideInviteCommand}" />

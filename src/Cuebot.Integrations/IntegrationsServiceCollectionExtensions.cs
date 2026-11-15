@@ -35,6 +35,10 @@ public static class IntegrationsServiceCollectionExtensions
     {
         services.AddSettingsFile<IntegrationsSettings>("integrations.json");
         services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<Steam.ISteamSource>(_ => new Steam.SteamFiles());
+        services.AddSingleton(sp => new Steam.SteamGameWatcher(sp.GetRequiredService<Steam.ISteamSource>(), Settings(sp),
+            sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
+        services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<Steam.SteamGameWatcher>());
         services.AddSingleton(sp => new HeartRateHub(sp.GetService<GlobalVariables>(), sp.GetRequiredService<TimeProvider>()));
         services.AddSingleton(sp => new VTubeStudioService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton(sp => new VoicemodService(Settings(sp), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));

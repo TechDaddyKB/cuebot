@@ -52,6 +52,28 @@ public sealed class MainWindowTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public async Task Cuebots_request_shows_above_every_page_and_the_first_answer_does_it()
+    {
+        var (window, vm) = Open();
+        var done = 0;
+        _host.Get<Cuebot.Core.Requests.StreamRequests>().Add("category", "Switch the stream category to Helldivers 2?", "Twitch: Helldivers 2",
+            TimeSpan.FromMinutes(10), (_, _) => { done++; return Task.FromResult("Category switched on Twitch (Helldivers 2)."); },
+            acceptLabel: "Switch", remember: "Always for this game");
+        Pump();
+        var banner = window.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "RequestBanner");
+        Assert.True(banner.IsVisible);
+        Assert.Equal("Switch", vm.RequestAcceptLabel);
+        Assert.True(vm.HasRequestRemember);
+        Save(window, "request-banner");
+
+        await vm.AcceptRequestCommand.ExecuteAsync(null);
+        Pump();
+        Assert.Equal(1, done);
+        Assert.False(banner.IsVisible);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task A_mods_change_waiting_for_approval_shows_above_every_page_and_in_the_sidebar()
     {
         // 2026-11-14: a mod's change waited for approval and nothing in Cuebot made that obvious.
@@ -93,7 +115,7 @@ public sealed class MainWindowTests : IAsyncDisposable
         {
             Assert.Equal(
                 ["Dashboard", "Chat", "Actions", "Commands", "History", "Assistant", "Queues", "Timers", "Users & Groups", "Variables", "Watchers",
-                 "Twitch", "Rumble", "YouTube", "Kick", "Donations", "Voice Control", "Input", "Apps & devices", "Stream Deck", "Webhooks", "Quotes", "Credits", "Top Spenders", "Subathon & Goals", "Points", "Games & Commands", "Giveaways & Store", "Decks", "Hotkeys", "Stream apps", "Speech", "Media Requests", "Music", "Mod portal", "Import / Export", "Scripting", "Overlays & Widgets", "Servers", "Support", "Settings"],
+                 "Twitch", "Rumble", "Game categories", "YouTube", "Kick", "Donations", "Voice Control", "Input", "Apps & devices", "Stream Deck", "Webhooks", "Quotes", "Credits", "Top Spenders", "Subathon & Goals", "Points", "Games & Commands", "Giveaways & Store", "Decks", "Hotkeys", "Stream apps", "Speech", "Media Requests", "Music", "Mod portal", "Import / Export", "Scripting", "Overlays & Widgets", "Servers", "Support", "Settings"],
                 vm.Pages.Select(p => p.Title));
             foreach (var (theme, suffix) in new[] { (Cuebot.App.Shell.AppTheme.Dark, ""), (Cuebot.App.Shell.AppTheme.Light, "-light") })
             {

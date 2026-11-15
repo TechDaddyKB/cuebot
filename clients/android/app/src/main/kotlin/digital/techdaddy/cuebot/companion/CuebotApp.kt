@@ -29,6 +29,8 @@ class AppContainer(
     iconFolder: File,
     deviceKeys: DeviceKeys,
     val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+    /** Shows a notification for something waiting for a yes (no-op in tests). */
+    val alert: (Alert) -> Unit = {},
 ) {
     val paired = PairedCuebots(store, cipher)
     val connection = Connection(paired, scope)
@@ -63,7 +65,9 @@ class CuebotApp : Application() {
     override fun onCreate() {
         super.onCreate()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-        container = AppContainer(DataStoreKeyValueStore(settings, scope), KeystoreTokenCipher(), File(cacheDir, "IconifyIcons"), KeystoreDeviceKeys(), scope)
+        val alerts = AndroidAlerts(this)
+        container = AppContainer(DataStoreKeyValueStore(settings, scope), KeystoreTokenCipher(), File(cacheDir, "IconifyIcons"), KeystoreDeviceKeys(), scope,
+            alerts::show)
     }
 }
 

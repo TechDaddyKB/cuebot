@@ -26,7 +26,8 @@ public sealed class PortalControls(
     SpeechService? speech = null,
     AudioService? audio = null,
     AppLog? log = null,
-    TimeProvider? time = null)
+    TimeProvider? time = null,
+    Cuebot.Core.Requests.StreamRequests? requests = null)
 {
     public const int MaxFeedItems = 50;
     public const int MaxSpeakLength = 300;
@@ -38,7 +39,8 @@ public sealed class PortalControls(
 
     /// <summary>The ops this class answers, for PortalApi's dispatch.</summary>
     public static bool Handles(string op) => op is "dashboard" or "scenes.list" or "scenes.set" or "audio.list" or "audio.set"
-        or "queues.list" or "queues.control" or "tts.state" or "tts.control" or "tts.speak" or "sounds.list" or "sounds.play";
+        or "queues.list" or "queues.control" or "tts.state" or "tts.control" or "tts.speak" or "sounds.list" or "sounds.play"
+        or "requests.list" or "requests.answer";
 
     public async Task<JsonObject> HandleAsync(PortalMember member, PortalRole? role, string op, JsonObject request, CancellationToken ct = default)
     {
@@ -56,6 +58,8 @@ public sealed class PortalControls(
             "tts.speak" => (PortalPermission.RunActions, true),
             "sounds.list" => (PortalPermission.RunActions, false),
             "sounds.play" => (PortalPermission.RunActions, true),
+            "requests.list" => (PortalPermission.StreamControl, false),
+            "requests.answer" => (PortalPermission.StreamControl, true),
             _ => ((PortalPermission?)null, false),
         };
         if (permission is { } p && !PortalPolicy.Has(role, p)) return Error("Your role does not include this.");
@@ -75,6 +79,8 @@ public sealed class PortalControls(
                 "tts.control" => ControlSpeech(member, request),
                 "tts.speak" => await SpeakAsync(member, request, ct).ConfigureAwait(false),
                 "sounds.list" => Ok(new JsonObject { ["sounds"] = new JsonArray([.. Sounds(role).Select(s => (JsonNode)s.Node)]) }),
+                "requests.list" => Ok(new JsonObject { ["requests"] = Requests() }),
+                "requests.answer" => await AnswerAsync(member, request, ct).ConfigureAwait(false),
                 _ => await PlaySoundAsync(member, role, request, ct).ConfigureAwait(false),
             };
         }
@@ -89,6 +95,8 @@ public sealed class PortalControls(
     private JsonObject Dashboard(PortalRole? role)
     {
         var body = new JsonObject();
+        // Cuebot's requests (e.g. "Switch the category to Helldivers 2?") for mods who may control the stream.
+        if (PortalPolicy.Has(role, PortalPermission.StreamControl) && requests is not null) body["requests"] = Requests();
         if (PortalPolicy.Has(role, PortalPermission.ViewActivity) && chat is not null)
             body["feed"] = new JsonArray([.. chat.RecentFeed().Where(f => !f.IsTest).TakeLast(MaxFeedItems).Reverse().Select(f => (JsonNode)new JsonObject
             {
@@ -117,6 +125,36 @@ public sealed class PortalControls(
                     ["risk"] = PortalPolicy.Steps(a.SubActions).Select(s => (int)StepRiskCatalog.ForStep(s.Type)).DefaultIfEmpty(0).Max(),
                 })]);
         return Ok(body);
+    }
+
+    // ---- Requests waiting for a yes ----
+
+    private JsonArray Requests() => new([.. (requests?.Pending ?? []).Select(r => (JsonNode)new JsonObject
+    {
+        ["id"] = r.Id.ToString(),
+        ["title"] = r.Title,
+        ["detail"] = r.Detail,
+        ["accept"] = r.AcceptLabel,
+        ["remember"] = r.Remember,
+        ["expires"] = r.Expires.ToUnixTimeMilliseconds(),
+    })]);
+
+    private async Task<JsonObject> AnswerAsync(PortalMember member, JsonObject request, CancellationToken ct)
+    {
+        if (requests is null) return Error("Requests are not available.");
+        if (!Guid.TryParse(Str(request, "id"), out var id)) return Error("That request was not found.");
+        var answer = Str(request, "answer") switch
+        {
+            "accept" => Cuebot.Core.Requests.RequestAnswer.Accept,
+            "always" => Cuebot.Core.Requests.RequestAnswer.AcceptAndRemember,
+            "decline" => Cuebot.Core.Requests.RequestAnswer.Decline,
+            _ => (Cuebot.Core.Requests.RequestAnswer?)null,
+        };
+        if (answer is null) return Error("Answer accept, always or decline.");
+        var outcome = await requests.AnswerAsync(id, answer.Value, member.Name + " (mod portal)", ct).ConfigureAwait(false);
+        return outcome.Result is Cuebot.Core.Requests.RequestOutcome.Failed or Cuebot.Core.Requests.RequestOutcome.NotPending
+            ? Error(outcome.Message)
+            : Ok(new JsonObject { ["message"] = outcome.Message, ["requests"] = Requests() });
     }
 
     // ---- Scenes and audio (OBS) ----

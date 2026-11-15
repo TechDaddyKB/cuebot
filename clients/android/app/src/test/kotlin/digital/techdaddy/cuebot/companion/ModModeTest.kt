@@ -244,6 +244,32 @@ class ApprovalsViewModelTest {
         visible.value = false
     }
 
+    @Test fun `each new request or change alerts once and a request reads as done`() {
+        val request = """{"id":"r1","member":"Cuebot","area":"request","kind":"category","target":"Switch?","summary":"Switch the stream category to Helldivers 2? Twitch: Helldivers 2","at":1,"expires":2}"""
+        cuebot.route("GET /api/v1/portal/changes", json("""{"changes":[$request,$change]}"""))
+        cuebot.route("POST /api/v1/portal/changes/r1/approve", json("""{"result":"applied","changes":[$change]}"""))
+        val alerts = CopyOnWriteArrayList<Alert>()
+        val vm = cuebot.viewModel { ApprovalsViewModel(cuebot.connection, MutableStateFlow(true), interval = 100, alert = { alerts += it }) }
+        cuebot.pair()
+        eventually("listed") { vm.state.value.pending.size == 2 }
+        Thread.sleep(350)   // several more checks: still one alert each
+        assertEquals(listOf("Cuebot needs a yes", "A mod's change is waiting for you"), alerts.map { it.title })
+        assertTrue(vm.state.value.pending.first().isRequest)
+
+        vm.approve(vm.state.value.pending.first())
+        eventually("done") { vm.state.value.message == "Done." }
+    }
+
+    @Test fun `alert memory forgets answered items so a new one with the same id alerts again`() {
+        val shown = mutableListOf<String>()
+        val memory = AlertMemory { shown += it.key }
+        memory.update(listOf("a", "b"), { it }) { Alert(it, it, it) }
+        memory.update(listOf("a", "b"), { it }) { Alert(it, it, it) }
+        memory.update(listOf("b"), { it }) { Alert(it, it, it) }
+        memory.update(listOf("a", "b"), { it }) { Alert(it, it, it) }
+        assertEquals(listOf("a", "b", "a"), shown)
+    }
+
     @Test fun `an older Cuebot says so`() {
         cuebot.route("GET /api/v1/portal/changes", json("", 404))
         val vm = cuebot.viewModel { ApprovalsViewModel(cuebot.connection, MutableStateFlow(true), interval = 100) }
