@@ -17,7 +17,7 @@ helps find it in the log.
 
 **App and connections**
 
-- [ ] The title bar shows **Cuebot 0.1.0-rc.17**.
+- [ ] The title bar shows **Cuebot 0.1.0-rc.18**.
 - [ ] Every platform and service you use shows as connected in the top bar. With more than four, they are small
       badges; hovering one shows its name and status. Nothing covers the search box, title or profile switcher.
 - [ ] Optional: run the automated tests for what you will use on stream (see [Running](#running)), for example
@@ -102,6 +102,11 @@ platform helps)
       chats say **Linked!**, `!points` shows the total with each platform's share, and the pair shows on **Games &
       Commands > Linked accounts**. `!unlink kick` separates them.
 - [ ] Optional: turn on `!support` and `!topsupporters`; they answer with money totals from **Top Spenders**.
+- [ ] `!top` leaves out your own accounts, Cuebot's bot and bots like StreamElements or Nightbot; `!points` from your
+      broadcaster account says **rank #–**. Untick **Hide the broadcaster from leaderboards** on **Points** and you show
+      up; tick it again.
+- [ ] Settings > Backups > **Back up now**: the new zip is small (no `piper`, `models` or `cache` folder inside), even
+      with Piper voices downloaded.
 
 **Mod portal** (Chat > Mod portal; you need a mod who can join from their own device)
 
@@ -140,6 +145,11 @@ The mod does these on their own device; you watch Cuebot.
 - [ ] **Undo** one of them from **Recent changes by mods**: undoing a new reward deletes it; undoing a delete makes it
       again.
 - [ ] If the role needs your approval, the change waits for it and only reaches the platform after you approve.
+      While it waits you get a notification, a strip above every page says what it is (with **Review**), and **Mod
+      portal** shows a count in the page list. If the mod saves the same thing again first, the older request shows
+      as **Replaced** and only the newer one waits.
+- [ ] The mod opens **Audio**: the OBS sources with sound are listed, they stay signed in, and the other sections
+      still work afterwards (a source without sound, like a browser source, is simply not listed).
 - [ ] **Assistant** page: the mod attaches a short sound and asks *"Make a channel point redeem called Bonk that plays
       this sound."* The Assistant uploads the sound, makes the reward and the action, and asks before playing anything
       on stream. Redeem Bonk from a viewer account: the sound plays.
@@ -167,6 +177,8 @@ These can only be confirmed with a real shop. Small real amounts are enough.
 
 ### 6. Ending the stream
 
+- [ ] Before stopping, check **Credits** and the Shopify merch counter still hold this stream's entries, even if a
+      platform dropped out and came back during the stream.
 - [ ] Stop the stream. Each platform's **stream offline** trigger runs.
 - [ ] Fourthwall no longer shows you as live.
 
