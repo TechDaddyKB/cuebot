@@ -107,10 +107,15 @@ public sealed class PortalUiLiveTests
         var changes = new PortalChanges(new PortalChangeLog(), () => { }, directory, [new ActionArea(profile), new CommandArea(commands), new UploadArea(store)]);
         var tools = MediaTools.Find();
         using var uploads = new PortalUploads(store, changes, tools is null ? null : new MediaCleaner(tools), Path.Combine(media, "quarantine"), log);
+        // Cuebot asks for a yes (the Home page's "Needs a yes" card): switching the category to the game being played.
+        var requests = new Cuebot.Core.Requests.StreamRequests(new EventBus(log), log);
+        requests.Add("category", "Switch the stream category to Helldivers 2?", "Twitch: Helldivers 2 · Kick: HELLDIVERS 2",
+            TimeSpan.FromMinutes(30), (_, _) => Task.FromResult("Category switched on Twitch and Kick."), acceptLabel: "Switch",
+            remember: "Always for this game");
         var controls = new PortalControls(profile, chat,
             [new TestConnection("Twitch", ConnectionState.Connected, "Connected as TechDaddy"), new TestConnection("OBS", ConnectionState.Connected, "Connected"),
              new TestConnection("Ko-fi", ConnectionState.Error, "Webhook not set up")],
-            obs: null, engine.Queues, speech: null, audio: null, log);
+            obs: null, engine.Queues, speech: null, audio: null, log, requests: requests);
         var api = new PortalApi(directory, changes, profile, commands, engine, registry, controls, uploads);
         await using var client = new PortalRelayClient(directory, log) { LinkHandler = new PortalSignInHandler(directory, new TestExchange(), api.HandleAsync, log) };
         using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(30));

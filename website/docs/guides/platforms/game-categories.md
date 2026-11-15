@@ -5,9 +5,13 @@ Twitch and Kick (and "Gaming" on YouTube). It **asks first**: nothing changes un
 
 Find it under **Platforms > Game categories**.
 
+![The Game categories page: game detection with the list of apps that are never a game, and switching the stream category](../../assets/screens/page-game-categories.png)
+
 ## Game detection
 
 Tick **Watch Steam for games**. The page then says what you are playing, like *Playing now: Helldivers 2*.
+
+![The Game detection card](../../assets/screens/card-game-detection.png)
 
 Cuebot reads what Steam itself records about running apps, so it works for every Steam game, on Windows, macOS and
 Linux (including games that run through Proton).
@@ -30,6 +34,8 @@ OBS scene when a game starts. See [Games triggers](../../reference/triggers/game
 
 Tick **Ask to switch the category when a game starts**, and the platforms to switch on:
 
+![The Switch the stream category card](../../assets/screens/card-switch-the-stream-category.png)
+
 | Platform | What changes |
 | --- | --- |
 | **Twitch** | The game (category) of your channel. |
@@ -47,8 +53,14 @@ up in every one of these places at once:
 
 - **In Cuebot:** a strip across the top of the window with **Switch**, **Always for this game** and **Ignore**, and a
   notification.
+
+    ![The request strip at the top of Cuebot: Switch, Always for this game and Ignore](../../assets/screens/banner-request.png)
+
 - **In the [mod portal](../mods/mod-portal.md):** a **Needs a yes** card at the top of the Home page, for mods whose
   role may control the stream (**Lead Mod** and **Tech Lead** at first).
+
+    ![The mod portal's Home page with the Needs a yes card](../../assets/screens/portal-home.png)
+
 - **In the [phone app](../mods/phone-app.md):** on your own paired phone or tablet, under **Waiting for your OK** on
   the Mods tab, with a notification. A mod using the app gets a notification and answers on the portal's Home page.
 
@@ -70,6 +82,8 @@ first, the question is taken back.
   matches names without caring about capitals, spaces and symbols (*HELLDIVERS™ 2* is *Helldivers 2*).
 
 ### Try it
+
+![The Try it card](../../assets/screens/card-try-it.png)
 
 Type a game's name under **Try it** and click **Ask now**. Cuebot acts as if that game just started: the question
 shows up everywhere it would on stream. Answer **Ignore** if you don't want the category changed.

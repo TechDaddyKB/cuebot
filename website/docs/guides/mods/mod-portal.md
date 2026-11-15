@@ -54,7 +54,7 @@ Mods open `portal.techdaddydigital.com` on their phone or computer, or use the *
 | **Text-to-speech** | Say something with your default voice and word filters; pause, skip or turn it off | Everyone says; Lead Mod and Tech Lead control |
 | **My changes** | Their own changes, with Undo | Everyone |
 
-![The mod portal's home page: quick actions and live activity](../../assets/screens/portal-home.png)
+![The mod portal's home page: a question that needs a yes, quick actions and live activity](../../assets/screens/portal-home.png)
 
 In the action editor, steps above the mod's level are shown but locked, and the step list only offers the steps they
 may add. Before running an action that can change the stream itself (end it, ban someone, change the title), the
@@ -244,6 +244,8 @@ While something waits, you can't miss it: a strip above every page says what it 
 portal page shows a count in the page list, and Cuebot shows a notification. With **Live and tell me** you get the
 notification too.
 
+![The strip above every page: Riley wants to add the command '!socials', with Review](../../assets/screens/banner-approval.png)
+
 Every role has one of these. You can set a different one for a single mod under **Their changes**.
 
 Under **Recent changes by mods**, **Undo** puts back what was there before. If it changed again since, Cuebot asks
@@ -268,6 +270,9 @@ paired with this Cuebot, lists the changes waiting for you on its **Mods** tab, 
 - Next to the link is a **QR code**. A mod sitting next to you scans it with the [phone app](phone-app.md#for-mods)
   (**Mods > Join with an invite**) or with their phone's camera, which opens the portal in the browser.
   **Get the Companion app** opens the download page.
+
+    ![A new invite: the link, its QR code and Get the Companion app](../../assets/screens/card-invite-a-mod-qr.png)
+
 - Never pair a mod's phone on **Apps > Servers** instead: pairing gives full control of Cuebot. An invite gives only
   what the mod's role allows.
 - **Only for this account** locks it to one Twitch name, Google email or Discord user name, so a leaked link is

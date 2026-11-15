@@ -53,6 +53,11 @@ public sealed class DocsScreenshots : IAsyncDisposable
         var window = new MainWindow { DataContext = vm, Width = 1360, Height = 860 };
         window.Show();
         Pump();
+        // The demo's mod change waits for approval, which puts a strip above every page: keep it out of the page
+        // pictures (it gets its own, banner-approval.png, at the end).
+        var approvalBanner = window.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "ApprovalBanner");
+        approvalBanner.ClipToBounds = true;
+        approvalBanner.MaxHeight = 0;   // IsVisible is bound, so it would come back
         DocsDemoData.Chat(_host);
         Settle();
 
@@ -127,6 +132,34 @@ public sealed class DocsScreenshots : IAsyncDisposable
         window.GetVisualDescendants().OfType<Button>().First(b => Equals(b.Content, "New deck token")).BringIntoView();
         Settle();
         Save(window, "servers-pairing");
+        window.Height = 860;
+
+        // Strips above every page: Cuebot's own request (a category switch) and a mod's change waiting for approval.
+        vm.SelectedPage = vm.Dashboard;
+        var requests = _host.Get<Cuebot.Core.Requests.StreamRequests>();
+        var request = requests.Add("category", "Switch the stream category to Helldivers 2?", "Twitch: Helldivers 2 · Kick: HELLDIVERS 2",
+            TimeSpan.FromMinutes(10), (_, _) => Task.FromResult("Category switched."), acceptLabel: "Switch", remember: "Always for this game");
+        Settle();
+        SaveControl(window, window.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "RequestBanner"), "banner-request");
+        requests.AnswerAsync(request.Id, Cuebot.Core.Requests.RequestAnswer.Decline, "docs").GetAwaiter().GetResult();
+        approvalBanner.MaxHeight = double.PositiveInfinity;
+        Settle();
+        SaveControl(window, approvalBanner, "banner-approval");
+        approvalBanner.MaxHeight = 0;
+
+        // A new invite shows its link and a QR code for the mod to scan.
+        var portal = vm.Pages.OfType<ModPortalViewModel>().Single();
+        vm.SelectedPage = portal;
+        portal.InviteLabel = "For Jordan";
+        portal.CreateInviteCommand.Execute(null);
+        window.Height = 1400;
+        Settle();
+        var inviteCard = window.GetVisualDescendants().OfType<Border>()
+            .First(b => b.Classes.Contains("card") && b.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Invite a mod"));
+        inviteCard.BringIntoView();
+        Settle();
+        SaveControl(window, inviteCard, "card-invite-a-mod-qr");
+        portal.HideInviteCommand.Execute(null);
         window.Height = 860;
 
         // The action editor: the list of steps, then the same action as a flowchart.
