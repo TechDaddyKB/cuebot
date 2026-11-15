@@ -12,6 +12,7 @@ public sealed class ServiceTests
         public bool Ready { get; set; } = ready;
         public List<AssistantContext> Sessions { get; } = [];
         public Exception? FailWith { get; set; }
+        public string? ErrorText { get; set; }
 
         public Task<AssistantProviderStatus> GetStatusAsync(CancellationToken ct = default) =>
             Task.FromResult(Ready ? AssistantProviderStatus.Available("ok") : AssistantProviderStatus.Unavailable("not set up"));
@@ -29,6 +30,11 @@ public sealed class ServiceTests
                 yield return new AssistantText($"{owner.Id}#{number}: ");
                 await Task.Yield();
                 if (owner.FailWith is { } failure) throw failure;
+                if (owner.ErrorText is { } error)
+                {
+                    yield return new AssistantError(error);
+                    yield break;
+                }
                 yield return new AssistantText(text);
             }
 
@@ -101,7 +107,24 @@ public sealed class ServiceTests
 
         Assert.IsType<AssistantText>(updates[0]);
         Assert.Equal("OpenAI: 429 Too Many Requests", Assert.IsType<AssistantError>(updates[1]).Message);
-        Assert.Contains(bot.Log.Recent(), e => e.Message.Contains("429"));
+        Assert.Single(bot.Log.Recent(), e => e.Message.Contains("429"));
+    }
+
+    [Fact]
+    public async Task Errors_the_AI_app_reports_are_logged_for_problem_reports()
+    {
+        await using var bot = new Bot();
+        var codex = new FakeProvider("codex", ready: true, AssistantProviderKind.Cli) { ErrorText = "Codex: stream disconnected before completion" };
+        await using var service = Service(bot, codex);
+
+        var updates = await Updates.CollectAsync(service.SendAsync("hi"));
+
+        Assert.Equal("Codex: stream disconnected before completion", Assert.IsType<AssistantError>(updates[^1]).Message);
+        Assert.Contains(bot.Log.Recent(), e => e.Level == Cuebot.Core.Logging.LogLevel.Warning && e.Message == "CODEX: Codex: stream disconnected before completion");
+
+        codex.Ready = false;
+        await Updates.CollectAsync(service.SendAsync("hi"));
+        Assert.Contains(bot.Log.Recent(), e => e.Level == Cuebot.Core.Logging.LogLevel.Warning && e.Message.StartsWith("No AI is set up yet", StringComparison.Ordinal));
     }
 
     [Fact]

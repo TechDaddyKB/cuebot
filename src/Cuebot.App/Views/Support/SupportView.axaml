@@ -21,13 +21,13 @@
                 <StackPanel Spacing="8">
                   <TextBlock Classes="h2" Text="What went wrong?" />
                   <TextBlock Classes="muted" TextWrapping="Wrap"
-                             Text="Describe the problem. Cuebot adds its version, details about your computer and the latest log lines (the app's diary), with secrets removed. Nothing is sent until you click a send button, and you can edit the preview first." />
+                             Text="Say what you were doing and what you saw, including any error message word for word: the log often can't show what was on your screen. Cuebot adds its version, details about your computer and the latest log lines (the app's diary), with secrets removed. Nothing is sent until you click a send button, and you can edit the preview first." />
                   <TextBox x:Name="ReportTitle" Text="{Binding Title}" PlaceholderText="Title (a short summary)"
                            ToolTip.Tip="A short headline for your problem. It is required before you can send." />
-                  <TextBox Text="{Binding Summary}" PlaceholderText="What happened?" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" />
+                  <TextBox Text="{Binding Summary}" PlaceholderText="What were you doing when it happened?" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" />
                   <TextBox Text="{Binding Steps}" PlaceholderText="Steps to reproduce (1. ... 2. ...)" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" />
                   <TextBox Text="{Binding Expected}" PlaceholderText="What did you expect?" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="50" />
-                  <TextBox Text="{Binding Actual}" PlaceholderText="What happened instead?" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="50" />
+                  <TextBox Text="{Binding Actual}" PlaceholderText="What did you see instead? Copy any error message word for word" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="50" />
                 </StackPanel>
               </Border>
               <Border Classes="card">

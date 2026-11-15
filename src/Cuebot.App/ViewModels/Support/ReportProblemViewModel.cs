@@ -166,9 +166,20 @@ public sealed partial class ReportProblemViewModel : ObservableObject
     private bool CheckTitle()
     {
         Error = "";
-        if (!string.IsNullOrWhiteSpace(Title)) return true;
-        Error = "Give the report a short title first.";
-        return false;
+        if (string.IsNullOrWhiteSpace(Title))
+        {
+            Error = "Give the report a short title first.";
+            return false;
+        }
+        // A title alone leaves nothing to go on: the log rarely holds what was on screen (an AI app's message, a
+        // wrong result). An attached crash speaks for itself.
+        if (string.IsNullOrWhiteSpace(Summary) && string.IsNullOrWhiteSpace(Steps) && string.IsNullOrWhiteSpace(Actual)
+            && !(IncludeCrash && HasCrash))
+        {
+            Error = "Say what you were doing and what you saw (copy any error message word for word) before sending.";
+            return false;
+        }
+        return true;
     }
 
     /// <summary>Saves the preview as <c>reports/report-*.md</c>.</summary>

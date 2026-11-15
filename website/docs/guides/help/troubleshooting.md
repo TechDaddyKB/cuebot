@@ -79,10 +79,12 @@ Start Cuebot again: the running copy comes to the front. Still off-screen? Close
 **Settings > Support**, tab **Report a problem**, builds a report for you: your Cuebot version, your system and the
 recent log.
 
-![The What went wrong? card with Title, What happened and the other boxes](../../assets/screens/card-what-went-wrong.png)
+![The What went wrong? card with Title, What were you doing and the other boxes](../../assets/screens/card-what-went-wrong.png)
 
 1. Type a short **Title**, like "Follow alert does not show".
-2. Fill in **What happened?**, the steps, what you expected and what happened instead.
+2. Say what you were doing when it happened and what you saw instead. Copy any error message word for word: the log
+   often can't show what was on your screen, such as a message in the Assistant chat. Cuebot won't send a report
+   that has only a title, unless a crash is attached.
 3. Under **Include**, leave the boxes as they are, unless you have a reason to change them.
 4. Read the **Preview** on the right. That is exactly what will be sent. You can change or delete anything in it.
 5. Click **Send report**. You do not need a GitHub account. **Open the issue** then shows your report in the browser.

@@ -223,6 +223,9 @@ public sealed class McpTests : IAsyncLifetime
         var (missing, missingResult) = await _host.CallAsync("get_action", Args(("action", "Nope")));
         Assert.True(missing);
         Assert.Contains("not found", missingResult["error"]!.GetValue<string>());
+        // Logged with the reason, so a problem report shows what the AI got wrong.
+        Assert.Contains(Bot.Log.Recent(), e => e.Source == "MCP" && e.Level == Cuebot.Core.Logging.LogLevel.Warning
+            && e.Message.StartsWith("Tool get_action failed: ", StringComparison.Ordinal) && e.Message.Contains("not found"));
 
         var (noArg, noArgResult) = await _host.CallAsync("get_action");
         Assert.True(noArg);

@@ -250,6 +250,10 @@ public sealed class SupportPageTests : IDisposable
         Assert.Equal("Give the report a short title first.", report.Error);
 
         report.Title = "Chat freezes";
+        await report.OpenIssue();
+        Assert.Empty(_opened);
+        Assert.StartsWith("Say what you were doing and what you saw", report.Error);
+
         report.Summary = "Chat stops after a raid";
         await report.OpenIssue();
         var url = Assert.Single(_opened);
@@ -353,6 +357,7 @@ public sealed class SupportPageTests : IDisposable
         // The same install id next time; refusals and rate limits are explained.
         var again = new SupportViewModel(Services(ghInstalled: false)).Report;
         again.Title = "Another";
+        again.Actual = "It broke";
         FakeIntake(HttpStatusCode.TooManyRequests, """{"error": "Too many", "retryAfter": 600}""");
         await again.SendCommand.ExecuteAsync(null);
         Assert.Equal(sent["installId"]!.GetValue<string>(), _sent[^1]["installId"]!.GetValue<string>());

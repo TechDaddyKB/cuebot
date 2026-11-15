@@ -296,7 +296,10 @@ public sealed class McpServer
             {
                 // Cuebot's own Assistant: the streamer answers on the Assistant page while the call waits.
                 if (!await confirm(name, summaryForAssistant, ct).ConfigureAwait(false))
+                {
+                    _services.Log.Info(LogSource, $"Tool {name} declined by the streamer");
                     return ToolResult(new JsonObject { ["declined"] = true, ["message"] = $"The streamer declined: {summaryForAssistant}. Nothing was done." }, isError: false);
+                }
             }
             else if (needed is { } summary)
             {
@@ -316,6 +319,7 @@ public sealed class McpServer
                 }
                 if (!Confirmations.TryConsume(token, name, args))
                 {
+                    _services.Log.Warn(LogSource, $"Tool {name} refused: the confirmation token is invalid or expired");
                     return ToolResult(new JsonObject
                     {
                         ["error"] = "The confirmation token is invalid, expired, already used or was issued for different arguments. "
@@ -328,6 +332,8 @@ public sealed class McpServer
         }
         catch (ApiException ex)
         {
+            // The AI sees why (a wrong parameter, a name that does not exist...); the log gets it too, for problem reports.
+            _services.Log.Warn(LogSource, $"Tool {name} failed: {ex.Message}");
             return ToolResult(ex.ToJson(), isError: true);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

@@ -114,13 +114,13 @@ public sealed class AssistantService : IAsyncDisposable
             var provider = await ResolveProviderAsync(ct).ConfigureAwait(false);
             if (provider is null)
             {
-                yield return new AssistantError("No AI is set up yet. Sign in to an AI app such as Codex or Claude Code, or add an API key, then try again.");
+                yield return Logged(null, new AssistantError("No AI is set up yet. Sign in to an AI app such as Codex or Claude Code, or add an API key, then try again."));
                 yield break;
             }
             var status = await SafeStatusAsync(provider, ct).ConfigureAwait(false);
             if (!status.Ready)
             {
-                yield return new AssistantError($"{provider.Name}: {status.Message}");
+                yield return Logged(null, new AssistantError($"{provider.Name}: {status.Message}"));
                 yield break;
             }
 
@@ -131,7 +131,8 @@ public sealed class AssistantService : IAsyncDisposable
             var turn = Channel.CreateUnbounded<AssistantUpdate>(new UnboundedChannelOptions { SingleReader = true });
             _turnUpdates = turn.Writer;
             var pump = PumpAsync(provider, session.SendAsync(text, ct), turn.Writer, ct);
-            await foreach (var update in turn.Reader.ReadAllAsync(CancellationToken.None).ConfigureAwait(false)) yield return update;
+            await foreach (var update in turn.Reader.ReadAllAsync(CancellationToken.None).ConfigureAwait(false))
+                yield return update is AssistantError error ? Logged(provider, error) : update;
             _turnUpdates = null;
             await pump.ConfigureAwait(false);
             // Offer to undo what the turn changed (also after Stop: what was done is done).
@@ -144,6 +145,17 @@ public sealed class AssistantService : IAsyncDisposable
             _turnUpdates = null;
             _turn.Release();
         }
+    }
+
+    /// <summary>
+    /// What the chat shows as an error also goes to the log, so "Report a problem" carries it: an AI app's own error
+    /// (Codex, Claude Code...) otherwise only lived in the chat.
+    /// </summary>
+    private AssistantError Logged(IAssistantProvider? provider, AssistantError error)
+    {
+        var name = provider?.Name;
+        _log.Warn(LogSource, name is null || error.Message.StartsWith(name, StringComparison.Ordinal) ? error.Message : $"{name}: {error.Message}");
+        return error;
     }
 
     private async Task PumpAsync(IAssistantProvider provider, IAsyncEnumerable<AssistantUpdate> updates, ChannelWriter<AssistantUpdate> turn,
@@ -159,8 +171,7 @@ public sealed class AssistantService : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _log.Warn(LogSource, $"{provider.Name}: {ex.Message}");
-            await turn.WriteAsync(new AssistantError(ex.Message), CancellationToken.None).ConfigureAwait(false);
+            await turn.WriteAsync(new AssistantError(ex.Message), CancellationToken.None).ConfigureAwait(false);   // logged as it is shown
         }
         turn.TryComplete();
     }
