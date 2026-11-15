@@ -1,6 +1,7 @@
 package digital.techdaddy.cuebot.companion
 
 import android.Manifest
+import android.os.Build
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -35,7 +36,10 @@ import java.util.concurrent.TimeUnit
 @RunWith(AndroidJUnit4::class)
 class CompanionUiTest {
     @get:Rule val compose = createEmptyComposeRule()
-    @get:Rule val camera: GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.CAMERA)
+    // Camera for the QR scanner; notifications (Android 13+) so the app's one-time question does not cover the screen.
+    @get:Rule val permissions: GrantPermissionRule = GrantPermissionRule.grant(
+        *listOfNotNull(Manifest.permission.CAMERA, Manifest.permission.POST_NOTIFICATIONS.takeIf { Build.VERSION.SDK_INT >= 33 }).toTypedArray(),
+    )
 
     private val server = MockWebServer()
     private val requests = CopyOnWriteArrayList<RecordedRequest>()

@@ -48,8 +48,10 @@ public sealed class SteamTests : IDisposable
         var second = Path.Combine(_dir, "Games");
         Directory.CreateDirectory(Path.Combine(root, "steamapps"));
         Directory.CreateDirectory(Path.Combine(second, "steamapps"));
+        // Steam escapes backslashes in its files ("C:\\Program Files (x86)\\Steam"), so Windows paths are written that way.
+        static string Vdf(string path) => path.Replace("\\", "\\\\", StringComparison.Ordinal);
         File.WriteAllText(Path.Combine(root, "steamapps", "libraryfolders.vdf"),
-            $"\"libraryfolders\" {{ \"0\" {{ \"path\" \"{root}\" }} \"1\" {{ \"path\" \"{second}\" }} }}");
+            $"\"libraryfolders\" {{ \"0\" {{ \"path\" \"{Vdf(root)}\" }} \"1\" {{ \"path\" \"{Vdf(second)}\" }} }}");
         File.WriteAllText(Path.Combine(second, "steamapps", "appmanifest_553850.acf"), "\"AppState\" { \"appid\" \"553850\" \"name\" \"HELLDIVERS™ 2\" }");
         var proc = Path.Combine(_dir, "proc");
         foreach (var (pid, env) in new[] { ("100", "HOME=/x\0SteamAppId=553850\0"), ("101", "SteamAppId=1325860\0"), ("102", "PATH=/bin\0"), ("abc", "SteamAppId=9\0") })
