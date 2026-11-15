@@ -39,8 +39,9 @@ internal sealed class WindowsSpeechEngine : ITtsEngine
     {
         using var synthesizer = new SpeechSynthesizer();
         return synthesizer.GetInstalledVoices()
-            .Where(v => v.Enabled)
-            .Select(v => new VoiceInfo(v.VoiceInfo.Name, v.VoiceInfo.Name, v.VoiceInfo.Culture?.Name)
+            // System.Speech 11 marks the name nullable; a voice without one can't be picked anyway.
+            .Where(v => v.Enabled && !string.IsNullOrEmpty(v.VoiceInfo.Name))
+            .Select(v => new VoiceInfo(v.VoiceInfo.Name ?? "", v.VoiceInfo.Name ?? "", v.VoiceInfo.Culture?.Name)
             {
                 Gender = v.VoiceInfo.Gender switch
                 {
