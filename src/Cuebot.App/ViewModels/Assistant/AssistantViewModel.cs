@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using Cuebot.Assistant;
 
@@ -248,6 +249,63 @@ public sealed partial class AssistantViewModel : PageViewModel
 
     private bool CanSend() => !IsBusy && (Input.Trim().Length > 0 || Attachments.Count > 0);
 
+    // ---- Working indicator: what the AI is doing in the running turn, and for how long ----
+
+    /// <summary>What the AI is doing right now (Thinking, Using a tool, Writing, Waiting for your answer).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(BusyText))]
+    private string _activity = "";
+
+    private DateTimeOffset _turnStarted;
+    private DispatcherTimer? _busyClock;
+
+    /// <summary>Now; tests move it.</summary>
+    internal Func<DateTimeOffset> Clock { get; set; } = () => DateTimeOffset.Now;
+
+    /// <summary>The working strip under the conversation, e.g. "Using list actions... 1:05".</summary>
+    public string BusyText
+    {
+        get
+        {
+            if (!IsBusy) return "";
+            var elapsed = Clock() - _turnStarted;
+            if (elapsed < TimeSpan.Zero) elapsed = TimeSpan.Zero;
+            var time = $"{(int)elapsed.TotalMinutes}:{elapsed.Seconds:00}";
+            var hint = elapsed >= LongTurn && !Activity.StartsWith("Waiting", StringComparison.Ordinal) ? " - still working; Stop ends it" : "";
+            return $"{Activity} {time}{hint}";
+        }
+    }
+
+    /// <summary>After this long the strip says it is still working, and how to stop it.</summary>
+    internal static readonly TimeSpan LongTurn = TimeSpan.FromMinutes(1);
+
+    private void StartBusyClock()
+    {
+        _turnStarted = Clock();
+        Activity = "Thinking...";
+        _busyClock ??= new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) => OnPropertyChanged(nameof(BusyText)));
+        _busyClock.Start();
+    }
+
+    private void StopBusyClock()
+    {
+        _busyClock?.Stop();
+        Activity = "";
+    }
+
+    /// <summary>Once the streamer answers an Approve card, the strip goes back to working.</summary>
+    private async Task AfterAnswerAsync(AssistantConfirmation confirmation)
+    {
+        await confirmation.Answer;
+        if (IsBusy && Activity.StartsWith("Waiting", StringComparison.Ordinal)) Activity = "Working...";
+    }
+
+    partial void OnIsBusyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(BusyText));
+        Badge = value ? "…" : "";   // the sidebar shows it is still working from any page
+    }
+
     /// <summary>
     /// Files picked with Attach (or dropped on the message box), sent as full paths at the end of the message so every AI
     /// can use them (edit_image, a sound or video step...). Nothing is uploaded: the paths are on this computer.
@@ -294,6 +352,7 @@ public sealed partial class AssistantViewModel : PageViewModel
         OnAttachmentsChanged();
         Add(new AssistantItem(AssistantItemKind.User, text));
         IsBusy = true;
+        StartBusyClock();
         _turn = new CancellationTokenSource();
         AssistantItem? answer = null;
         try
@@ -305,16 +364,21 @@ public sealed partial class AssistantViewModel : PageViewModel
                     case AssistantText t:
                         if (answer is null) Add(answer = new AssistantItem(AssistantItemKind.Assistant, ""));
                         answer.Text += t.Text;
+                        Activity = "Writing...";
                         break;
                     case AssistantToolStarted s:
                         Add(new AssistantItem(AssistantItemKind.Tool, ToolLabel(s.Tool)) { CallId = s.CallId });
+                        Activity = $"Using {ToolLabel(s.Tool)}...";
                         answer = null;
                         break;
                     case AssistantToolFinished f:
                         if (Items.LastOrDefault(i => i.CallId == f.CallId) is { } tool) tool.Finish(f.Failed);
+                        Activity = "Thinking...";
                         break;
                     case AssistantConfirmation c:
                         Add(new AssistantItem(AssistantItemKind.Confirmation, c.Summary) { Confirmation = c });
+                        Activity = "Waiting for you to Approve or Deny...";
+                        _ = AfterAnswerAsync(c);
                         answer = null;
                         break;
                     case AssistantError e:
@@ -338,6 +402,8 @@ public sealed partial class AssistantViewModel : PageViewModel
         finally
         {
             foreach (var pending in Items.Where(i => i.AwaitingAnswer).ToList()) pending.Expire();
+            foreach (var tool in Items.Where(i => i.IsTool && i.State == "running")) tool.State = "stopped";
+            StopBusyClock();
             IsBusy = false;
             _turn.Dispose();
             _turn = null;

@@ -197,12 +197,25 @@ public sealed class AssistantPageTests : IAsyncDisposable
         Assert.Equal("running", page.Items.Single(i => i.IsTool).State);
         Assert.True(page.IsBusy);
 
+        // The working strip says the AI is busy, with what it is doing and for how long.
+        Assert.Contains(window.GetVisualDescendants().OfType<Border>(), b => b.Name == "AssistantWorking" && b.IsEffectivelyVisible);
+        var started = DateTimeOffset.Now;
+        page.Clock = () => started.AddSeconds(75);
+        Assert.Equal("Waiting for you to Approve or Deny... 1:15", page.BusyText);
+        Assert.Equal("…", page.Badge);
+        page.Activity = "Using list actions...";
+        Assert.Equal("Using list actions... 1:15 - still working; Stop ends it", page.BusyText);
+        page.Activity = "Waiting for you to Approve or Deny...";
+        page.Clock = () => DateTimeOffset.Now;
+
         Screenshot(window, "assistant-confirm");
         var approve = window.GetVisualDescendants().OfType<Button>().Single(b => b.Content as string == "Approve" && b.IsEffectivelyVisible);
         approve.Command!.Execute(null);
         PumpUntil(() => !page.IsBusy);
 
         Assert.Equal("approved", _ai.LastResult);
+        Assert.Equal(("", ""), (page.BusyText, page.Badge));
+        Assert.DoesNotContain(window.GetVisualDescendants().OfType<Border>(), b => b.Name == "AssistantWorking" && b.IsEffectivelyVisible);
         Assert.Equal("done", page.Items.Single(i => i.IsTool).State);
         Assert.Equal("Approved", page.Items.Single(i => i.IsConfirmation).State);
         Assert.Equal(Done, page.Items.Last(i => i.IsAssistant).Text);

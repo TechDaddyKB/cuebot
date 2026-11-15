@@ -55,6 +55,10 @@ Type what you want and click **Send** (or press **Enter**). Some ideas:
 - "Set up OBS so it hears the text-to-speech." It adds an audio capture source to the scene you're on. On Linux that
   captures everything you hear; to capture only Cuebot, install OBS's Application Audio Capture (PipeWire) plugin first.
 
+While the assistant works, a bar above the message box shows what it is doing, such as **Thinking...**, **Using list
+actions...** or **Waiting for you to Approve or Deny...**, and how long it has been working. Long questions can take a
+few minutes. **Assistant** in the sidebar shows **…** until it is done, so you can use other pages meanwhile.
+
 **Stop** stops an answer, **New chat** starts fresh.
 
 ### Sending it files
