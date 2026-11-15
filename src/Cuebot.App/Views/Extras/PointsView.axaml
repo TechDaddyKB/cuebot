@@ -84,8 +84,14 @@
             <TextBox Text="{Binding Thresholds, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. 100, 1000, 10000" ToolTip.Tip="Point totals that count as a milestone. When a viewer reaches one, the 'Points threshold reached' trigger starts. Separate them with commas." />
             <TextBlock Classes="error" Text="{Binding ThresholdsError}"
                        IsVisible="{Binding ThresholdsError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-            <TextBlock Text="Never earn automatically (bots)" />
-            <TextBox Text="{Binding IgnoredUsers, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. Nightbot, StreamElements" ToolTip.Tip="Names that never earn points by themselves, like chat bots. Separate them with commas." />
+            <TextBlock Text="Ignored users (never earn, never ranked)" />
+            <TextBox Text="{Binding IgnoredUsers, UpdateSourceTrigger=LostFocus}" PlaceholderText="e.g. your test account" ToolTip.Tip="Names that never earn points by themselves and never appear on leaderboards or get a rank. Separate them with commas." />
+            <CheckBox IsChecked="{Binding HideBroadcaster}" Content="Hide the broadcaster from leaderboards"
+                      ToolTip.Tip="Your own accounts on every platform keep their points but are left off leaderboards and ranks." />
+            <CheckBox IsChecked="{Binding HideBots}" Content="Hide bots from leaderboards"
+                      ToolTip.Tip="Cuebot's own bot account and the bots listed below keep their points but are left off leaderboards and ranks." />
+            <TextBox Text="{Binding KnownBots, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding HideBots}" AcceptsReturn="False" TextWrapping="Wrap"
+                     PlaceholderText="e.g. Nightbot, StreamElements" ToolTip.Tip="Chat bots to hide from leaderboards. Separate them with commas." />
           </StackPanel>
         </Border>
         <Border Classes="card">

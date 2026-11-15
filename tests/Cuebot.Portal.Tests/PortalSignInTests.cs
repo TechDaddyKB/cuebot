@@ -39,6 +39,7 @@ public sealed class PortalSignInHandlerTests
     public PortalSignInHandlerTests() => _handler = new PortalSignInHandler(_dir, _exchange, (m, r) =>
     {
         _apiCalls.Add((m, (string)r["op"]!));
+        if ((string)r["op"]! == "audio.list") throw new Cuebot.Obs.Protocol.ObsRequestException("GetInputVolume", 604, "The specified input does not support audio.");
         return Task.FromResult(new JsonObject { ["ok"] = true, ["name"] = _dir.Member(m)!.Name, ["role"] = _dir.RoleOf(_dir.Member(m)!)!.Name });
     });
 
@@ -101,6 +102,20 @@ public sealed class PortalSignInHandlerTests
         Assert.True((bool)after["ok"]!);
         Assert.Equal(2, (int)after["req"]!);
         Assert.Contains((link.MemberId!.Value, "actions.list"), _apiCalls);
+    }
+
+    [Fact]
+    public async Task A_request_that_fails_is_answered_with_an_error_and_the_mod_stays_signed_in()
+    {
+        // GitHub #36: OBS refused a volume for an input without audio and the whole connection was closed.
+        var link = NewLink();
+        await SignIn(link, _dir.CreateInvite(DefaultRoles.StandardModId).Secret);
+        var failed = await Send(link, new JsonObject { ["op"] = "audio.list", ["req"] = 5 });
+        Assert.False((bool)failed["ok"]!);
+        Assert.Equal(5, (int)failed["req"]!);
+        Assert.NotNull(link.MemberId);
+        var next = await Send(link, new JsonObject { ["op"] = "actions.list", ["req"] = 6 });
+        Assert.True((bool)next["ok"]!);
     }
 
     [Fact]

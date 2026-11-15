@@ -79,7 +79,8 @@ public sealed class PortalControls(
             };
         }
         catch (Exception e) when (e is InvalidOperationException or JsonException or IOException or TimeoutException
-            or System.Net.WebSockets.WebSocketException or ArgumentException)
+            or System.Net.WebSockets.WebSocketException or ArgumentException
+            or Cuebot.Obs.Protocol.ObsRequestException or Cuebot.Obs.Protocol.ObsConnectionException)
         {
             return Error("That did not work: " + e.Message);
         }
@@ -140,12 +141,24 @@ public sealed class PortalControls(
         var list = new JsonArray();
         foreach (var name in await AudioInputsAsync(ct).ConfigureAwait(false))
         {
-            var volume = await obs.RequestAsync("GetInputVolume", new { inputName = name }, ct).ConfigureAwait(false);
+            JsonElement volume;
+            bool muted;
+            try
+            {
+                volume = await obs.RequestAsync("GetInputVolume", new { inputName = name }, ct).ConfigureAwait(false);
+                muted = await obs.Default.GetInputMuteAsync(name, ct).ConfigureAwait(false);
+            }
+            catch (Cuebot.Obs.Protocol.ObsRequestException)
+            {
+                // The kind matched, but OBS says this input has no audio (a browser source without its audio routed to
+                // OBS, for one: code 604). It has no level to show, so it is left out (GitHub #36).
+                continue;
+            }
             list.Add(new JsonObject
             {
                 ["name"] = name,
                 ["db"] = Math.Round(volume.TryGetProperty("inputVolumeDb", out var db) && db.ValueKind == JsonValueKind.Number ? db.GetDouble() : 0, 1),
-                ["muted"] = await obs.Default.GetInputMuteAsync(name, ct).ConfigureAwait(false),
+                ["muted"] = muted,
             });
         }
         return Ok(new JsonObject { ["inputs"] = list });

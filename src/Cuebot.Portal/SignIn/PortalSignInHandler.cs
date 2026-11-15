@@ -54,6 +54,13 @@ public sealed class PortalSignInHandler(PortalDirectory directory, IPortalIdenti
         {
             answer = Error(e.Message);
         }
+        catch (Exception e) when (e is not OperationCanceledException || !ct.IsCancellationRequested)
+        {
+            // One request that fails must not end the mod's session: the error goes back as an answer and the link stays
+            // open, so the rest of the portal keeps working (GitHub #36).
+            log?.Warn(LogSource, $"A portal request ({(op.Length > 0 ? op : "unknown")}) failed: {e.Message}");
+            answer = Error("That did not work. Cuebot logged the details for the streamer.");
+        }
         return Encode(answer, req);
     }
 

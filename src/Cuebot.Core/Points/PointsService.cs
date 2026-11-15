@@ -56,8 +56,24 @@ public class PointsCurrency
     /// <summary>Balances that fire the "Points threshold reached" trigger when crossed upwards.</summary>
     public List<long> Thresholds { get; set; } = [];
 
-    /// <summary>User names that never earn automatically (bots).</summary>
+    /// <summary>User names that never earn automatically and are left off leaderboards and ranks.</summary>
     public List<string> IgnoredUsers { get; set; } = [];
+
+    /// <summary>Leave the broadcaster's own accounts off leaderboards and ranks (they still keep their balance).</summary>
+    public bool HideBroadcaster { get; set; } = true;
+
+    /// <summary>Leave chat bots off leaderboards and ranks: Cuebot's own bot account and every name in <see cref="KnownBots"/>.</summary>
+    public bool HideBots { get; set; } = true;
+
+    /// <summary>Common chat bots' user names, hidden from leaderboards while <see cref="HideBots"/> is on. Editable.</summary>
+    public List<string> KnownBots { get; set; } = [.. DefaultKnownBots];
+
+    /// <summary>The bots a new currency starts with in <see cref="KnownBots"/>.</summary>
+    public static readonly string[] DefaultKnownBots =
+    [
+        "StreamElements", "Nightbot", "Moobot", "Streamlabs", "Fossabot", "Sery_Bot", "Wizebot", "SoundAlerts",
+        "BotRix", "BotRixOficial", "Kicklet", "PokemonCommunityGame", "StreamStickers",
+    ];
 
     // ---- multipliers (automatic earning only: presence, chat and bonuses) ----
 
@@ -450,12 +466,22 @@ public sealed class PointsService : IPeriodicService, IDisposable
     /// </summary>
     public IReadOnlyList<PointsEntry> Leaderboard(string? platform = null, int count = 10, string? currency = null)
     {
-        string name;
-        lock (_gate) name = Resolve(currency).VariableName;
+        PointsCurrency c;
+        lock (_gate) c = Json.Clone(Resolve(currency));
+        var name = c.VariableName;
         var accounts = _vars.Snapshot(string.IsNullOrWhiteSpace(platform) ? null : platform)
             .Where(v => string.Equals(v.Name, name, StringComparison.OrdinalIgnoreCase))
             .Select(v => (v.Platform, v.UserId, v.UserName, Points: ToLong(v.Value)))
             .ToList();
+        // Bots, the broadcaster and ignored users keep their balances but are not ranked (GitHub #35). A linked viewer
+        // with any hidden account is hidden as a whole, so the broadcaster's linked accounts never show up combined.
+        var hidden = accounts.Where(a => HiddenFromBoard(c, a.Platform, a.UserId, a.UserName))
+            .Select(a => UserKey(a.Platform, a.UserId)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (_links is not null)
+            foreach (var group in _links.Groups.Where(g => g.Accounts.Any(a => hidden.Contains(UserKey(a.Platform, a.UserId))
+                         || HiddenFromBoard(c, a.Platform, a.UserId, a.UserName))))
+                foreach (var a in group.Accounts) hidden.Add(UserKey(a.Platform, a.UserId));
+        accounts = accounts.Where(a => !hidden.Contains(UserKey(a.Platform, a.UserId))).ToList();
         var rows = new List<(string Platform, string UserId, string UserName, long Points, string Platforms)>();
         if (!string.IsNullOrWhiteSpace(platform) || _links is null)
         {
@@ -892,6 +918,16 @@ public sealed class PointsService : IPeriodicService, IDisposable
         return (long)(ExtrasText.FirstNumber(title) ?? 1);
     }
 
+    /// <summary>True when this account is left off the currency's leaderboards and ranks.</summary>
+    private bool HiddenFromBoard(PointsCurrency c, string platform, string userId, string userName)
+    {
+        var user = userId.Length > 0 ? _users?.Get(platform, userId) : null;
+        bool Named(IEnumerable<string> names) => IsIgnored(names, userName) || IsIgnored(names, user?.UserName) || IsIgnored(names, user?.DisplayName);
+        if (Named(c.IgnoredUsers)) return true;
+        if (c.HideBots && (user?.IsBotAccount == true || Named(c.KnownBots))) return true;
+        return c.HideBroadcaster && user is not null && user.Roles.HasFlag(ChatRoles.Broadcaster);
+    }
+
     private static bool IsIgnored(IEnumerable<string> ignored, string? name) =>
         !string.IsNullOrWhiteSpace(name) && ignored.Contains(name.Trim().TrimStart('@'), StringComparer.OrdinalIgnoreCase);
 
@@ -931,6 +967,7 @@ public sealed class PointsService : IPeriodicService, IDisposable
             c.VariableName = string.IsNullOrWhiteSpace(c.VariableName) ? (i == 0 ? "points" : VariableNameFor(c.Name)) : c.VariableName.Trim();
             c.Thresholds ??= [];
             c.IgnoredUsers ??= [];
+            c.KnownBots ??= [];
             c.GroupMultipliers ??= [];
             c.UserMultipliers ??= [];
         }

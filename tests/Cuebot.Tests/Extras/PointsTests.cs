@@ -194,6 +194,32 @@ public sealed class PointsTests : IDisposable
     }
 
     [Fact]
+    public void Bots_the_broadcaster_and_ignored_users_keep_points_but_are_not_ranked()
+    {
+        // GitHub #35: accounts that sit in chat all stream used to top the leaderboard.
+        _bus.Publish(Chat.Message("hi", "kris", "100", roles: ChatRoles.Broadcaster));
+        _bus.Publish(Chat.Message("hi", "cuebot_bot", "101", extra: new() { ["isBotAccount"] = true }));
+        _points.Set("twitch", "100", "kris", 900);
+        _points.Set("twitch", "101", "cuebot_bot", 800);
+        _points.Set("twitch", "102", "Nightbot", 700);
+        _points.Set("twitch", "103", "testaccount", 600);
+        _points.Set("twitch", "1", "alice", 100);
+        _points.UpdateCurrency(null, c => c.IgnoredUsers = ["testaccount"]);
+
+        Assert.Equal(["alice"], _points.Leaderboard().Select(e => e.UserName));
+        Assert.Equal(["alice"], _points.Leaderboard("twitch").Select(e => e.UserName));
+        Assert.Equal(1, _points.Rank("twitch", "1"));
+        Assert.Equal(0, _points.Rank("twitch", "100"));
+        Assert.Equal(900, _points.Get("twitch", "100"));   // the balance is kept
+
+        _points.UpdateCurrency(null, c => { c.HideBroadcaster = false; c.HideBots = false; c.IgnoredUsers = []; });
+        Assert.Equal(["kris", "cuebot_bot", "Nightbot", "testaccount", "alice"], _points.Leaderboard().Select(e => e.UserName));
+
+        _points.UpdateCurrency(null, c => { c.HideBots = true; c.KnownBots = ["SomeOtherBot"]; });
+        Assert.Equal(["kris", "Nightbot", "testaccount", "alice"], _points.Leaderboard().Select(e => e.UserName));
+    }
+
+    [Fact]
     public void Threshold_trigger_fires_when_crossing_upwards()
     {
         _points.UpdateSettings(s => s.Thresholds = [100, 500]);

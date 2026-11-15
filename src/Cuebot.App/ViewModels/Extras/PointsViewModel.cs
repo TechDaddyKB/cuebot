@@ -85,6 +85,9 @@ public sealed partial class PointsViewModel : PageViewModel
     [ObservableProperty] private decimal? _maxBalance;
     [ObservableProperty] private string _thresholds = "";
     [ObservableProperty] private string _ignoredUsers = "";
+    [ObservableProperty] private bool _hideBroadcaster;
+    [ObservableProperty] private bool _hideBots;
+    [ObservableProperty] private string _knownBots = "";
     [ObservableProperty] private string _thresholdsError = "";
 
     // ---- multipliers ----
@@ -144,6 +147,9 @@ public sealed partial class PointsViewModel : PageViewModel
         MaxBalance = s.MaxBalance;
         Thresholds = string.Join(", ", s.Thresholds);
         IgnoredUsers = string.Join(", ", s.IgnoredUsers);
+        HideBroadcaster = s.HideBroadcaster;
+        HideBots = s.HideBots;
+        KnownBots = string.Join(", ", s.KnownBots);
         SubscriberMultiplier = s.SubscriberMultiplier;
         Tier2Multiplier = s.Tier2Multiplier;
         Tier3Multiplier = s.Tier3Multiplier;
@@ -231,6 +237,10 @@ public sealed partial class PointsViewModel : PageViewModel
                 s.MaxBalance = L(MaxBalance);
                 s.Thresholds = thresholds.Distinct().Order().ToList();
                 s.IgnoredUsers = IgnoredUsers.Split([',', ';', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(u => u.TrimStart('@')).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                s.HideBroadcaster = HideBroadcaster;
+                s.HideBots = HideBots;
+                s.KnownBots = KnownBots.Split([',', ';', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Select(u => u.TrimStart('@')).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
                 s.SubscriberMultiplier = M(SubscriberMultiplier);
                 s.Tier2Multiplier = M(Tier2Multiplier);

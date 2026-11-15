@@ -48,7 +48,7 @@ Mods open `portal.techdaddydigital.com` on their phone or computer, or use the *
 | **Sounds** | Play the sounds your actions use, on stream | Everyone |
 | **Overlays** | Move, restyle, show and hide overlay layers, change widget settings and alert designs (see [Overlays](#overlays)) | Lead Mod changes; Tech Lead also adds and removes layers and overlays |
 | **Uploads** | Upload sounds, pictures, GIFs and videos for your actions (see [Uploads](#uploads)) | Everyone uploads sounds; Lead Mod and Tech Lead also pictures and video |
-| **Audio** | Volume and mute for your OBS audio sources | Everyone |
+| **Audio** | Volume and mute for your OBS audio sources (sources OBS reports as having no sound are left out) | Everyone |
 | **Scenes** | Switch your OBS scene | Lead Mod, Tech Lead |
 | **Queues** | Pause, resume or clear action queues | Lead Mod, Tech Lead |
 | **Text-to-speech** | Say something with your default voice and word filters; pause, skip or turn it off | Everyone says; Lead Mod and Tech Lead control |

@@ -49,7 +49,19 @@ multiplier per group, like `Regulars=1.5`. Twitch subscriber tiers 2 and 3 can h
 
 ![The Multipliers card](../../assets/screens/card-multipliers.png)
 
-**Never earn automatically (bots)**: list your bots here so they do not collect points.
+### Who is on the leaderboard
+
+Some accounts sit in chat all stream and would end up at the top. These keep whatever they have, but they are left off
+every leaderboard (the Points page, `!top`, the leaderboard sub-action and widgets) and get no rank:
+
+- **Ignored users** never earn points by themselves and are never ranked. Use it for a test account or anyone else.
+- **Hide the broadcaster from leaderboards** (on by default): your own accounts on every platform. Cuebot knows them
+  once you have chatted from them.
+- **Hide bots from leaderboards** (on by default): Cuebot's own bot account, plus the bots in the list below the box.
+  The list starts with common ones (StreamElements, Nightbot, Moobot, Streamlabs, Fossabot, Sery_Bot, Wizebot and
+  more), and you can add or remove names.
+
+A viewer whose linked accounts include a hidden one is hidden as a whole.
 
 ## Linked accounts
 

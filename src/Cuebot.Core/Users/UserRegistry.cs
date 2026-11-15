@@ -19,6 +19,9 @@ public sealed class UserRecord
     public long MessageCount { get; set; }
     public ChatRoles Roles { get; set; }
 
+    /// <summary>True once this account chatted as Cuebot's own bot account (it stays true).</summary>
+    public bool IsBotAccount { get; set; }
+
     /// <summary>Identity within the registry: "platform:userId" (user name when there is no id), lower case.</summary>
     public string Key => KeyOf(Platform, UserId, UserName);
 
@@ -231,6 +234,7 @@ public sealed class UserRegistry : IPeriodicService, IViewerDataStore, IDisposab
             user.LastSeen = now;
             user.MessageCount++;
             user.Roles = ChatArgs.RolesOf(args);
+            if (args.GetBool("isBotAccount") || args.GetBool("isBot")) user.IsBotAccount = true;
             first = _spoken.Add(key);
             MarkDirty();
             copy = Json.Clone(user);

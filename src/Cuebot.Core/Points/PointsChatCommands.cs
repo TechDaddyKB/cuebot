@@ -468,7 +468,7 @@ public sealed class PointsChatCommands : IDisposable
             ["target"] = name,
             ["balance"] = _points.Format(_points.Get(x.Platform, id, c), c),
             ["points"] = Number(_points.Get(x.Platform, id, c)),
-            ["rank"] = Number(_points.Rank(x.Platform, id, c)),
+            ["rank"] = _points.Rank(x.Platform, id, c) is > 0 and var rank ? Number(rank) : "–",
             ["shares"] = sharesText,
         });
     }
