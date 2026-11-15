@@ -113,7 +113,13 @@ public sealed class RumbleServiceTests : IAsyncLifetime
         Assert.Equal("u_s=tok", sent.Cookie);
         Assert.Contains("\"hi from cuebot\"", sent.Body);
 
-        _apiJson = TestData.Read("live-stream-api-offline.json");
+        // Missing from the API is only an end once the stream stays gone for the grace time (Rumble's clock).
+        var offline = TestData.Read("live-stream-api-offline.json");
+        _apiJson = offline;
+        await SettleAsync();
+        Assert.Empty(Events(RumbleEventTypes.StreamOffline));
+        Assert.True(_service.IsLive);
+        _apiJson = offline.Replace("\"now\": 1767268800", "\"now\": 1767269400");
         await Wait.UntilAsync(() => Events(RumbleEventTypes.StreamOffline).Count == 1, "stream offline");
         Assert.False(_service.IsLive);
         Assert.False(_service.IsChatAttached);

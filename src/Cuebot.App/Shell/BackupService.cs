@@ -27,9 +27,13 @@ public sealed class BackupService
     private const string Prefix = "cuebot-";
     private const string StampFormat = "yyyyMMdd-HHmmss";
 
-    /// <summary>Top-level folders never included in (or replaced by) a backup.</summary>
+    /// <summary>
+    /// Top-level folders never included in (or replaced by) a backup: logs, the backups themselves and everything
+    /// Cuebot downloads again when needed (Python, Piper's program and voices, speech-recognition models, caches).
+    /// Piper voices alone made one backup 420 MB (2026-11-14).
+    /// </summary>
     public static readonly IReadOnlySet<string> ExcludedFolders =
-        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "logs", "python", FolderName };
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "logs", "python", "piper", "models", "cache", FolderName };
 
     /// <summary>
     /// Top-level files never included in (or replaced by) a backup. The secret store stays on this computer: a backup

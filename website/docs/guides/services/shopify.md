@@ -98,7 +98,8 @@ refund (with those webhooks set up) comes back off. Test events never count.
 
 - Under **Shopify extras**, set a **Goal title**, a target and whether it counts **Items sold** or **Revenue**. The
   **Goal** widget's **Shopify merch goal** shows it, and **Merch Goal Reached** runs once when it is reached.
-- **Start the counter again when a stream goes live** is on by default. **Reset counter** does it by hand.
+- **Start the counter again when a stream goes live** is on by default. Like the [credits](../chat/credits.md), only a
+  new stream counts, not a platform dropping and coming back mid-stream. **Reset counter** does it by hand.
 - Steps: **Get Shopify merch counter** (for a `!merch` command: `%shopifySalesItems%`, `%shopifyTopProduct%`,
   `%shopifySalesProductsText%`), **Reset Shopify merch counter** and **Set Shopify merch goal**.
 

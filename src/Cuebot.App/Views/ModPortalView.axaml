@@ -5,6 +5,27 @@
              x:DataType="vm:ModPortalViewModel">
   <ScrollViewer>
     <StackPanel Spacing="12" Margin="0,0,0,24">
+      <Border Classes="card" BorderBrush="{DynamicResource CuebotWarn}" BorderThickness="2" IsVisible="{Binding !HasNoPending}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="h2" Text="Waiting for your approval" />
+          <ItemsControl ItemsSource="{Binding Pending}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:ModChangeViewModel">
+                <DockPanel Margin="0,2">
+                  <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                    <Button Content="Open" Command="{Binding OpenCommand}" IsVisible="{Binding CanOpen}"
+                            ToolTip.Tip="Opens the cleaned file in its usual app, to see or hear it first." />
+                    <Button Content="Approve" Command="{Binding ApproveCommand}" ToolTip.Tip="Makes the change live." />
+                    <Button Content="Reject" Command="{Binding RejectCommand}" ToolTip.Tip="Drops the change. Nothing changes." />
+                  </StackPanel>
+                  <TextBlock Text="{Binding Text}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                </DockPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
       <Border Classes="card">
         <StackPanel Spacing="6">
           <TextBlock Classes="h2" Text="Let your mods help from anywhere" />
@@ -111,27 +132,6 @@
         </StackPanel>
       </Border>
 
-      <Border Classes="card">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="h2" Text="Waiting for your approval" />
-          <TextBlock Classes="muted" Text="Nothing is waiting." IsVisible="{Binding HasNoPending}" />
-          <ItemsControl ItemsSource="{Binding Pending}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate DataType="vm:ModChangeViewModel">
-                <DockPanel Margin="0,2">
-                  <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
-                    <Button Content="Open" Command="{Binding OpenCommand}" IsVisible="{Binding CanOpen}"
-                            ToolTip.Tip="Opens the cleaned file in its usual app, to see or hear it first." />
-                    <Button Content="Approve" Command="{Binding ApproveCommand}" ToolTip.Tip="Makes the change live." />
-                    <Button Content="Reject" Command="{Binding RejectCommand}" ToolTip.Tip="Drops the change. Nothing changes." />
-                  </StackPanel>
-                  <TextBlock Text="{Binding Text}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                </DockPanel>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </StackPanel>
-      </Border>
 
       <Border Classes="card">
         <StackPanel Spacing="8">

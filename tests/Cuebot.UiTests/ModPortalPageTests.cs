@@ -93,9 +93,14 @@ public sealed class ModPortalPageTests
         UiPump.Pump();
         var pending = vm.Pending.Single();
         Assert.Contains("sam created the command '!socials'", pending.Text);
+        // Shown outside the page too: a count in the sidebar and a line for the strip above every page.
+        Assert.Equal("1", vm.Badge);
+        Assert.Equal("sam wants to add the command '!socials'. It is waiting for your approval.", vm.PendingSummary);
         await pending.ApproveCommand.ExecuteAsync(null);
         UiPump.Pump();
         Assert.Empty(vm.Pending);
+        Assert.False(vm.HasBadge);
+        Assert.Equal("", vm.PendingSummary);
         Assert.NotNull(_commands.Get(id));
         var recent = vm.Recent.Single();
         Assert.True(recent.CanUndo);

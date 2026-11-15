@@ -163,6 +163,33 @@ public sealed partial class ModPortalViewModel : PageViewModel
         Message = "Everyone is signed out on every device. Mods sign in again with their account.";
     }
 
+    /// <summary>One line about what waits for approval ("" when nothing does), for the banner above every page.</summary>
+    public string PendingSummary { get; private set; } = "";
+
+    /// <summary>"jasmin wants to add the command 'Discord'." or "3 changes from your mods are waiting for your approval."</summary>
+    internal static string Summary(IReadOnlyList<PortalChange> pending) => pending.Count switch
+    {
+        0 => "",
+        1 => Wants(pending[0]) + " It is waiting for your approval.",
+        _ => $"{pending.Count} changes from your mods are waiting for your approval.",
+    };
+
+    /// <summary>"jasmin wants to add the command 'Discord'."</summary>
+    internal static string Wants(PortalChange c)
+    {
+        var verb = c.Kind switch { ChangeKind.Create => "add", ChangeKind.Delete => "remove", _ => "change" };
+        var what = c.Area == UploadArea.AreaName ? "the file" : "the " + c.Area;
+        return $"{c.MemberName} wants to {verb} {what} '{c.TargetName}'.";
+    }
+
+    /// <summary>"jasmin added the command 'Discord'."</summary>
+    internal static string Did(PortalChange c)
+    {
+        var verb = c.Kind switch { ChangeKind.Create => "added", ChangeKind.Delete => "removed", _ => "changed" };
+        var what = c.Area == UploadArea.AreaName ? "the file" : "the " + c.Area;
+        return $"{c.MemberName} {verb} {what} '{c.TargetName}'.";
+    }
+
     internal void Refresh()
     {
         Sync(Roles, _directory.Roles, r => r.Id, r => new ModRoleViewModel(this, r), (vm, r) => vm.Update(r));
@@ -174,6 +201,9 @@ public sealed partial class ModPortalViewModel : PageViewModel
         OnPropertyChanged(nameof(HasNoMembers));
         OnPropertyChanged(nameof(HasNoInvites));
         OnPropertyChanged(nameof(HasNoPending));
+        Badge = Pending.Count > 0 ? Pending.Count.ToString(System.Globalization.CultureInfo.InvariantCulture) : "";
+        PendingSummary = Summary(_changes.Pending);
+        OnPropertyChanged(nameof(PendingSummary));
         OnPropertyChanged(nameof(HasNoRecent));
         if (InviteRole is not null && Roles.All(r => r.Id != InviteRole.Id)) InviteRole = Roles.FirstOrDefault();
     }
@@ -438,6 +468,7 @@ public sealed partial class ModChangeViewModel : ObservableObject, IHasId
         ChangeStatus.Rejected => "Rejected",
         ChangeStatus.Expired => "Expired (not answered in 7 days)",
         ChangeStatus.Undone => "Undone by " + _change.DecidedBy,
+        ChangeStatus.Replaced => "Replaced by a newer change from " + _change.DecidedBy,
         _ => "",
     };
 

@@ -7,7 +7,8 @@ namespace Cuebot.Portal.Changes;
 
 public enum ChangeKind { Create, Update, Delete }
 
-public enum ChangeStatus { Applied, Pending, Rejected, Expired, Undone }
+/// <summary><see cref="Replaced"/>: a newer change to the same thing came in while this one waited, so it no longer applies.</summary>
+public enum ChangeStatus { Applied, Pending, Rejected, Expired, Undone, Replaced }
 
 /// <summary>One change a member made or asked for, with full before and after copies for approval and undo.</summary>
 public sealed class PortalChange
@@ -120,6 +121,15 @@ public sealed class PortalChanges
                 Before = before?.DeepClone(),
                 After = after?.DeepClone(),
             };
+            // Older requests for the same thing are out of date now: approving one later would undo this change, or
+            // create the same thing twice (2026-11-14: a mod's first "!discord" stayed waiting after the second went live).
+            lock (_log)
+                foreach (var old in _log.Changes.Where(c => c.Status == ChangeStatus.Pending && c.Area == area && c.TargetId == targetId))
+                {
+                    old.Status = ChangeStatus.Replaced;
+                    old.DecidedAt = change.At;
+                    old.DecidedBy = member.Name;
+                }
             var mode = _directory.ChangeModeOf(member);
             if (mode == ChangeMode.NeedsApproval) change.Status = ChangeStatus.Pending;
             else
@@ -212,6 +222,18 @@ public sealed class PortalChanges
                 c.DecidedAt = now;
                 expired = true;
             }
+            // Requests already out of date in a saved log (from before newer changes replaced them on submit).
+            // "Newer" is later in the log (the order changes came in), not a later time: an approval keeps its request time.
+            for (var i = 0; i < _log.Changes.Count; i++)
+                if (_log.Changes[i] is { Status: ChangeStatus.Pending } c
+                    && _log.Changes.Skip(i + 1).LastOrDefault(n => n.Area == c.Area && n.TargetId == c.TargetId
+                        && n.Status is ChangeStatus.Applied or ChangeStatus.Pending) is { } newer)
+                {
+                    c.Status = ChangeStatus.Replaced;
+                    c.DecidedAt = now;
+                    c.DecidedBy = newer.MemberName;
+                    expired = true;
+                }
         }
         if (expired) Saved();
     }

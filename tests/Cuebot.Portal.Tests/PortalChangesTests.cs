@@ -192,6 +192,37 @@ public sealed class PortalChangesTests
     }
 
     [Fact]
+    public async Task A_newer_change_to_the_same_thing_replaces_the_one_still_waiting()
+    {
+        // 2026-11-14: a mod's first "!discord" stayed waiting after their second try went live; approving it would
+        // have created the command again.
+        var mod = Member(DefaultRoles.StandardModId);
+        var lead = Member(DefaultRoles.TechLeadId);
+        var id = Guid.NewGuid();
+        var (_, first) = await _changes.SubmitAsync(mod, CommandArea.AreaName, id, Command(id, "!discord"));
+        var (_, second) = await _changes.SubmitAsync(mod, CommandArea.AreaName, id, Command(id, "!discord2"));
+        Assert.Equal(ChangeStatus.Replaced, _changes.Find(first.Id)!.Status);
+        Assert.Equal(second.Id, Assert.Single(_changes.Pending).Id);
+
+        await _changes.SubmitAsync(lead, CommandArea.AreaName, id, Command(id, "!discord"));
+        Assert.Empty(_changes.Pending);
+        Assert.Equal(ChangeStatus.Replaced, _changes.Find(second.Id)!.Status);
+        Assert.Equal(ChangeResult.NotPending, await _changes.ApproveAsync(second.Id));
+    }
+
+    [Fact]
+    public void A_saved_log_with_an_out_of_date_request_is_tidied_on_load()
+    {
+        var id = Guid.NewGuid();
+        var log = new PortalChangeLog();
+        log.Changes.Add(new PortalChange { At = _time.GetUtcNow(), Area = CommandArea.AreaName, TargetId = id, Status = ChangeStatus.Pending, MemberName = "jasmin" });
+        log.Changes.Add(new PortalChange { At = _time.GetUtcNow().AddMinutes(3), Area = CommandArea.AreaName, TargetId = id, Status = ChangeStatus.Applied, MemberName = "jasmin" });
+        var changes = new PortalChanges(log, () => { }, _dir, [new CommandArea(_commands)], _time);
+        Assert.Empty(changes.Pending);
+        Assert.Equal(ChangeStatus.Replaced, log.Changes[0].Status);
+    }
+
+    [Fact]
     public async Task Approve_and_undo_refuse_when_the_thing_changed_since()
     {
         var mod = Member(DefaultRoles.StandardModId);

@@ -859,6 +859,10 @@ public sealed class PointsService : IPeriodicService, IDisposable
         {
             if (adapter.ToFeedItem(e) is not { } item) continue;
             if (e.Args.GetBool("isAnonymous")) return;
+            // Bonuses come from the streaming platforms' own events. StreamElements, Streamlabs and the like pass the
+            // same follows and subs along again, under their own name: paying those gave the viewer the bonus twice,
+            // into a second "streamelements" balance (seen on 2026-11-14).
+            if (AccountLinks.PlatformOf(item.Platform) is null) return;
             var userId = e.Args.GetString("userId");
             var name = item.User.Length > 0 ? item.User : e.Args.GetString("user");
             if (item.Kind == FeedKind.Subscription && userId.Length > 0

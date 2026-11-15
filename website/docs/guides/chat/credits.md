@@ -19,7 +19,9 @@ helped, and your actions can use the list.
 
 ![The Collecting card with Start fresh, Reset after and Reset credits](../../assets/screens/card-collecting.png)
 
-- **Start fresh when a stream goes live** (ticked at first) clears the list each stream.
+- **Start fresh when a stream goes live** (ticked at first) clears the list each stream. Only a new stream counts: a
+  platform that drops and comes back, or one you add while already live on another, keeps the list. A stream is new
+  when no platform was live for the last 10 minutes.
 - **Reset after** … idle hours (12 at first) empties the list after that many hours with no new
   events. 0 means never.
 - **Credit everyone who chatted** (ticked at first): untick it to leave out people who only wrote in chat.

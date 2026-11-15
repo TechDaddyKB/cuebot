@@ -64,10 +64,32 @@ public sealed class ActivityTrackerTests
         Assert.Equal("abc", online.WentOnline?.Id);
         Assert.Null(_tracker.Update(Channel(live: Stream("abc"))).WentOnline);
 
-        var offline = _tracker.Update(Channel());
+        // Gone from the API: only an end once it stays gone for the grace time.
+        Assert.Null(_tracker.Update(Channel(now: T0)).WentOffline);
+        var offline = _tracker.Update(Channel(now: T0 + ActivityTracker.OfflineGrace));
         Assert.Equal("abc", offline.WentOffline?.Id);
         Assert.Null(offline.WentOnline);
-        Assert.Null(_tracker.Update(Channel()).WentOffline);
+        Assert.Null(_tracker.Update(Channel(now: T0.AddHours(1))).WentOffline);
+    }
+
+    [Fact]
+    public void A_stream_missing_from_the_api_for_a_minute_is_not_an_end_and_a_new_start()
+    {
+        // 2026-11-14: Rumble dropped the live stream for about a minute; Cuebot reported "Stream ended", then
+        // "Stream went live", and everything that resets on a new stream did.
+        _tracker.Seed(Channel(now: T0, live: Stream("abc")));
+
+        var gone = _tracker.Update(Channel(now: T0.AddMinutes(1)));
+        Assert.Null(gone.WentOffline);
+        Assert.Equal("abc", _tracker.LiveStream?.Id);
+
+        var back = _tracker.Update(Channel(now: T0.AddMinutes(2), live: Stream("abc")));
+        Assert.Null(back.WentOffline);
+        Assert.Null(back.WentOnline);
+
+        // The grace starts over after the stream came back.
+        Assert.Null(_tracker.Update(Channel(now: T0.AddMinutes(4))).WentOffline);
+        Assert.Equal("abc", _tracker.Update(Channel(now: T0.AddMinutes(4) + ActivityTracker.OfflineGrace)).WentOffline?.Id);
     }
 
     [Fact]

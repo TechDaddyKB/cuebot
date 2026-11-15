@@ -32,6 +32,9 @@ Under **Earning** (these are the starting values; change any of them):
 | **Subscription bonus** | 100 | Extra points for subscribing, resubscribing or becoming a member. |
 | **Per gifted sub** | 50 | For each sub or membership someone gifts. |
 | **Raid bonus** | 0 | For raiding you (a Kick host counts as a raid). |
+
+Bonuses come from Twitch, Kick, YouTube and Rumble themselves. StreamElements, Streamlabs and other donation services
+pass the same follows and subs along again; Cuebot does not pay for those a second time.
 | **Maximum balance (0 = none)** | 0 | The most points one viewer can have. 0 means no limit. |
 
 ![The Earning card with the points settings](../../assets/screens/card-earning.png)

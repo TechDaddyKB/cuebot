@@ -44,10 +44,27 @@ internal sealed class ActivityTracker
         Diff(snapshot);
     }
 
+    /// <summary>
+    /// How long the live stream may be missing from the API before it counts as ended. Rumble's API sometimes drops
+    /// a stream that is still live for a minute or so (2026-11-14: "ended" at 21:02:35, "live" again at 21:03:47);
+    /// the same stream coming back within this time is a blip, not an end and a new start.
+    /// </summary>
+    public static readonly TimeSpan OfflineGrace = TimeSpan.FromMinutes(3);
+
+    private DateTimeOffset? _missingSince;
+
     public PollChanges Update(LiveStreamSnapshot snapshot)
     {
         var previous = _live;
-        _live = snapshot.LiveStream;
+        var current = snapshot.LiveStream;
+        if (current is null && previous is not null)
+        {
+            _missingSince ??= snapshot.ServerTime;
+            // Still within the grace time: keep treating the stream as live (its chat simply has nothing new).
+            if (snapshot.ServerTime - _missingSince.Value < OfflineGrace) current = previous;
+        }
+        if (snapshot.LiveStream is not null) _missingSince = null;
+        _live = current;
         var restarted = _live is not null && _live.Id != previous?.Id;
         if (restarted) _chatSince = _live!.CreatedOn > _seededAt ? _live.CreatedOn : _seededAt;
 

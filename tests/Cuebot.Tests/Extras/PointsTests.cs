@@ -148,13 +148,18 @@ public sealed class PointsTests : IDisposable
         _bus.Publish(new BotEvent("fake.follow", new Dictionary<string, object?> { ["user"] = "Fran", ["userId"] = "77" }));
         _bus.Publish(new BotEvent("fake.gift", new Dictionary<string, object?> { ["user"] = "Gus", ["userId"] = "88", ["total"] = 3 }));
         _bus.Publish(new BotEvent("fake.gift", new Dictionary<string, object?> { ["user"] = "", ["isAnonymous"] = true, ["total"] = 5 }));
-        Assert.Equal(10, _points.Get("fake", "77"));
-        Assert.Equal(150, _points.Get("fake", "88"));
-        Assert.Equal("Fran", _vars.Snapshot("fake").Single(v => v.UserId == "77").UserName);
+        Assert.Equal(10, _points.Get("twitch", "77"));
+        Assert.Equal(150, _points.Get("twitch", "88"));
+        Assert.Equal("Fran", _vars.Snapshot("twitch").Single(v => v.UserId == "77").UserName);
+
+        // A donation service passing the same follow along again pays nothing (2026-11-14: a second
+        // "streamelements" balance for every follower).
+        _bus.Publish(new BotEvent("fake.relayed", new Dictionary<string, object?> { ["user"] = "Fran", ["userId"] = "77" }));
+        Assert.Empty(_vars.Snapshot("streamelements"));
 
         _points.UpdateSettings(s => s.Enabled = false);
         _bus.Publish(new BotEvent("fake.follow", new Dictionary<string, object?> { ["user"] = "Fran", ["userId"] = "77" }));
-        Assert.Equal(10, _points.Get("fake", "77"));
+        Assert.Equal(10, _points.Get("twitch", "77"));
     }
 
     [Fact]
@@ -307,10 +312,10 @@ public sealed class PointsTests : IDisposable
         _log.Dispose();
     }
 
-    /// <summary>A module adapter for "fake.*" events, like the Twitch/Rumble ones.</summary>
+    /// <summary>A module adapter for "fake.*" events, like the Twitch/Rumble ones ("fake.relayed": a donation service's copy).</summary>
     private sealed class FakeAdapter : IChatEventAdapter
     {
-        public string Platform => "fake";
+        public string Platform => "twitch";
         public ChatMessage? ToChatMessage(BotEvent e) => null;
 
         public FeedItem? ToFeedItem(BotEvent e)
@@ -319,6 +324,7 @@ public sealed class PointsTests : IDisposable
             return e.Type switch
             {
                 "fake.follow" => new FeedItem(Platform, FeedKind.Follow, user, $"{user} followed", e.Time),
+                "fake.relayed" => new FeedItem("streamelements", FeedKind.Follow, user, $"{user} followed", e.Time),
                 "fake.gift" => new FeedItem(Platform, FeedKind.GiftSubscription, user, $"{user} gifted {e.Args.GetString("total")} subs", e.Time),
                 _ => null,
             };

@@ -21,6 +21,12 @@ public sealed class BackupServiceTests : IDisposable
         File.WriteAllText(Path.Combine(_root, "logs", "cuebot-20261001.log"), "log line");
         Directory.CreateDirectory(Path.Combine(_root, "python", "bin"));
         File.WriteAllText(Path.Combine(_root, "python", "bin", "python3"), "binary");
+        // Downloads Cuebot fetches again when needed.
+        foreach (var download in (string[])["piper/voices/en_US-ryan-high.onnx", "models/whisper/base.bin", "cache/emotes/1.png"])
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(_root, download))!);
+            File.WriteAllText(Path.Combine(_root, download), "big");
+        }
         File.WriteAllText(Path.Combine(_root, "actions.json.tmp"), "partial");
     }
 
@@ -33,7 +39,7 @@ public sealed class BackupServiceTests : IDisposable
     }
 
     [Fact]
-    public void Backup_contains_data_but_not_logs_python_backups_or_temp_files()
+    public void Backup_contains_data_but_not_logs_downloads_backups_or_temp_files()
     {
         var service = Service();
         service.Create("startup");

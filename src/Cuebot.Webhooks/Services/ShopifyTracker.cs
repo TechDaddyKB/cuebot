@@ -135,6 +135,7 @@ public sealed class ShopifyTracker : ISessionDataSource, IPeriodicService, IDisp
     private readonly ShopifyData _memory = new();
     private readonly AppLog _log;
     private readonly TimeProvider _time;
+    private readonly StreamStartDetector _streams;
     private readonly object _gate = new();
     private readonly DateTimeOffset _started;
     private int _busy;
@@ -150,6 +151,7 @@ public sealed class ShopifyTracker : ISessionDataSource, IPeriodicService, IDisp
         _log = log;
         _time = time ?? TimeProvider.System;
         _started = _time.GetUtcNow();
+        _streams = new StreamStartDetector(_time);
         if (path is not null) _file = new JsonFile<ShopifyData>(path, log);
         lock (_gate)
         {
@@ -420,8 +422,10 @@ public sealed class ShopifyTracker : ISessionDataSource, IPeriodicService, IDisp
     /// <summary>Bus events: a stream going live starts the counter again (when that option is on).</summary>
     internal void OnEvent(BotEvent e)
     {
-        if (e.Type != ChatHub.ActivityEvent || !Options.ResetSalesOnStreamStart) return;
-        if (!string.Equals(e.Args.GetString("kind"), nameof(FeedKind.StreamOnline), StringComparison.OrdinalIgnoreCase)) return;
+        if (e.Type != ChatHub.ActivityEvent) return;
+        // Only a real stream start counts: one platform dropping and coming back mid-stream does not (the detector
+        // sees every platform's live and offline events, so it is fed even while the option is off).
+        if (!_streams.IsNewStream(e) || !Options.ResetSalesOnStreamStart) return;
         // Several platforms going live together reset once.
         lock (_gate)
         {

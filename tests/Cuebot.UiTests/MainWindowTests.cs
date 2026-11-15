@@ -52,6 +52,37 @@ public sealed class MainWindowTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public async Task A_mods_change_waiting_for_approval_shows_above_every_page_and_in_the_sidebar()
+    {
+        // 2026-11-14: a mod's change waited for approval and nothing in Cuebot made that obvious.
+        var (window, vm) = Open();
+        var directory = _host.Get<Cuebot.Portal.Members.PortalDirectory>();
+        using var key = System.Security.Cryptography.ECDsa.Create(System.Security.Cryptography.ECCurve.NamedCurves.nistP256);
+        var invite = directory.CreateInvite(Cuebot.Portal.Members.DefaultRoles.StandardModId);
+        var member = directory.RedeemInvite(invite.Secret,
+            new Cuebot.Portal.Members.ProviderIdentity(Cuebot.Portal.Members.IdentityProvider.Twitch, "42", "jasmin", "jasmin"),
+            Cuebot.Portal.Crypto.PortalKeys.RawPublicKey(key.ExportParameters(false)), "phone").Member;
+        var id = Guid.NewGuid();
+        await _host.Get<Cuebot.Portal.Changes.PortalChanges>().SubmitAsync(member, Cuebot.Portal.Changes.CommandArea.AreaName, id,
+            Cuebot.Portal.Changes.PortalChanges.ToNode(new Cuebot.Core.Commands.CommandDefinition { Id = id, Name = "Discord", Commands = ["!discord"] }));
+        Pump();
+
+        var banner = window.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "ApprovalBanner");
+        Assert.True(banner.IsVisible);
+        Assert.Equal("jasmin wants to add the command 'Discord'. It is waiting for your approval.", vm.ApprovalNotice);
+        var portal = vm.Pages.OfType<ModPortalViewModel>().Single();
+        Assert.Equal("1", portal.Badge);
+        Assert.Contains(vm.NavGroups, g => g.HasBadge);
+        Save(window, "approval-banner");
+
+        vm.ReviewApprovalsCommand.Execute(null);
+        Pump();
+        Assert.Same(portal, vm.SelectedPage);
+        Assert.False(banner.IsVisible);   // the list is on this page
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void Every_page_renders_without_binding_errors()
     {
         TestApp.BindingErrors.Clear();

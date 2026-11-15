@@ -94,10 +94,40 @@ public sealed class CreditsTests : IDisposable
             Assert.NotEmpty(credits.Snapshot().Sections);
 
             credits.UpdateSettings(s => s.ResetOnStreamOnline = true);
+            // Twitch is still live: going live again is not a new stream.
+            _bus.Publish(Activity(FeedKind.StreamOnline, "Streamer", "Stream went live"));
+            Assert.NotEmpty(credits.Snapshot().Sections);
+
+            _bus.Publish(Activity(FeedKind.StreamOffline, "Streamer", "Stream ended"));
+            _clock.Advance(StreamStartDetector.DefaultGrace.TotalSeconds);
             _bus.Publish(Activity(FeedKind.StreamOnline, "Streamer", "Stream went live"));
             Assert.Empty(credits.Snapshot().Sections);
             Assert.Null(credits.Snapshot().StartedAt);
         }
+    }
+
+    [Fact]
+    public void One_platform_dropping_and_coming_back_mid_stream_keeps_the_credits()
+    {
+        // 2026-11-14: Rumble reported "Stream ended" and "Stream went live" a minute apart while YouTube was still live,
+        // and the night's credits were wiped just before they were to roll.
+        using var credits = Collector();
+        _clock.Advance(3600);
+        _bus.Publish(Activity(FeedKind.StreamOnline, "Streamer", "Stream went live", platform: "youtube"));
+        _bus.Publish(Activity(FeedKind.StreamOnline, "Streamer", "Stream went live", platform: "rumble"));
+        _bus.Publish(Activity(FeedKind.Follow, "Alice", "Alice followed"));
+
+        _bus.Publish(Activity(FeedKind.StreamOffline, "Streamer", "Stream ended", platform: "rumble"));
+        _clock.Advance(60);
+        _bus.Publish(Activity(FeedKind.StreamOnline, "Streamer", "Stream went live", platform: "rumble"));
+        Assert.Equal(["Alice"], Names(credits.Snapshot(), CreditsSections.Follows));
+
+        // Every platform offline only briefly is still the same stream.
+        _bus.Publish(Activity(FeedKind.StreamOffline, "Streamer", "Stream ended", platform: "rumble"));
+        _bus.Publish(Activity(FeedKind.StreamOffline, "Streamer", "Stream ended", platform: "youtube"));
+        _clock.Advance(120);
+        _bus.Publish(Activity(FeedKind.StreamOnline, "Streamer", "Stream went live", platform: "youtube"));
+        Assert.Equal(["Alice"], Names(credits.Snapshot(), CreditsSections.Follows));
     }
 
     [Fact]

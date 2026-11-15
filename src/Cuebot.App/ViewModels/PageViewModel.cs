@@ -8,6 +8,20 @@ public abstract class PageViewModel(string title) : ObservableObject
 {
     public string Title { get; } = title;
 
+    private string _badge = "";
+
+    /// <summary>A short count shown next to the page in the sidebar (e.g. changes waiting for approval); "" for none.</summary>
+    public string Badge
+    {
+        get => _badge;
+        set
+        {
+            if (SetProperty(ref _badge, value ?? "")) OnPropertyChanged(nameof(HasBadge));
+        }
+    }
+
+    public bool HasBadge => _badge.Length > 0;
+
     /// <summary>Sub-pages the section list shows under this page while it is open (the page shows one at a time).</summary>
     public virtual IReadOnlyList<string> SubPages => [];
 

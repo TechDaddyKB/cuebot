@@ -236,8 +236,13 @@ A role can also be limited to some **groups** of actions and commands, like "Mod
 
 - **Live**: the change applies at once.
 - **Live and tell me**: it applies at once, and you get a notice.
-- **Needs approval**: it waits under **Waiting for your approval** until you approve or reject it. A change nobody
-  answers expires after 7 days.
+- **Needs approval**: it waits under **Waiting for your approval**, at the top of the Mod portal page, until you approve
+  or reject it. A change nobody answers expires after 7 days. If the mod changes the same thing again before you answer,
+  the newer change replaces the waiting one.
+
+While something waits, you can't miss it: a strip above every page says what it is, with a **Review** button, the Mod
+portal page shows a count in the page list, and Cuebot shows a notification. With **Live and tell me** you get the
+notification too.
 
 Every role has one of these. You can set a different one for a single mod under **Their changes**.
 

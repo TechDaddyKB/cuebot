@@ -22,6 +22,7 @@ public sealed class CreditsCollector : ICreditsSource, IPeriodicService, IDispos
     private readonly AppLog _log;
     private readonly IDisposable _subscription;
     private readonly object _gate = new();
+    private readonly StreamStartDetector _streams;
 
     public CreditsCollector(AppPaths? paths, EventBus bus, AppLog log, TimeProvider? time = null)
     {
@@ -36,6 +37,8 @@ public sealed class CreditsCollector : ICreditsSource, IPeriodicService, IDispos
         {
             _data = new CreditsFile();
         }
+        // Credits updated a moment ago mean a stream is running (Cuebot restarted mid-stream).
+        _streams = new StreamStartDetector(_time, lastLive: _data.Current.UpdatedAt);
         _subscription = bus.Subscribe(Handle);
     }
 
@@ -114,11 +117,13 @@ public sealed class CreditsCollector : ICreditsSource, IPeriodicService, IDispos
         var user = args.GetString("user").Trim();
         var title = args.GetString("title");
         var amountText = args.GetString("amount").Trim();
+        // Every platform's live/offline goes through the detector, so only a real stream start resets the credits.
+        var newStream = _streams.IsNewStream(kind.ToString(), platform);
         switch (kind)
         {
             case FeedKind.StreamOnline:
                 bool reset;
-                lock (_gate) reset = _data.Settings.ResetOnStreamOnline && _data.Current.Sections.Count > 0;
+                lock (_gate) reset = newStream && _data.Settings.ResetOnStreamOnline && _data.Current.Sections.Count > 0;
                 if (reset) Reset();
                 return false;
             case FeedKind.Follow:

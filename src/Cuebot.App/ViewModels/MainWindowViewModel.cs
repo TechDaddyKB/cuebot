@@ -211,6 +211,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Status = new StatusBarViewModel(host, Dashboard);
         Status.ProblemsRequested += () => SelectedPage = Support;
         SyncGroupSelection(Dashboard);
+        WatchModApprovals(host);
 
         PageViewModel Page(string title) => Pages.First(p => p.Title == title);
         ShortcutCommands = new Dictionary<string, System.Windows.Input.ICommand>
@@ -323,6 +324,69 @@ public sealed partial class MainWindowViewModel : ObservableObject
         oldValue?.OnLeft();
         SyncGroupSelection(newValue);
         newValue.OnEntered();
+        OnPropertyChanged(nameof(ShowApprovalNotice));
+    }
+
+    // ---- Mod changes waiting for approval: a strip above every page, a sidebar badge and a notification ----
+
+    private const string ApprovalToastId = "mod-portal-approval";
+    private ModPortalViewModel? _modPortal;
+
+    /// <summary>What waits for approval, for the strip above the page ("" when nothing does).</summary>
+    public string ApprovalNotice => _modPortal?.PendingSummary ?? "";
+
+    /// <summary>The strip shows while something waits, except on the Mod portal page itself (the list is there).</summary>
+    public bool ShowApprovalNotice => ApprovalNotice.Length > 0 && !ReferenceEquals(SelectedPage, _modPortal);
+
+    [RelayCommand]
+    private void ReviewApprovals()
+    {
+        if (_modPortal is not null) SelectedPage = _modPortal;
+    }
+
+    /// <summary>
+    /// A mod's change that waits for approval used to show only in a card far down the Mod portal page, so nobody
+    /// noticed it (2026-11-14). Now it also shows above every page, as a count in the sidebar, and as a notification.
+    /// </summary>
+    private void WatchModApprovals(AppHost host)
+    {
+        _modPortal = Pages.OfType<ModPortalViewModel>().FirstOrDefault();
+        if (_modPortal is null) return;
+        _modPortal.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != nameof(ModPortalViewModel.PendingSummary)) return;
+            OnPropertyChanged(nameof(ApprovalNotice));
+            OnPropertyChanged(nameof(ShowApprovalNotice));
+        };
+        var log = host.Get<AppLog>();
+        host.Get<Cuebot.Portal.Changes.PortalChanges>().StreamerNotice += change =>
+        {
+            var pending = change.Status == Cuebot.Portal.Changes.ChangeStatus.Pending;
+            var text = pending
+                ? ModPortalViewModel.Wants(change) + " Open the Mod portal page to approve or reject it."
+                : ModPortalViewModel.Did(change) + " It is live.";
+            log.Info("Mod portal", text);
+            _ = NotifyAsync(host, new Cuebot.Core.Desktop.Notifications.DesktopNotification(
+                pending ? "A mod's change is waiting for you" : "A mod changed something", text) { Id = ApprovalToastId, DurationSeconds = 10 }, log);
+        };
+        host.Get<Cuebot.Core.Events.EventBus>().Subscribe(e =>
+        {
+            if (e.Type == Cuebot.Core.Desktop.Notifications.DesktopEvents.ToastActivated
+                && string.Equals(e.Args.GetValueOrDefault("toastId") as string, ApprovalToastId, StringComparison.Ordinal))
+                Avalonia.Threading.Dispatcher.UIThread.Post(ReviewApprovals);
+        });
+    }
+
+    private static async Task NotifyAsync(AppHost host, Cuebot.Core.Desktop.Notifications.DesktopNotification notification, AppLog log)
+    {
+        try
+        {
+            await host.Get<Cuebot.Core.Desktop.Notifications.INotifier>().ShowAsync(notification).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or System.ComponentModel.Win32Exception)
+        {
+            log.Debug("Mod portal", "Could not show the notification: " + ex.Message);
+        }
     }
 
     /// <summary>Shows a page (and its section).</summary>
@@ -382,6 +446,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             groups.Insert(at < 0 ? groups.Count : at,
                 new NavGroupViewModel(this, new NavSection(FallbackGroup, FallbackGroup, "ellipsis", []), rest));
         }
+        foreach (var group in groups) group.WatchBadges();
         return groups;
     }
 
@@ -430,6 +495,19 @@ public sealed partial class NavGroupViewModel(MainWindowViewModel owner, NavSect
     public bool IsBottom { get; } = section.Bottom;
 
     public IReadOnlyList<PageViewModel> Pages { get; } = pages;
+
+    /// <summary>True when a page in this section shows a badge (a dot on the rail icon).</summary>
+    public bool HasBadge => Pages.Any(p => p.HasBadge);
+
+    /// <summary>Call once: keeps <see cref="HasBadge"/> current.</summary>
+    internal void WatchBadges()
+    {
+        foreach (var page in Pages)
+            page.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(PageViewModel.HasBadge)) OnPropertyChanged(nameof(HasBadge));
+            };
+    }
 
     [ObservableProperty] private PageViewModel? _selected;
 

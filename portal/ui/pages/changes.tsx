@@ -7,7 +7,7 @@ interface Change {
   area: "action" | "command";
   targetName: string;
   kind: "Create" | "Update" | "Delete";
-  status: "Applied" | "Pending" | "Rejected" | "Expired" | "Undone";
+  status: "Applied" | "Pending" | "Rejected" | "Expired" | "Undone" | "Replaced";
 }
 interface Changes extends Answer { changes?: Change[] }
 
@@ -17,6 +17,7 @@ const STATUS: Record<Change["status"], string> = {
   Rejected: "Not approved",
   Expired: "Expired before approval",
   Undone: "Undone",
+  Replaced: "Replaced by a newer change",
 };
 
 const VERB: Record<Change["kind"], string> = { Create: "Added", Update: "Changed", Delete: "Deleted" };
