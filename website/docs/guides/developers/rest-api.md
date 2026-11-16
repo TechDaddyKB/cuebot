@@ -105,7 +105,7 @@ short version:
 | `/triggers`, `/subactions`, `/scriptfunctions` | What triggers, sub-actions and script functions exist, with their settings |
 | `/commands`, `/timers`, `/globals` | Chat commands, timers and global variables |
 | `/history` | Recent runs, newest first |
-| `/chat` | Read the combined chat, or send a message |
+| `/chat` | Read the combined chat, send a message (as you or your bot), see what each moderation tool does per platform, moderate as the streamer, and read the mod log |
 | `/speech`, `/alerts` | Pause, skip and mute text-to-speech and overlay alerts |
 | `/polls`, `/predictions`, `/giveaway`, `/store`, `/media` | Cuebot's chat polls, points predictions, giveaways, points store and media requests |
 | `/import/preview`, `/import/apply`, `/export` | Bring actions in (also from Streamer.bot), or pack them up to share |
@@ -148,6 +148,7 @@ data: {"type":"twitch.follow","time":"2026-11-01T18:00:00+00:00","args":{"user":
 ```
 
 - `types` picks what you want, separated by commas: `twitch.follow,twitch.cheer`, or `twitch.*` for all of Twitch.
+- For a chat window, ask for `chat.received`, `chat.moderated` and `chat.modLog`: a message in the same shape as `GET /chat`, a deletion, ban or timeout, and a new mod log row. Cuebot only sends these when `types` asks for them.
   Leave it out to get everything.
 - `action.runCompleted` arrives every time an action finishes.
 - A line `: ping` comes every 15 seconds so you know the line is still open.

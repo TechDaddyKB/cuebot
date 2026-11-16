@@ -858,59 +858,6 @@ public sealed partial class ApiOperations(ServerServices services, Func<IReadOnl
             ? Media()
             : throw ApiException.NotFound($"No waiting request '{id}'");
 
-    public JsonObject Chat(int limit = 50)
-    {
-        var chat = services.Chat ?? throw ApiException.Unavailable("Chat is not available");
-        limit = Math.Clamp(limit, 1, 500);
-        var messages = chat.RecentMessages().TakeLast(limit).ToList();
-        var feed = chat.RecentFeed().TakeLast(limit).ToList();
-        return new JsonObject
-        {
-            ["messages"] = new JsonArray([.. messages.Select(m => (JsonNode)new JsonObject
-            {
-                ["platform"] = m.Platform,
-                ["id"] = m.Id,
-                ["user"] = m.User,
-                ["userId"] = m.UserId,
-                ["text"] = m.Text,
-                ["time"] = m.Time.ToString("o"),
-                ["roles"] = m.Roles.ToString(),
-                ["color"] = m.Color,
-                ["amount"] = m.Amount,
-            })]),
-            ["feed"] = new JsonArray([.. feed.Select(f => (JsonNode)new JsonObject
-            {
-                ["platform"] = f.Platform,
-                ["kind"] = f.Kind.ToString(),
-                ["user"] = f.User,
-                ["title"] = f.Title,
-                ["detail"] = f.Detail,
-                ["amount"] = f.Amount,
-                ["time"] = f.Time.ToString("o"),
-            })]),
-            ["platforms"] = CatalogJson.Strings(chat.Platforms),
-            ["sendablePlatforms"] = CatalogJson.Strings(chat.SendablePlatforms),
-        };
-    }
-
-    public async Task<JsonObject> SendChatAsync(string? platform, string? message, CancellationToken ct = default)
-    {
-        var chat = services.Chat ?? throw ApiException.Unavailable("Chat is not available");
-        var text = message ?? "";
-        if (text.Trim().Length == 0) throw ApiException.BadRequest("message is required");
-        var target = string.IsNullOrWhiteSpace(platform) ? ChatHub.AllPlatforms : platform.Trim();
-        try
-        {
-            var sent = await chat.SendAsync(target, text, ct).ConfigureAwait(false);
-            services.Log.Info(LogSource, $"Chat message sent to {string.Join(", ", sent)}");
-            return new JsonObject { ["sent"] = true, ["platforms"] = CatalogJson.Strings(sent) };
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw ApiException.Conflict(ex.Message);
-        }
-    }
-
     // ---- Import / export -------------------------------------------------------------------------------------------
 
     private TransferService Transfer => services.Transfer ?? throw ApiException.Unavailable("Import/export is not available");

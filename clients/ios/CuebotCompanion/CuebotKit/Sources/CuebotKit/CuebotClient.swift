@@ -63,6 +63,44 @@ public actor CuebotClient {
         }
     }
 
+    // MARK: Chat: the combined chat, sending as the broadcaster or the bot, and moderating as the streamer
+
+    public func chat(limit: Int = 200) async throws(CuebotError) -> ChatSnapshot {
+        try await get(Self.apiRequest(endpoint, "/api/v1/chat", query: [URLQueryItem(name: "limit", value: String(limit))]))
+    }
+
+    /// Sends to one platform or "All"; the platforms that took it. A refusal (no platform, no bot account) is `.http(409, …)`.
+    @discardableResult
+    public func sendChat(platform: String, text: String, as sendAs: SendAs = .default) async throws(CuebotError) -> [String] {
+        let answer: JSONValue = try await post(api("/api/v1/chat/send"),
+                                               body: ["platform": .string(platform), "text": .string(text), "as": .string(sendAs.rawValue)])
+        if case .array(let platforms)? = answer["platforms"] { return platforms.compactMap(\.string) }
+        return []
+    }
+
+    public func chatCapabilities() async throws(CuebotError) -> ChatCapabilities { try await get(api("/api/v1/chat/capabilities")) }
+
+    /// Runs one tool as the streamer. A refusal or failure comes back in the outcome, not as an error.
+    public func moderate(platform: String, action: ModAction, messageId: String? = nil, userId: String = "", userName: String = "",
+                         durationSeconds: Int? = nil, reason: String? = nil) async throws(CuebotError) -> ModerationOutcome {
+        var body: [String: JSONValue] = [
+            "platform": .string(platform), "action": .string(action.rawValue), "userId": .string(userId), "userName": .string(userName),
+        ]
+        if let messageId { body["messageId"] = .string(messageId) }
+        if let durationSeconds { body["durationSeconds"] = .number(Double(durationSeconds)) }
+        if let reason, !reason.trimmingCharacters(in: .whitespaces).isEmpty { body["reason"] = .string(reason) }
+        return try await post(api("/api/v1/chat/moderate"), body: body)
+    }
+
+    /// The mod log, newest first; about one account with `target` (a user id).
+    public func modLog(target: String? = nil, platform: String? = nil) async throws(CuebotError) -> [ModLogEntry] {
+        var query: [URLQueryItem] = []
+        if let target { query.append(URLQueryItem(name: "target", value: target)) }
+        if let platform { query.append(URLQueryItem(name: "platform", value: platform)) }
+        let list: Listed<ModLogEntry> = try await get(Self.apiRequest(endpoint, "/api/v1/chat/modlog", query: query))
+        return list.items(key: "entries")
+    }
+
     // MARK: Mod portal approvals: mods' changes waiting for the streamer's OK
 
     public func portalChanges() async throws(CuebotError) -> [PendingChange] {
@@ -141,6 +179,12 @@ public actor CuebotClient {
             Self.prepareStream(&request, lastId: lastId)
             return request
         }
+    }
+
+    /// The Chat tab's events: chat.received, chat.moderated and chat.modLog (Cuebot sends them only when asked by name).
+    public nonisolated func chatEvents(backoff: Backoff = .standard,
+                                       onState: @escaping @Sendable (StreamState) -> Void = { _ in }) -> AsyncThrowingStream<ServerEvent, Error> {
+        apiEvents(types: Self.chatEvents, backoff: backoff, onState: onState)
     }
 
     /// `/deck/{id}/events`: `state` (the full view, first on connect) and `notify` events.

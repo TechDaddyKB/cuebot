@@ -28,7 +28,10 @@ internal sealed class TestBot : IAsyncDisposable
         Users = new UserRegistry(null, Bus, Log);
         Groups = new GroupStore(null, Log, Bus);
         Commands = new CommandStore(null, Log);
-        Chat = new ChatHub(Bus, Log, [], [Sender]);
+        Chat = new ChatHub(Bus, Log, [ChatAdapter], [Sender]);
+        ModLog = new Cuebot.Core.Chat.Moderation.ModLog(Path.Combine(Path.GetTempPath(), $"cuebot-modlog-{Guid.NewGuid():N}.db"));
+        Moderation = new Cuebot.Core.Chat.Moderation.ModerationService(
+            new Cuebot.Core.Chat.Moderation.ChatModerationService([Moderator], []), ModLog, Chat);
         CodeTriggers = new CodeTriggerRegistry();
 
         Api = new ScriptApi([new CoreScriptFunctions(), new VariableScriptFunctions(UserVariables), Functions, .. options.Functions]);
@@ -52,7 +55,7 @@ internal sealed class TestBot : IAsyncDisposable
             Widgets = Widgets, WidgetCode = WidgetCode, WidgetStore = WidgetStore, OverlayBridge = OverlayBridge, Elements = Elements,
             AlertQueue = AlertQueue, Polls = Polls, ChatPolls = ChatPolls, Giveaways = Giveaways, Store = Store, Media = Media,
             Quotes = Quotes, Points = Points, Groups = Groups, Packages = Packages, Gallery = Gallery, StreamElementsOverlays = StreamElements,
-            Speech = Speech, Hotkeys = Hotkeys, Decks = Decks, Subathon = Subathon, Approvals = Approvals,
+            Speech = Speech, Hotkeys = Hotkeys, Decks = Decks, Subathon = Subathon, Approvals = Approvals, Moderation = Moderation,
             Profiles = Profiles, FeatureRequests = FeatureRequests, MediaEditor = MediaEditor,
         };
         Emotes = Services.Emotes;
@@ -171,6 +174,12 @@ internal sealed class TestBot : IAsyncDisposable
     public FakeMediaEditor MediaEditor { get; } = new();
     public ServerManager Manager { get; }
     public FakeSender Sender { get; } = new();
+
+    /// <summary>Turns "test.chat" events into Twitch chat messages (see <see cref="FakeChatAdapter"/>).</summary>
+    public FakeChatAdapter ChatAdapter { get; } = new();
+    public FakeModerator Moderator { get; } = new();
+    public Cuebot.Core.Chat.Moderation.ModLog ModLog { get; }
+    public Cuebot.Core.Chat.Moderation.ModerationService Moderation { get; }
     public FakeSpeaker Speaker { get; } = new();
     public FakeFunctions Functions { get; } = new();
     public CaptureSubAction Capture { get; } = new();
@@ -250,6 +259,11 @@ internal sealed class TestBot : IAsyncDisposable
         Scripts.Dispose();
         Engine.Dispose();
         Timers.Dispose();
+        Moderation.Dispose();
+        var modLogPath = ModLog.Path;
+        ModLog.Dispose();
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        try { File.Delete(modLogPath); } catch (IOException) { }
         Chat.Dispose();
         Users.Dispose();
         Profile.Dispose();
@@ -306,6 +320,9 @@ internal sealed class FakeSender : IChatSender
 {
     public string Platform => "Twitch";
     public bool CanSend => true;
+
+    /// <summary>A bot account is signed in.</summary>
+    public bool CanSendAsBot { get; set; }
     public ConcurrentQueue<string> Sent { get; } = new();
     public ConcurrentQueue<(string Text, ChatSendOptions Options)> SentWithOptions { get; } = new();
 
@@ -525,4 +542,55 @@ internal sealed class FakeMediaEditor : Cuebot.Server.Mcp.IMediaEditor
         LastVideoOptions = (System.Text.Json.Nodes.JsonObject)options.DeepClone();
         return Task.FromResult(new System.Text.Json.Nodes.JsonObject { ["output"] = OutputFor(source, output, format, true) });
     }
+}
+
+/// <summary>A Twitch chat adapter for "test.chat" events: {id, user, userId, message, roles?}.</summary>
+internal sealed class FakeChatAdapter : IChatEventAdapter
+{
+    public const string EventType = "test.chat";
+    public string Platform => "Twitch";
+
+    public ChatMessage? ToChatMessage(BotEvent e) => e.Type != EventType ? null
+        : ChatMessage.Create("Twitch", e.Args.GetString("id"), e.Args.GetString("user"), e.Args.GetString("userId"), e.Args.GetString("message"), e.Time)
+            with { Roles = Enum.TryParse<ChatRoles>(e.Args.GetString("roles"), out var roles) ? roles : ChatRoles.None };
+
+    public FeedItem? ToFeedItem(BotEvent e) => null;
+
+    public static BotEvent Message(string id, string user, string userId, string message, string roles = "None") =>
+        new(EventType, new Dictionary<string, object?> { ["id"] = id, ["user"] = user, ["userId"] = userId, ["message"] = message, ["roles"] = roles });
+}
+
+/// <summary>A Twitch moderator that records each request; Kick-like whole-minute timeouts and a website-only pin.</summary>
+internal sealed class FakeModerator : Cuebot.Core.Chat.Moderation.IChatModerator
+{
+    public string Platform => "Twitch";
+    public Cuebot.Core.Chat.Moderation.ChatModerationActions Available => Cuebot.Core.Chat.Moderation.ChatModerationActions.DeleteMessage
+        | Cuebot.Core.Chat.Moderation.ChatModerationActions.Timeout | Cuebot.Core.Chat.Moderation.ChatModerationActions.Ban;
+    public ConcurrentQueue<Cuebot.Core.Chat.Moderation.ModerationRequest> Requests { get; } = new();
+
+    public Cuebot.Core.Chat.Moderation.ModerationCapability Capability(Cuebot.Core.Chat.Moderation.ModerationAction action) => action switch
+    {
+        Cuebot.Core.Chat.Moderation.ModerationAction.Timeout => Cuebot.Core.Chat.Moderation.ModerationCapability.Works(action) with
+        {
+            State = Cuebot.Core.Chat.Moderation.ModerationToolState.Closest, Note = "Whole minutes",
+            DurationUnit = TimeSpan.FromMinutes(1), MaxDuration = TimeSpan.FromDays(7),
+        },
+        Cuebot.Core.Chat.Moderation.ModerationAction.Delete or Cuebot.Core.Chat.Moderation.ModerationAction.Ban
+            or Cuebot.Core.Chat.Moderation.ModerationAction.Unban or Cuebot.Core.Chat.Moderation.ModerationAction.Warn =>
+            Cuebot.Core.Chat.Moderation.ModerationCapability.Works(action),
+        Cuebot.Core.Chat.Moderation.ModerationAction.Pin =>
+            Cuebot.Core.Chat.Moderation.ModerationCapability.Website(action, "https://example.test/mod", "Pin on the website"),
+        _ => Cuebot.Core.Chat.Moderation.ModerationCapability.NotAvailable(action, "Not on this platform"),
+    };
+
+    public Task<Cuebot.Core.Chat.Moderation.ModerationOutcome> ExecuteAsync(Cuebot.Core.Chat.Moderation.ModerationRequest request, CancellationToken ct = default)
+    {
+        Requests.Enqueue(request);
+        var applied = request.Duration is { } d ? Capability(request.Action).Apply(d) : (TimeSpan?)null;
+        return Task.FromResult(Cuebot.Core.Chat.Moderation.ModerationOutcome.Done(applied));
+    }
+
+    public Task DeleteMessageAsync(string messageId, CancellationToken ct = default) => Task.CompletedTask;
+    public Task TimeoutAsync(string userId, string userName, TimeSpan duration, string? reason, CancellationToken ct = default) => Task.CompletedTask;
+    public Task BanAsync(string userId, string userName, string? reason, CancellationToken ct = default) => Task.CompletedTask;
 }

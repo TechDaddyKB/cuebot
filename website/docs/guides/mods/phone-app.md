@@ -16,12 +16,13 @@ someone else's stream.
 
 </div>
 
-It has four tabs:
+It has five tabs:
 
 | Tab | What it is for |
 | --- | --- |
 | **Deck** | The buttons of your [decks](../apps/decks.md). Tap one and Cuebot runs it, just like a Stream Deck. **Choose deck** switches decks, and the arrows at the bottom switch pages. |
 | **Dashboard** | What is connected, your **Quick actions**, your [subathon timers](../services/subathon-timers.md) and [goals](../services/goals.md) with their buttons, **Top spenders** for **This stream** and more, totals, and the **Activity** list of follows, subs, tips and raids. |
+| **Chat** | Chat from every connected platform in one list. Write as yourself or as your bot, and delete, time out, ban, unban or warn. See [Chat on your phone](#chat-on-your-phone). |
 | **Mods** | Your mods' changes that wait for your OK, and, if you are a mod for someone, their [mod portal](mod-portal.md). A number on the tab (Android) shows how many changes wait. |
 | **Settings** | The Cuebots you paired, light or dark look, and **Troubleshooting**. |
 
@@ -80,6 +81,44 @@ You can pair more than one Cuebot, like a gaming PC and a streaming PC. Tap one 
 - **TEST** badges in the Activity list mark test events: a service's test button (like **Send test event**) or the
   sample events the assistant sends. They don't count towards top spenders. The assistant's sample events *do* move
   subathon timers and goals, so you can try those out; a service's test button doesn't.
+
+## Chat on your phone
+
+The **Chat** tab shows chat from every platform Cuebot is connected to, newest at the bottom, as plain text. Each
+line starts with the platform (**TW** for Twitch, **YO** for YouTube, **KI** for Kick, **RU** for Rumble). A deleted
+message stays in the list, crossed out and marked *(deleted)*. Bans and timeouts show up as grey lines, whoever made
+them: you, a mod in the [mod portal](mod-portal.md), or someone on the platform's own website.
+
+With more than one platform connected, the buttons at the top show **All** or only one platform.
+
+**Writing in chat:**
+
+1. Pick where it goes with the button on the left: **All** or one platform.
+2. Under **Send as**, pick **Broadcaster** (you) or **Bot** (your bot account). **Bot** only shows where a bot account
+   is signed in in Cuebot.
+3. Type the message and tap the send button.
+
+**Moderating:** tap a message (or press and hold it). A list of tools opens for that message and the person who wrote it:
+
+| Tool | What it does |
+| --- | --- |
+| **Delete message** | Removes this message from chat. |
+| **Timeout 1 min** … **1 week** | Stops the person chatting for that long. When a platform can't do that exact length, the line under it says what it does instead (Kick, for example, rounds up to whole minutes). |
+| **Ban** | Stops the person chatting for good. The app asks first. |
+| **Unban** | Lifts a ban or a timeout. |
+| **Warn** | Sends a warning. You type it first. |
+
+A tool a platform can't do is greyed out, with the reason under it. Where a platform only does something on its own
+website, **On the website** opens that page in your browser. After each action, a line above the message box says
+what happened.
+
+Everything you do here is done as you, the streamer, and goes in Cuebot's mod log, like on the Chat page in Cuebot.
+
+!!! note "Mods use the mod portal"
+    The Chat tab is for your own paired phone. Your mods moderate from the [mod portal](mod-portal.md) (in the
+    browser, or in this app under **Mods**), with only what their role allows.
+
+The Chat tab needs an up-to-date Cuebot. An older one shows **Update Cuebot** here; the other tabs still work.
 
 ## Switching persona
 

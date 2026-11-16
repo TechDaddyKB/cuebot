@@ -4,6 +4,8 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Channels;
 using Cuebot.Core.Actions;
+using Cuebot.Core.Chat;
+using Cuebot.Core.Chat.Moderation;
 using Cuebot.Core.Events;
 using Cuebot.Server.Hosting;
 using Cuebot.Server.Mcp;
@@ -316,7 +318,22 @@ public sealed class ApiServer : IAsyncDisposable
             case "alerts" when s.Length == 1 && method == "GET": result = ops.Alerts(); break;
             case "alerts" when s.Length == 2 && method == "POST": result = ops.AlertControl(s[1]); break;
 
-            case "chat" when s.Length == 1 && method == "GET": result = ops.Chat(QInt("limit", 50)); break;
+            case "chat" when s.Length == 1 && method == "GET": result = ops.Chat(QInt("limit", 50), Q("platform")); break;
+            case "chat" when s.Length == 2 && method == "GET" && s[1].Equals("capabilities", StringComparison.OrdinalIgnoreCase):
+                result = ops.ChatCapabilities(Q("platform"));
+                break;
+            case "chat" when s.Length == 2 && method == "GET" && s[1].Equals("modlog", StringComparison.OrdinalIgnoreCase):
+                result = ops.ChatModLog(Q("target"), Q("platform"), QInt("limit", 100));
+                break;
+            case "chat" when s.Length == 2 && method == "POST" && s[1].Equals("send", StringComparison.OrdinalIgnoreCase):
+            {
+                var body = await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? [];
+                result = await ops.SendChatAsync(Text(body["platform"]), Text(body["text"] ?? body["message"]), ct, Text(body["as"])).ConfigureAwait(false);
+                break;
+            }
+            case "chat" when s.Length == 2 && method == "POST" && s[1].Equals("moderate", StringComparison.OrdinalIgnoreCase):
+                result = await ops.ModerateChatAsync(await BodyAsync(context).ConfigureAwait(false) as JsonObject ?? [], ct).ConfigureAwait(false);
+                break;
             case "dashboard" when s.Length == 1 && method == "GET": result = ops.Dashboard(); break;
             case "decks" when s.Length == 1 && method == "GET": result = ops.Decks(); break;
             case "subathon" when s.Length == 3 && method == "POST":
@@ -464,9 +481,23 @@ public sealed class ApiServer : IAsyncDisposable
 
         void OnDashboard(long revision) => Push("dashboard.changed", DateTimeOffset.Now, new JsonObject { ["revision"] = revision });
 
+        // The companion Chat tab's events, in the shape GET /chat answers with. Only sent when the filter names them, so
+        // streams without one (which already get every bus event, chat.message included) do not get chat twice.
+        var chat = filters.Any(f => ChatEvents.Any(t => Matches(f, t))) ? _services.Chat : null;
+        var modLog = filters.Any(f => Matches(f, ChatModLogEvent)) ? _services.Moderation?.Log : null;
+        void OnChatMessage(ChatMessage m) => Push(ChatReceivedEvent, m.Time, ApiOperations.ChatMessageJson(m, deleted: false));
+        void OnChatModeration(ChatModerationNotice n) => Push(ChatModeratedEvent, n.Time, ApiOperations.ModerationNoticeJson(n));
+        void OnModLog(ModLogEntry entry) => Push(ChatModLogEvent, DateTimeOffset.Now, ApiOperations.ModLogJson(entry));
+
         var subscription = _services.Bus.Subscribe(OnEvent);
         _services.Engine.RunCompleted += OnRun;
         Operations.DashboardChanges.Changed += OnDashboard;
+        if (chat is not null)
+        {
+            chat.MessageReceived += OnChatMessage;
+            chat.ModerationSeen += OnChatModeration;
+        }
+        if (modLog is not null) modLog.Changed += OnModLog;
         try
         {
             context.Response.StatusCode = 200;
@@ -500,9 +531,26 @@ public sealed class ApiServer : IAsyncDisposable
             subscription.Dispose();
             _services.Engine.RunCompleted -= OnRun;
             Operations.DashboardChanges.Changed -= OnDashboard;
+            if (chat is not null)
+            {
+                chat.MessageReceived -= OnChatMessage;
+                chat.ModerationSeen -= OnChatModeration;
+            }
+            if (modLog is not null) modLog.Changed -= OnModLog;
             Interlocked.Decrement(ref _eventStreams);
         }
     }
+
+    /// <summary>A chat message, as in GET /chat (sent only when the <c>types</c> filter asks for it).</summary>
+    public const string ChatReceivedEvent = "chat.received";
+
+    /// <summary>A deletion, ban or timeout a platform reported, whoever made it.</summary>
+    public const string ChatModeratedEvent = "chat.moderated";
+
+    /// <summary>A new or changed mod log row.</summary>
+    public const string ChatModLogEvent = "chat.modLog";
+
+    private static readonly string[] ChatEvents = [ChatReceivedEvent, ChatModeratedEvent];
 
     /// <summary>Exact type (case-insensitive) or a prefix ending in '*'.</summary>
     internal static bool Matches(string filter, string type) =>

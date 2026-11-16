@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Groups
@@ -72,6 +73,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import digital.techdaddy.cuebot.companion.AppContainer
 import digital.techdaddy.cuebot.companion.data.ConnectionStatus
+import digital.techdaddy.cuebot.companion.ui.chat.ChatScreen
+import digital.techdaddy.cuebot.companion.ui.chat.ChatViewModel
 import digital.techdaddy.cuebot.companion.ui.dashboard.DashboardScreen
 import digital.techdaddy.cuebot.companion.ui.dashboard.DashboardViewModel
 import digital.techdaddy.cuebot.companion.ui.deck.DeckScreen
@@ -89,6 +92,7 @@ import digital.techdaddy.cuebot.core.PairingLink
 enum class Tab(val label: String, val icon: ImageVector) {
     Deck("Deck", Icons.Filled.GridView),
     Dashboard("Dashboard", Icons.Filled.Speed),
+    Chat("Chat", Icons.AutoMirrored.Filled.Chat),
     Mods("Mods", Icons.Filled.Groups),
     Settings("Settings", Icons.Filled.Settings),
 }
@@ -102,6 +106,7 @@ fun RootScreen(container: AppContainer, startTab: Tab, pendingLink: String?, onL
     var streamMode by rememberSaveable { mutableStateOf(false) }
     val deck: DeckViewModel = viewModel(factory = viewModelFactory { initializer { DeckViewModel(container.connection, container.store, container.foreground) } })
     val dashboard: DashboardViewModel = viewModel(factory = viewModelFactory { initializer { DashboardViewModel(container.connection, container.store, container.foreground) } })
+    val chat: ChatViewModel = viewModel(factory = viewModelFactory { initializer { ChatViewModel(container.connection, container.foreground) } })
     val settings: SettingsViewModel = viewModel(factory = viewModelFactory { initializer { SettingsViewModel(container.paired, container.connection, container.store) } })
     val mods: ModViewModel = viewModel(factory = viewModelFactory { initializer { ModViewModel(container.memberships, foreground = container.foreground, alert = container.alert) } })
     // The approval queue is checked while the app is on screen, so the Mods tab can show how many changes wait.
@@ -146,6 +151,7 @@ fun RootScreen(container: AppContainer, startTab: Tab, pendingLink: String?, onL
             when (tab) {
                 Tab.Deck -> DeckScreen(deck, container, streamMode, onStreamMode = { streamMode = it }, goToSettings = { tab = Tab.Settings })
                 Tab.Dashboard -> DashboardScreen(dashboard, container, goToSettings = { tab = Tab.Settings })
+                Tab.Chat -> ChatScreen(chat, container, goToSettings = { tab = Tab.Settings })
                 Tab.Mods -> ModScreen(mods, approvals)
                 Tab.Settings -> SettingsScreen(settings)
             }

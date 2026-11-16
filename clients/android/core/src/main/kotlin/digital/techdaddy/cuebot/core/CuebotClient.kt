@@ -96,6 +96,37 @@ class CuebotClient(val endpoint: CuebotEndpoint, client: OkHttpClient = defaultH
         return ChangeDecision(ChangeDecision.Result.of(answer.str("result")), answer.list("changes", PendingChange::from))
     }
 
+    // Chat: the combined chat, sending as the broadcaster or the bot, and moderating as the streamer
+
+    suspend fun chat(limit: Int = 200): ChatSnapshot = ChatSnapshot.from(getJson(api("/api/v1/chat", "limit" to limit.toString())))
+
+    /** Sends to one platform or "All"; the platforms that took it. 409 (no platform, no bot account) is a [CuebotException.Http]. */
+    suspend fun sendChat(platform: String, text: String, sendAs: SendAs = SendAs.Default): List<String> {
+        val answer = parseJson(send(api("/api/v1/chat/send"), buildJsonObject { put("platform", platform); put("text", text); put("as", sendAs.wire) })).obj()
+        return (answer?.get("platforms") as? JsonArray)?.mapNotNull { (it as? kotlinx.serialization.json.JsonPrimitive)?.content } ?: emptyList()
+    }
+
+    suspend fun chatCapabilities(): ChatCapabilities = ChatCapabilities.from(getJson(api("/api/v1/chat/capabilities")))
+
+    /** Runs one tool as the streamer. A refusal or failure comes back in the outcome, not as an exception. */
+    suspend fun moderate(
+        platform: String, action: ModAction, messageId: String? = null, userId: String = "", userName: String = "",
+        durationSeconds: Int? = null, reason: String? = null,
+    ): ModerationOutcome = ModerationOutcome.from(parseJson(send(api("/api/v1/chat/moderate"), buildJsonObject {
+        put("platform", platform)
+        put("action", action.wire)
+        if (messageId != null) put("messageId", messageId)
+        put("userId", userId)
+        put("userName", userName)
+        if (durationSeconds != null) put("durationSeconds", durationSeconds)
+        if (!reason.isNullOrBlank()) put("reason", reason)
+    })))
+
+    /** The mod log, newest first; about one account with [target] (a user id). */
+    suspend fun modLog(target: String? = null, platform: String? = null): List<ModLogEntry> =
+        listed(getJson(api("/api/v1/chat/modlog", *listOfNotNull(target?.let { "target" to it }, platform?.let { "platform" to it }).toTypedArray())), "entries")
+            .map(ModLogEntry::from)
+
     // Streamer profiles (personas)
 
     /** The profiles, or null when this Cuebot has none (503) or is too old to know them (404). */
@@ -139,14 +170,19 @@ class CuebotClient(val endpoint: CuebotEndpoint, client: OkHttpClient = defaultH
             authorized(Request.Builder().url(url)).streamHeaders(lastId).build()
         }
 
+    /** The Chat tab's events: chat.received, chat.moderated and chat.modLog (sent only when asked for by name). */
+    fun chatEvents(backoff: Backoff = Backoff.Standard, onState: (StreamState) -> Unit = {}): Flow<ServerEvent> =
+        apiEvents(CHAT_EVENTS, backoff, onState)
+
     /** `/deck/{id}/events`: `state` (the full view, first on connect) and `notify` events. */
     fun deckEvents(deck: String, backoff: Backoff = Backoff.Standard, onState: (StreamState) -> Unit = {}): Flow<ServerEvent> =
         EventStream.events(streamHttp, backoff, onState) { lastId -> deckBuilder(deck, "events").streamHeaders(lastId).build() }
 
     // Requests
 
-    private fun api(path: String): Request.Builder =
-        authorized(Request.Builder().url(endpoint.apiBase.toHttpUrl().newBuilder().encodedPath(path).build()))
+    private fun api(path: String, vararg query: Pair<String, String>): Request.Builder =
+        authorized(Request.Builder().url(endpoint.apiBase.toHttpUrl().newBuilder().encodedPath(path)
+            .apply { query.forEach { (k, v) -> addQueryParameter(k, v) } }.build()))
 
     private fun authorized(b: Request.Builder) = b.header("Authorization", "Bearer ${endpoint.token}").header("Accept", "application/json")
 
@@ -189,6 +225,11 @@ class CuebotClient(val endpoint: CuebotEndpoint, client: OkHttpClient = defaultH
 
     companion object {
         private val JSON = "application/json".toMediaType()
+
+        const val CHAT_RECEIVED = "chat.received"
+        const val CHAT_MODERATED = "chat.moderated"
+        const val CHAT_MOD_LOG = "chat.modLog"
+        val CHAT_EVENTS = listOf(CHAT_RECEIVED, CHAT_MODERATED, CHAT_MOD_LOG)
 
         val defaultHttp: OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS).writeTimeout(10, TimeUnit.SECONDS)

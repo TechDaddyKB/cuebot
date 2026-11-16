@@ -7,6 +7,7 @@ struct CuebotCompanionApp: App {
     @State private var connection: ConnectionStore
     @State private var deck = DeckStore()
     @State private var dashboard = DashboardStore()
+    @State private var chat = ChatStore()
     @State private var profiles = ProfileStore()
     @State private var quickActions = QuickActionsStore()
     @State private var mods = ModStore(memberships: ModMemberships())
@@ -30,6 +31,7 @@ struct CuebotCompanionApp: App {
                 .environment(connection)
                 .environment(deck)
                 .environment(dashboard)
+                .environment(chat)
                 .environment(profiles)
                 .environment(quickActions)
                 .environment(mods)
@@ -55,13 +57,14 @@ struct CuebotCompanionApp: App {
 }
 
 /// Launch arguments the UI tests use: `-resetPairing` starts with nothing paired; `-pair <link>` pairs first;
-/// `-tab deck|dashboard|settings` opens that tab.
+/// `-tab deck|dashboard|chat|mods|settings` opens that tab.
 enum UITestSupport {
     static var initialTab: RootView.Tab? {
         let args = ProcessInfo.processInfo.arguments
         guard let index = args.firstIndex(of: "-tab"), index + 1 < args.count else { return nil }
         return switch args[index + 1] {
         case "dashboard": .dashboard
+        case "chat": .chat
         case "settings": .settings
         case "mods": .mods
         case "deck": .deck

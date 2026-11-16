@@ -247,11 +247,45 @@ public static class OpenApiDocument
             },
             ["/chat"] = new JsonObject
             {
-                ["get"] = Op("getChat", "Chat", "Recent combined chat messages and activity feed", [Query("limit", "Maximum items (default 50)", Int())],
-                    responses: Ok(Obj(("messages", Arr(new JsonObject { ["type"] = "object" })), ("feed", Arr(new JsonObject { ["type"] = "object" })),
-                        ("platforms", Arr(Str())), ("sendablePlatforms", Arr(Str()))))),
+                ["get"] = Op("getChat", "Chat", "Recent combined chat messages (with deleted flags), activity feed and moderation seen",
+                    [Query("limit", "Maximum items (default 50)", Int()), Query("platform", "Only this platform")],
+                    responses: Ok(Obj(("messages", Arr(ChatMessage())), ("feed", Arr(new JsonObject { ["type"] = "object" })),
+                        ("moderation", Arr(new JsonObject { ["type"] = "object" })),
+                        ("platforms", Arr(Str())), ("sendablePlatforms", Arr(Str())), ("botPlatforms", Arr(Str()))))),
                 ["post"] = Op("sendChat", "Chat", "Send a chat message (platform: Twitch, YouTube, Kick... or All)", body: Obj(("message", Str()), ("platform", Str())),
                     responses: Responses(("200", "Sent", Obj(("sent", Bool()), ("platforms", Arr(Str())))), Bad(), Err("409", "No platform could send"))),
+            },
+            ["/chat/send"] = new JsonObject
+            {
+                ["post"] = Op("sendChatAs", "Chat", "Send a chat message as the broadcaster or the bot account",
+                    body: Obj(("text", Str()), ("platform", Str()), ("as", Enum("default", "broadcaster", "bot"))),
+                    responses: Responses(("200", "Sent", Obj(("sent", Bool()), ("platforms", Arr(Str())), ("as", Str()))), Bad(),
+                        Err("409", "No platform could send, or no bot account is signed in there"))),
+            },
+            ["/chat/capabilities"] = new JsonObject
+            {
+                ["get"] = Op("getChatCapabilities", "Chat", "What each moderation tool does on each chat platform, and the timeout lengths it really applies",
+                    [Query("platform", "Only this platform")],
+                    responses: Ok(Obj(("platforms", Arr(Obj(("platform", Str()), ("canSend", Bool()), ("canSendAsBot", Bool()),
+                        ("actions", Arr(Obj(("action", Str()), ("label", Str()), ("state", Enum("works", "closest", "onWebsite", "notAvailable")),
+                            ("canRun", Bool()), ("note", Str()), ("minDurationSeconds", Int()), ("maxDurationSeconds", Int()), ("durationUnitSeconds", Int()),
+                            ("maxReasonLength", Int()), ("quotaCost", Int()), ("websiteUrl", Str())))),
+                        ("timeoutPresets", Arr(Obj(("requestedSeconds", Int()), ("appliedSeconds", Int()), ("note", Str())))))))))),
+            },
+            ["/chat/moderate"] = new JsonObject
+            {
+                ["post"] = Op("moderateChat", "Chat", "Delete, time out, ban, unban or warn as the streamer; the answer says what happened",
+                    body: Obj(("platform", Str()), ("action", Str()), ("messageId", Str()), ("userId", Str()), ("userName", Str()),
+                        ("durationSeconds", Int()), ("reason", Str()), ("enabled", Bool()), ("value", Int())),
+                    responses: Responses(("200", "Done, failed or skipped (see result)", Obj(("ok", Bool()), ("result", Enum("ok", "failed", "skipped")),
+                        ("message", Str()), ("appliedDurationSeconds", Int()), ("websiteUrl", Str()), ("entry", new JsonObject { ["type"] = "object" }))),
+                        Bad(), Err("409", "That message cannot be deleted"))),
+            },
+            ["/chat/modlog"] = new JsonObject
+            {
+                ["get"] = Op("getModLog", "Chat", "The mod log, newest first: everything, or about one account",
+                    [Query("target", "A user id: only rows about this account"), Query("platform", "Only this platform"), Query("limit", "Maximum rows (default 100)", Int())],
+                    responses: Ok(Obj(("entries", Arr(new JsonObject { ["type"] = "object" }))))),
             },
             ["/dashboard"] = new JsonObject
             {
@@ -306,7 +340,7 @@ public static class OpenApiDocument
                 {
                     ["operationId"] = "events",
                     ["tags"] = new JsonArray("Events"),
-                    ["summary"] = "Server-Sent Events: every Cuebot event ('event:' is its type, e.g. twitch.chatMessage) plus action.runCompleted",
+                    ["summary"] = "Server-Sent Events: every Cuebot event ('event:' is its type, e.g. twitch.chatMessage) plus action.runCompleted; chat.received, chat.moderated and chat.modLog when types names them",
                     ["parameters"] = new JsonArray(Query("types", "Comma separated event types; a trailing * matches a prefix (twitch.*)")),
                     ["responses"] = new JsonObject
                     {
@@ -461,6 +495,10 @@ public static class OpenApiDocument
         ["description"] = description,
         ["content"] = new JsonObject { ["application/json"] = new JsonObject { ["schema"] = Ref("Error") } },
     };
+
+    private static JsonObject ChatMessage() =>
+        Obj(("platform", Str()), ("id", Str()), ("user", Str()), ("userId", Str()), ("text", Str()), ("time", Str()), ("roles", Str()),
+            ("color", Str()), ("amount", Str()), ("channelId", Str()), ("canDelete", Bool()), ("deleted", Bool()));
 
     private static JsonObject SpeechState() =>
         Obj(("enabled", Bool()), ("paused", Bool()), ("queueLength", Int()), ("current", Str("The text playing, or null")), ("stepped", Bool()));

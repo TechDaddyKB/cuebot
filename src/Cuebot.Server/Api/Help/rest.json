@@ -327,7 +327,7 @@
       "description": "Controls the alerts on every overlay page. pause: the alert playing finishes, new ones wait. resume: go on. skip: end the alert playing now. mute / unmute: turn alert sounds and videos off or on."
     },
     "GET /chat": {
-      "description": "Gives you the latest chat messages from all platforms in one list, plus the activity feed (follows, subs, raids...). Add ?limit=20 for fewer. It also lists which platforms can send."
+      "description": "Gives you the latest chat messages from all platforms in one list, plus the activity feed (follows, subs, raids...) and the latest deletions, bans and timeouts. Each message says if it was deleted (deleted) and if it can be (canDelete). Add ?limit=20 for fewer, or ?platform=Twitch for one platform. It also lists which platforms can send (sendablePlatforms) and which have a bot account signed in (botPlatforms)."
     },
     "POST /chat": {
       "description": "Writes a chat message. Pick a platform, like \"Twitch\", or \"All\" (the default) for every connected one. 409 if no platform could send.",
@@ -335,6 +335,32 @@
         "message": "Thanks for watching! See you tomorrow.",
         "platform": "All"
       }
+    },
+    "POST /chat/send": {
+      "description": "Writes a chat message as you (the broadcaster) or as your bot account, like the Send as choice on the Chat page. as is default (the platform's own setting), broadcaster or bot. 409 when no platform could send, or when you ask for bot where no bot account is signed in (GET /chat lists them under botPlatforms).",
+      "example": {
+        "text": "Back in 5 minutes!",
+        "platform": "Twitch",
+        "as": "bot"
+      }
+    },
+    "GET /chat/capabilities": {
+      "description": "Tells you what each moderation tool (delete, timeout, ban, unban, warn, clear, chat modes, pin...) does on each chat platform right now: works, closest (something similar; note says how it differs), onWebsite (websiteUrl opens the platform's own page) or notAvailable (note says why). timeoutPresets shows the length each platform will really apply for 1 minute, 10 minutes, 1 hour, 1 day and 1 week. Add ?platform=Kick for one platform."
+    },
+    "POST /chat/moderate": {
+      "description": "Moderates as you, the streamer, and writes it to the mod log. Give the platform and the action (delete, timeout, ban, unban, warn...). For a message in GET /chat, its messageId is enough: Cuebot fills in who wrote it. Otherwise give userId and userName. The answer is 200 with result ok, failed or skipped and a message saying what happened; skipped with websiteUrl means the platform only does it on its website. Only a bad request is an error (400).",
+      "example": {
+        "platform": "Twitch",
+        "action": "timeout",
+        "messageId": "5b1c0f2e-4d0a-4b6e-9a2b-7f1e0c3d2a11",
+        "userId": "123456",
+        "userName": "spammer42",
+        "durationSeconds": 600,
+        "reason": "Spam"
+      }
+    },
+    "GET /chat/modlog": {
+      "description": "Gives you the mod log, newest first: who deleted, timed out, banned or warned whom, from Cuebot, the mod portal or the platform's website. Add ?target=123456 (a user id) for one viewer's history, ?platform=Twitch for one platform, ?limit=50 for fewer."
     },
     "GET /dashboard": {
       "description": "Everything a companion app's dashboard shows, in one answer: which platforms are connected, this stream's totals, your subathon timers and points goals, your top spenders, and the latest 50 activity items (newest first). revision goes up whenever any of it changes; GET /events sends dashboard.changed with the new revision, so an app only fetches this again when it needs to."
@@ -379,7 +405,7 @@
       "description": "Makes a share text (starts with CUEBOT1:) for the things you name, like ?actions=Say%20hello,Raid%20alert. Others can paste it into their import. Things they need, like queues and other actions, come along unless includeDependencies=false."
     },
     "GET /events": {
-      "description": "Keeps the connection open and sends you each Cuebot event as it happens (Server-Sent Events), like twitch.chatMessage, plus action.runCompleted when a run ends and dashboard.changed (with the new revision) when something GET /dashboard shows has changed. Add ?types=twitch.* for only some. At most 16 at once."
+      "description": "Keeps the connection open and sends you each Cuebot event as it happens (Server-Sent Events), like twitch.chatMessage, plus action.runCompleted when a run ends and dashboard.changed (with the new revision) when something GET /dashboard shows has changed. Add ?types=twitch.* for only some. For a chat window, ask for chat.received (a message, shaped as in GET /chat), chat.moderated (a deletion, ban or timeout, whoever made it) and chat.modLog (a new mod log row) by name: they are only sent when types asks for them. At most 16 at once."
     }
   },
   "fields": {
@@ -574,6 +600,18 @@
     "POST /subathon/{timer}/{command}.value": "For multiplier: how much time events add, like 0.5 for half or 2 for double.",
     "POST /goals/{goal}/{command}.add": "For points: points to add, like 5. Negative takes points away.",
     "POST /goals/{goal}/{command}.set": "For points: the goal's points to set, like 20.",
-    "POST /goals/{goal}/{command}.value": "For multiplier: how many points events give, like 2 for double."
+    "POST /goals/{goal}/{command}.value": "For multiplier: how many points events give, like 2 for double.",
+    "POST /chat/send.text": "What to write, like \"Back in 5 minutes!\". It must not be empty. (message works too.)",
+    "POST /chat/send.platform": "Where to write, like \"Twitch\". \"All\" or empty writes on every connected platform.",
+    "POST /chat/send.as": "Which account writes it: default (the platform's own setting), broadcaster (you) or bot (your bot account, where one is signed in).",
+    "POST /chat/moderate.platform": "The one platform to act on, like \"Twitch\" (not \"All\").",
+    "POST /chat/moderate.action": "What to do: delete, timeout, ban, unban, warn, clear, slowMode, followersOnly, subscribersOnly, emoteOnly, pin or unpin. GET /chat/capabilities tells you which work where.",
+    "POST /chat/moderate.messageId": "The message's id from GET /chat. Needed to delete or pin; for the other actions it fills in who wrote it.",
+    "POST /chat/moderate.userId": "The viewer's id on that platform. Needed for timeout, ban, unban and warn unless messageId is given (or userName on platforms that work by name).",
+    "POST /chat/moderate.userName": "The viewer's name, shown in the mod log.",
+    "POST /chat/moderate.durationSeconds": "Timeouts: how long, in seconds (10 minutes when left out). The platform may round it; the answer has appliedDurationSeconds.",
+    "POST /chat/moderate.reason": "Why, stored by platforms that keep a reason and in the mod log. For warn it is the warning.",
+    "POST /chat/moderate.enabled": "Chat modes: true turns the mode on (the default), false turns it off.",
+    "POST /chat/moderate.value": "Chat modes: slow mode seconds or followers-only minutes; leave it out for the platform's default."
   }
 }

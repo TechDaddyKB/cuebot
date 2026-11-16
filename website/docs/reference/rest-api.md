@@ -902,11 +902,12 @@ curl -X POST -H "Authorization: Bearer YOUR_TOKEN" \
 
 ### GET /chat
 
-Gives you the latest chat messages from all platforms in one list, plus the activity feed (follows, subs, raids...). Add ?limit=20 for fewer. It also lists which platforms can send.
+Gives you the latest chat messages from all platforms in one list, plus the activity feed (follows, subs, raids...) and the latest deletions, bans and timeouts. Each message says if it was deleted (deleted) and if it can be (canDelete). Add ?limit=20 for fewer, or ?platform=Twitch for one platform. It also lists which platforms can send (sendablePlatforms) and which have a bot account signed in (botPlatforms).
 
 | In the address | What it is |
 | --- | --- |
 | `limit` (optional, after ?) | Maximum items (default 50) |
+| `platform` (optional, after ?) | Only this platform |
 
 **Answers:** `200` OK; `401` Missing or wrong token; `403` Origin not allowed; `503` That part of Cuebot is not available (its module is not loaded or not ready).
 
@@ -930,6 +931,80 @@ Writes a chat message. Pick a platform, like "Twitch", or "All" (the default) fo
 curl -X POST -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json" \
   -d '{"message":"Thanks for watching! See you tomorrow.","platform":"All"}' \
   "http://127.0.0.1:7475/api/v1/chat"
+```
+
+### POST /chat/send
+
+Writes a chat message as you (the broadcaster) or as your bot account, like the Send as choice on the Chat page. as is default (the platform's own setting), broadcaster or bot. 409 when no platform could send, or when you ask for bot where no bot account is signed in (GET /chat lists them under botPlatforms).
+
+| Body field | Type | What it is |
+| --- | --- | --- |
+| `text` | text | What to write, like "Back in 5 minutes!". It must not be empty. (message works too.) |
+| `platform` | text | Where to write, like "Twitch". "All" or empty writes on every connected platform. |
+| `as` | one of `default`, `broadcaster`, `bot` | Which account writes it: default (the platform's own setting), broadcaster (you) or bot (your bot account, where one is signed in). |
+
+**Answers:** `200` Sent; `400` Invalid request (details lists each problem); `409` No platform could send, or no bot account is signed in there; `401` Missing or wrong token; `403` Origin not allowed; `503` That part of Cuebot is not available (its module is not loaded or not ready).
+
+```bash
+curl -X POST -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json" \
+  -d '{"text":"Back in 5 minutes!","platform":"Twitch","as":"bot"}' \
+  "http://127.0.0.1:7475/api/v1/chat/send"
+```
+
+### GET /chat/capabilities
+
+Tells you what each moderation tool (delete, timeout, ban, unban, warn, clear, chat modes, pin...) does on each chat platform right now: works, closest (something similar; note says how it differs), onWebsite (websiteUrl opens the platform's own page) or notAvailable (note says why). timeoutPresets shows the length each platform will really apply for 1 minute, 10 minutes, 1 hour, 1 day and 1 week. Add ?platform=Kick for one platform.
+
+| In the address | What it is |
+| --- | --- |
+| `platform` (optional, after ?) | Only this platform |
+
+**Answers:** `200` OK; `401` Missing or wrong token; `403` Origin not allowed; `503` That part of Cuebot is not available (its module is not loaded or not ready).
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "http://127.0.0.1:7475/api/v1/chat/capabilities"
+```
+
+### POST /chat/moderate
+
+Moderates as you, the streamer, and writes it to the mod log. Give the platform and the action (delete, timeout, ban, unban, warn...). For a message in GET /chat, its messageId is enough: Cuebot fills in who wrote it. Otherwise give userId and userName. The answer is 200 with result ok, failed or skipped and a message saying what happened; skipped with websiteUrl means the platform only does it on its website. Only a bad request is an error (400).
+
+| Body field | Type | What it is |
+| --- | --- | --- |
+| `platform` | text | The one platform to act on, like "Twitch" (not "All"). |
+| `action` | text | What to do: delete, timeout, ban, unban, warn, clear, slowMode, followersOnly, subscribersOnly, emoteOnly, pin or unpin. GET /chat/capabilities tells you which work where. |
+| `messageId` | text | The message's id from GET /chat. Needed to delete or pin; for the other actions it fills in who wrote it. |
+| `userId` | text | The viewer's id on that platform. Needed for timeout, ban, unban and warn unless messageId is given (or userName on platforms that work by name). |
+| `userName` | text | The viewer's name, shown in the mod log. |
+| `durationSeconds` | whole number | Timeouts: how long, in seconds (10 minutes when left out). The platform may round it; the answer has appliedDurationSeconds. |
+| `reason` | text | Why, stored by platforms that keep a reason and in the mod log. For warn it is the warning. |
+| `enabled` | true/false | Chat modes: true turns the mode on (the default), false turns it off. |
+| `value` | whole number | Chat modes: slow mode seconds or followers-only minutes; leave it out for the platform's default. |
+
+**Answers:** `200` Done, failed or skipped (see result); `400` Invalid request (details lists each problem); `409` That message cannot be deleted; `401` Missing or wrong token; `403` Origin not allowed; `503` That part of Cuebot is not available (its module is not loaded or not ready).
+
+```bash
+curl -X POST -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json" \
+  -d '{"platform":"Twitch","action":"timeout","messageId":"5b1c0f2e-4d0a-4b6e-9a2b-7f1e0c3d2a11","userId":"123456","userName":"spammer42","durationSeconds":600,"reason":"Spam"}' \
+  "http://127.0.0.1:7475/api/v1/chat/moderate"
+```
+
+### GET /chat/modlog
+
+Gives you the mod log, newest first: who deleted, timed out, banned or warned whom, from Cuebot, the mod portal or the platform's website. Add ?target=123456 (a user id) for one viewer's history, ?platform=Twitch for one platform, ?limit=50 for fewer.
+
+| In the address | What it is |
+| --- | --- |
+| `target` (optional, after ?) | A user id: only rows about this account |
+| `platform` (optional, after ?) | Only this platform |
+| `limit` (optional, after ?) | Maximum rows (default 100) |
+
+**Answers:** `200` OK; `401` Missing or wrong token; `403` Origin not allowed; `503` That part of Cuebot is not available (its module is not loaded or not ready).
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "http://127.0.0.1:7475/api/v1/chat/modlog"
 ```
 
 ## Companion
@@ -1062,7 +1137,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 
 ### GET /events
 
-Keeps the connection open and sends you each Cuebot event as it happens (Server-Sent Events), like twitch.chatMessage, plus action.runCompleted when a run ends and dashboard.changed (with the new revision) when something GET /dashboard shows has changed. Add ?types=twitch.* for only some. At most 16 at once.
+Keeps the connection open and sends you each Cuebot event as it happens (Server-Sent Events), like twitch.chatMessage, plus action.runCompleted when a run ends and dashboard.changed (with the new revision) when something GET /dashboard shows has changed. Add ?types=twitch.* for only some. For a chat window, ask for chat.received (a message, shaped as in GET /chat), chat.moderated (a deletion, ban or timeout, whoever made it) and chat.modLog (a new mod log row) by name: they are only sent when types asks for them. At most 16 at once.
 
 | In the address | What it is |
 | --- | --- |

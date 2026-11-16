@@ -153,6 +153,15 @@ public sealed class ServerServices
 
     private Cuebot.Core.Portal.IPortalApprovals? _approvals;
 
+    /// <summary>Chat moderation and the mod log (the companion app's Chat tab moderates as the streamer).</summary>
+    public Cuebot.Core.Chat.Moderation.ModerationService? Moderation
+    {
+        get => _moderation ??= _provider?.GetService<Cuebot.Core.Chat.Moderation.ModerationService>();
+        init => _moderation = value;
+    }
+
+    private Cuebot.Core.Chat.Moderation.ModerationService? _moderation;
+
     /// <summary>Pronouns (GetUserPronouns; cached pronouns in Streamer.bot user payloads).</summary>
     public Cuebot.Core.Chat.Pronouns.PronounService? Pronouns
     {

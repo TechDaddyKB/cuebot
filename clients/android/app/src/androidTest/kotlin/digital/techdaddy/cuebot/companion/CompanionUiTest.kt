@@ -3,6 +3,7 @@ package digital.techdaddy.cuebot.companion
 import android.Manifest
 import android.os.Build
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -61,6 +62,15 @@ class CompanionUiTest {
         "topSpenders":{"currency":"USD","periods":{"stream":{"all":{"total":0,"spenders":[]}}}},
         "feed":[{"platform":"Twitch","kind":"Cheer","user":"ann","title":"ann cheered 500 bits","isTest":true}]}""".replace("\n", "")
 
+    private val chat = """{"messages":[{"platform":"Twitch","id":"m1","user":"Ann","userId":"u1","text":"hello from chat","time":"2026-11-16T10:00:00+00:00"},
+        {"platform":"Kick","id":"k1","user":"Bob","userId":"u2","text":"kick says hi","time":"2026-11-16T10:00:01+00:00","deleted":true}],
+        "moderation":[],"platforms":["Twitch","Kick"],"sendablePlatforms":["Twitch","Kick"],"botPlatforms":["Twitch"]}""".replace("\n", "")
+
+    private val chatCapabilities = """{"platforms":[{"platform":"Twitch","actions":[{"action":"delete","state":"works","canRun":true},
+        {"action":"timeout","state":"works","canRun":true},{"action":"ban","state":"works","canRun":true},{"action":"unban","state":"works","canRun":true},
+        {"action":"warn","state":"notAvailable","canRun":false,"note":"Soft warnings are turned off."}],
+        "timeoutPresets":[{"requestedSeconds":60,"appliedSeconds":60},{"requestedSeconds":600,"appliedSeconds":600}]}]}""".replace("\n", "")
+
     private val change = """{"id":"c1","member":"Sam","area":"command","kind":"update","target":"!hello","summary":"Sam changed the command '!hello'","at":1,"expires":2}"""
     @Volatile private var approved = false
 
@@ -77,6 +87,10 @@ class CompanionUiTest {
                     "GET /api/v1/events" -> sse(": connected\n\n")
                     "GET /api/v1/portal/changes" -> json(if (approved) """{"changes":[]}""" else """{"changes":[$change]}""")
                     "POST /api/v1/portal/changes/c1/approve" -> { approved = true; json("""{"result":"applied","changes":[]}""") }
+                    "GET /api/v1/chat" -> json(chat)
+                    "GET /api/v1/chat/capabilities" -> json(chatCapabilities)
+                    "POST /api/v1/chat/send" -> json("""{"sent":true,"platforms":["Twitch"],"as":"bot"}""")
+                    "POST /api/v1/chat/moderate" -> json("""{"ok":true,"result":"ok","message":"Timed out for 10 min","appliedDurationSeconds":600}""")
                     "POST /api/v1/subathon/main/time" -> json("""{"timers":[{"id":"main","name":"Subathon","state":"paused","remaining":3900}],"goals":[]}""")
                     else -> MockResponse.Builder().code(404).build()
                 }
@@ -151,6 +165,43 @@ class CompanionUiTest {
         compose.onNodeWithText("last: 42 viewers").assertExists()
         compose.onNodeWithTag("dashboard").performScrollToNode(hasTestTag("feed"))
         compose.onNodeWithTag("test-badge", useUnmergedTree = true).assertExists()
+    }
+
+    @Test fun chatShowsMessagesSendsAsTheBotAndModerates() {
+        pairWithServer()
+        launch()
+        compose.waitUntilExactlyOneExists(hasTestTag("tab-chat"), 10_000)
+        compose.onNodeWithTag("tab-chat").performClick()
+        compose.waitUntilExactlyOneExists(hasTestTag("chat-line-m1"), 10_000)
+        compose.onNodeWithText("(deleted)", substring = true).assertExists()
+
+        // Bot only where a bot account is signed in: Twitch here, not Kick.
+        compose.onNodeWithTag("chat-send-to").performClick()
+        compose.onNodeWithTag("chat-send-to-Kick").performClick()
+        compose.onNodeWithTag("chat-as-bot").assertDoesNotExist()
+        compose.onNodeWithTag("chat-send-to").performClick()
+        compose.onNodeWithTag("chat-send-to-Twitch").performClick()
+        compose.onNodeWithTag("chat-as-bot").performClick()
+        compose.onNodeWithTag("chat-input").performTextInput("hi from the phone")
+        compose.onNodeWithTag("chat-send").performClick()
+        compose.waitUntil(5_000) { count("POST /api/v1/chat/send") == 1 }
+        assertTrue(requests.last { it.url.encodedPath == "/api/v1/chat/send" }.body!!.utf8().contains("\"as\":\"bot\""))
+
+        // Moderate: warn is greyed with its reason; a 10 minute timeout goes to Cuebot.
+        compose.onNodeWithTag("chat-line-m1").performClick()
+        compose.waitUntilExactlyOneExists(hasTestTag("mod-dialog"), 5_000)
+        compose.onNodeWithTag("mod-warn").assertIsNotEnabled()
+        compose.onNodeWithText("Soft warnings are turned off.").assertExists()
+        compose.onNodeWithTag("mod-timeout-600").performClick()
+        compose.waitUntil(5_000) { count("POST /api/v1/chat/moderate") == 1 }
+        compose.waitUntilExactlyOneExists(hasText("Timed out for 10 min"), 5_000)
+
+        // Ban asks first.
+        compose.onNodeWithTag("chat-line-m1").performClick()
+        compose.onNodeWithTag("mod-ban").performClick()
+        compose.onNodeWithText("Ban Ann?").assertExists()
+        compose.onNodeWithTag("mod-ban-confirm").performClick()
+        compose.waitUntil(5_000) { count("POST /api/v1/chat/moderate") == 2 }
     }
 
     @Test fun settingsListsTheCuebotAndChangesAppearance() {

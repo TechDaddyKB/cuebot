@@ -6,12 +6,13 @@ struct RootView: View {
     @Environment(ConnectionStore.self) private var connection
     @Environment(DeckStore.self) private var deck
     @Environment(DashboardStore.self) private var dashboard
+    @Environment(ChatStore.self) private var chat
     @Environment(ProfileStore.self) private var profiles
     @Environment(QuickActionsStore.self) private var quickActions
     @Environment(\.scenePhase) private var scenePhase
     @State private var tab = UITestSupport.initialTab ?? .deck
 
-    enum Tab: Hashable { case deck, dashboard, mods, settings }
+    enum Tab: Hashable { case deck, dashboard, chat, mods, settings }
 
     var body: some View {
         TabView(selection: $tab) {
@@ -22,6 +23,10 @@ struct RootView: View {
                 .toolbarBackground(Color.cuebotGround, for: .tabBar)
                 .tabItem { Label("Dashboard", systemImage: "gauge.with.dots.needle.50percent") }
                 .tag(Tab.dashboard)
+            ChatTab()
+                .toolbarBackground(Color.cuebotGround, for: .tabBar)
+                .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
+                .tag(Tab.chat)
             ModsTab()
                 .toolbarBackground(Color.cuebotGround, for: .tabBar)
                 .tabItem { Label("Mods", systemImage: "person.2") }
@@ -38,18 +43,21 @@ struct RootView: View {
             async let decks: Void = deck.load(client: connection.client)
             async let board: Void = dashboard.load(client: connection.client)
             async let personas: Void = profiles.load(client: connection.client)
-            _ = await (decks, board, personas)
+            async let chatLines: Void = chat.load(client: connection.client)
+            _ = await (decks, board, personas, chatLines)
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
                 deck.resume()
                 dashboard.resume()
+                chat.resume()
                 Task { await profiles.refresh() }
                 Task { await connection.check() }
             case .background:
                 deck.stop()   // no background networking in v1
                 dashboard.stop()
+                chat.stop()
             default:
                 break
             }
