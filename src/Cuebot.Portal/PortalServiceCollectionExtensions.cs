@@ -93,6 +93,8 @@ public static class PortalServiceCollectionExtensions
             };
         });
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<PortalRelayClient>());
+        // Server push to signed-in devices (topics such as "chat" are registered by the features that publish them).
+        services.AddSingleton<IPortalPush>(sp => sp.GetRequiredService<PortalRelayClient>().Push);
         return services;
     }
 

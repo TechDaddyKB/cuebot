@@ -1,10 +1,10 @@
 // Shared state for the pages: the link to Cuebot, the member, and small helpers.
 
 import { createContext } from "preact";
-import { useContext, useEffect, useState } from "preact/hooks";
-import type { Answer, PortalHost } from "../web/host.js";
+import { useContext, useEffect, useRef, useState } from "preact/hooks";
+import type { Answer, PortalHost, PushHandlers } from "../web/host.js";
 
-export type { Answer };
+export type { Answer, PushHandlers };
 
 /** What the member's role allows (PortalPermission in src/Cuebot.Portal/Members/PortalModel.cs). */
 export type Permission =
@@ -67,4 +67,34 @@ export const LEVELS = ["", "Basic", "Stream control", "Show-critical", "Trusted 
 /** Running an action with show-critical steps (level 3 and up: ending the stream, bans, title) asks first. */
 export function confirmRun(name: string, risk: number | undefined): boolean {
   return (risk ?? 0) < 3 || confirm(`"${name}" can change the stream itself (for example end it, ban someone or change the title). Run it?`);
+}
+
+/**
+ * Subscribes to a push topic on the encrypted link (portal/RELAY.md, "Push"); the loader subscribes again after a
+ * reconnect and then calls onResync. Returns the unsubscribe function, or null when the loader is older than push
+ * (the page should keep polling then).
+ */
+export function subscribe(host: PortalHost, topic: string, params: Record<string, unknown>, handlers: PushHandlers): (() => void) | null {
+  return host.subscribe ? host.subscribe(topic, params, handlers) : null;
+}
+
+/**
+ * subscribe() for a page: subscribed while shown and whenever `topic` or the params (compared as JSON) change; the
+ * latest handlers are always used. Returns false when push is not available, so the page can fall back to useLoad
+ * with a refresh.
+ */
+export function useSubscription(topic: string, params: Record<string, unknown>, handlers: PushHandlers): boolean {
+  const { host } = usePortal();
+  const latest = useRef(handlers);
+  latest.current = handlers;
+  const key = JSON.stringify(params);
+  useEffect(() => {
+    const stop = subscribe(host, topic, JSON.parse(key) as Record<string, unknown>, {
+      onEvents: (events) => latest.current.onEvents(events),
+      onResync: (missed) => latest.current.onResync?.(missed),
+      onEnd: (error) => latest.current.onEnd?.(error),
+    });
+    return () => stop?.();
+  }, [host, topic, key]);
+  return typeof host.subscribe === "function";
 }

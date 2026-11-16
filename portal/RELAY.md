@@ -67,6 +67,31 @@ cannot read them. Close codes:
 | `4403` | (from Cuebot) The streamer has not opened the mod portal. |
 | `4100`-`4999` | Anything else Cuebot chooses (for example signing a device out). |
 
+## Push (inside the encrypted channel)
+
+The relay never sees these: they are JSON messages inside a device's AES-256-GCM frames, sharing the session's counter
+nonces with requests and answers (Cuebot encrypts and sends each frame under one lock, so the order holds). The relay
+forwards them like any other frame and stores nothing. Cuebot side: `src/Cuebot.Portal/Relay/PortalPush.cs`
+(`IPortalPush`); device side: `web/push.ts`, `web/link.ts`.
+
+| Direction | Message | Meaning |
+| --- | --- | --- |
+| device → Cuebot | `{"op":"subscribe","req":n,"topic":"chat","params":{…}}` | Subscribe a signed-in device. `params` is an object of at most 2 KB, checked by the topic. |
+| Cuebot → device | `{"ok":true,"req":n,"sub":<id>,"topic":"chat"}` or `{"ok":false,"req":n,"error":"…"}` (`"signIn":true` before sign-in) | The answer. It is always sent before the subscription's first push frame. |
+| device → Cuebot | `{"op":"unsubscribe","req":n,"sub":<id>}` | Stop; always answered `{"ok":true}`. |
+| Cuebot → device | `{"push":"chat","sub":<id>,"events":[…]}` | Events in order, batched about every 250 ms: at most 100 events and 32 KB a frame, 4 frames a subscription per batch. |
+| Cuebot → device | `{"push":"chat","sub":<id>,"resync":true,"missed":<k>}` | The device fell behind (over 500 events or 256 KB waiting): the queue was dropped. Load the current state again; later events follow. |
+| Cuebot → device | `{"push":"chat","sub":<id>,"ended":true,"error":"…"}` | The subscription ended: the member was removed or paused, the device signed out, the role lost the topic's permission, or the topic was withdrawn. |
+
+Push frames carry no `req`, so loaders without push ignore them. A device may hold 8 subscriptions; one event is at
+most 16 KB. A device whose earlier frames Cuebot is still sending is skipped until they are out, so a slow connection
+ends in a resync rather than a growing queue. Subscriptions end with the device's connection: after a reconnect the
+loader resumes the device, subscribes again and tells each page to resync (the gap was missed).
+
+Caps checked for a busy chat: push frames stay far below the 1 MB Cuebot frame cap and Cuebot's frames have no rate
+limit, so the Worker is unchanged. The 4 GB daily budget is shared: 20 devices reading a 20-message-a-second chat
+(about 300 bytes a message) use about 120 KB/s, roughly 3 GB over 7 hours.
+
 ## Webhooks
 
 `POST`, `GET` or `PUT` to the hooks address. The relay answers **200 with an empty body in every case** once the body

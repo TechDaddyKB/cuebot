@@ -112,6 +112,7 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
         _log = log;
         _transportFactory = transportFactory;
         _timings = timings;
+        Push = new PortalPush(directory, log);
     }
 
     public string Name => "Mod portal relay";
@@ -125,6 +126,9 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
 
     /// <summary>Handles mod devices' messages. Replaced when sign-in is built (phase 3).</summary>
     public IPortalLinkHandler LinkHandler { get; set; } = new PingLinkHandler();
+
+    /// <summary>Server push to signed-in devices (<c>subscribe</c> and <c>unsubscribe</c> are answered here, before <see cref="LinkHandler"/>).</summary>
+    public PortalPush Push { get; }
 
     /// <summary>Where opened webhooks go (the app hands them to the webhook relay client's handlers). Called one at a time.</summary>
     public Func<WebhookDelivery, CancellationToken, Task>? WebhookSink { get; set; }
@@ -316,6 +320,7 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await DisconnectAsync().ConfigureAwait(false);
+        Push.Dispose();
         GC.SuppressFinalize(this);
     }
 
@@ -655,15 +660,36 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
 
     /// <summary>
     /// One mod device: the first frame is its handshake hello; after that, frames are decrypted in order here and
-    /// handled one at a time on a worker, whose answers are encrypted in order.
+    /// handled one at a time on a worker, whose answers are encrypted in order. Push frames share the same send order.
     /// </summary>
-    private sealed class Link(PortalRelayClient client, IPortalRelayTransport transport, uint ch) : IDisposable
+    private sealed class Link(PortalRelayClient client, IPortalRelayTransport transport, uint ch) : IPortalPushLink, IDisposable
     {
         private readonly Channel<byte[]> _inbox = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(LinkQueue) { SingleReader = true, SingleWriter = true });
+        // Frames carry counter nonces: encrypting and sending must happen together, one frame at a time.
+        private readonly SemaphoreSlim _send = new(1, 1);
         private CancellationTokenSource? _stop;
         private PortalSession? _session;
         private PortalLinkContext? _context;
         private bool _disposed;
+
+        public PortalLinkContext? Context => _context;
+
+        public bool IsOpen => !Volatile.Read(ref _disposed);
+
+        public async Task SendAsync(byte[] plaintext, CancellationToken ct)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            await _send.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                ObjectDisposedException.ThrowIf(_disposed || _session is null, this);
+                await transport.SendBinaryAsync(Frame(ch, _session!.Encrypt(plaintext)), ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                _send.Release();
+            }
+        }
 
         public void Start(CancellationToken ct)
         {
@@ -705,8 +731,10 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
             {
                 await foreach (var message in _inbox.Reader.ReadAllAsync(ct).ConfigureAwait(false))
                 {
-                    var answer = await client.LinkHandler.HandleAsync(_context!, message, ct).ConfigureAwait(false);
-                    if (answer is not null && _session is { } s) await transport.SendBinaryAsync(Frame(ch, s.Encrypt(answer)), ct).ConfigureAwait(false);
+                    var answer = client.Push.TryHandle(this, message, out var answered)
+                        ?? await client.LinkHandler.HandleAsync(_context!, message, ct).ConfigureAwait(false);
+                    if (answer is not null) await SendAsync(answer, ct).ConfigureAwait(false);
+                    answered?.Invoke();
                 }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -733,6 +761,7 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
         {
             if (_disposed) return;
             _disposed = true;
+            client.Push.RemoveLink(this);
             _inbox.Writer.TryComplete();
             _stop?.Cancel();
             _stop?.Dispose();

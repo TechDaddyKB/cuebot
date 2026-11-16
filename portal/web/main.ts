@@ -1,11 +1,12 @@
 // The mod portal loader on portal.<domain>: opens an invite, signs the mod in with Google, Twitch or Discord, and
-// keeps this device's key so it can come back without signing in again. The portal itself arrives in a later phase
-// (docs/MOD_PORTAL_PLAN.md, section 11). No inline script or style: the page's CSP forbids both.
+// keeps this device's key so it can come back without signing in again. Once the portal UI is up, a lost link is
+// resumed quietly and push subscriptions are made again. No inline script or style: the page's CSP forbids both.
 
 import { base64Url, deviceProof, rawPublicKey, type Bytes } from "../src/crypto.js";
 import { appReturnLink, authorizeUrl, deviceName, isAppReturn, parseInvite, random, readReturn, relayOrigin, type PendingSignIn, type Provider, type Target } from "./flow.js";
 import type { PortalHost, PortalUiModule } from "./host.js";
 import { Link, LinkClosed, type Answer } from "./link.js";
+import { Subscriptions } from "./push.js";
 
 /** A device signed in to one streamer's Cuebot. The private key is non-extractable: script can use it, not read it. */
 interface SavedDevice {
@@ -189,22 +190,66 @@ async function resume(device: SavedDevice): Promise<void> {
   await welcome(link, device, device.key, answer);
 }
 
-async function welcome(link: Link, target: Target, key: CryptoKeyPair, me: Answer): Promise<void> {
+/** Waits between attempts to resume a lost link while the portal is open (about two minutes in all). */
+const RECONNECT_DELAYS = [1_000, 2_000, 4_000, 8_000, 15_000, 30_000, 30_000, 30_000];
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+async function welcome(first: Link, target: Target, key: CryptoKeyPair, me: Answer): Promise<void> {
   const member = String(me.name ?? "");
   const role = String(me.role ?? "");
   await saveDevice({ relay: target.relay, fingerprint: target.fingerprint, key, member, role, at: Date.now() });
+  let link = first;
+  let signedOut = false;
+  const subscriptions = new Subscriptions();
   const signOut = async () => {
+    signedOut = true;
     await link.request("signout").catch(() => undefined);
     link.close();
     await forgetDevice(target.relay);
     show("Signed out", "This device is no longer signed in. Open an invite link or sign in again to come back.");
   };
 
+  /** The link was lost under the running portal: resume on a new one, then subscribe again. */
+  const lost = async (reason: string, code: number): Promise<void> => {
+    subscriptions.detach();
+    if (signedOut) return;
+    // 4403: the streamer closed the portal; 4003: the secure channel broke. Retrying will not help.
+    if (code === 4403 || code === 4003) return problem(reason, () => location.reload());
+    for (const delay of RECONNECT_DELAYS) {
+      await sleep(delay);
+      if (signedOut) return;
+      let next: Link;
+      try {
+        next = await connect(target);
+      } catch {
+        continue;
+      }
+      const answer = await next.request("resume", { device: await proveDevice(next, key) });
+      if (answer.ok) return use(next);
+      next.close();
+      if (answer.signIn) return chooseProvider({ relay: target.relay, fingerprint: target.fingerprint });
+    }
+    problem(reason, () => location.reload());
+  };
+  const use = (next: Link) => {
+    link = next;
+    link.onPush = (frame) => subscriptions.deliver(frame);
+    link.onClose = (reason, code) => void lost(reason, code);
+    subscriptions.attach(link);
+  };
+
   show(`Welcome, ${member}`, "Loading the mod portal…");
   const ui = await link.request("ui");
   if (ui.ok && typeof ui.js === "string" && typeof ui.css === "string") {
     try {
-      await mountUi(ui.js, ui.css, { me, request: (op, body) => link.request(op, body), signOut });
+      await mountUi(ui.js, ui.css, {
+        me,
+        request: (op, body) => link.request(op, body),
+        subscribe: (topic, params, handlers) => subscriptions.subscribe(topic, params, handlers),
+        signOut,
+      });
+      use(link);
       return;
     } catch (e) {
       console.error(e);
