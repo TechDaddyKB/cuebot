@@ -9,6 +9,9 @@ internal sealed class FakeAudioPlayer : IAudioPlayer
 
     public bool Block { get; set; }
 
+    /// <summary>Thrown by every playback while set (an output device that refuses to open...).</summary>
+    public Exception? FailWith { get; set; }
+
     public PlaybackOptions? LastOptions { get; private set; }
 
     public IReadOnlyList<AudioDevice> GetOutputDevices() => [new("fake-1", "Fake speakers", true), new("fake-2", "Fake headset", false)];
@@ -16,6 +19,7 @@ internal sealed class FakeAudioPlayer : IAudioPlayer
     public async Task PlayAsync(byte[] wav, PlaybackOptions options, CancellationToken ct)
     {
         LastOptions = options;
+        if (FailWith is { } failure) throw failure;
         var playback = new Playback(wav, options);
         _started.Writer.TryWrite(playback);
         if (Block) await playback.Released.Task.WaitAsync(ct);

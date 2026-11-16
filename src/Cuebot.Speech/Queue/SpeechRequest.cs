@@ -72,6 +72,10 @@ internal sealed class SpeechRequest
         Options = options ?? new SpeakOptions { Alias = aliasName };
         Id = Interlocked.Increment(ref _sequence);
         _registration = cancellation.Register(() => _completion.TrySetCanceled(cancellation));
+        // Most callers don't wait for the result; a failure is already logged where it happens, so it must not also
+        // surface as an "unobserved background task" error. Callers that await still get the exception.
+        _ = _completion.Task.ContinueWith(static t => _ = t.Exception, CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
     public long Id { get; }

@@ -50,6 +50,12 @@ Two actions react to it. Often it is the example **!hello** action in the **Exam
 **Text-to-speech is silent on Linux.**
 Install `espeak-ng`, and one of `pw-play` (PipeWire), `paplay` or `aplay`. See [Linux](linux.md#sound-and-speech).
 
+**Text-to-speech or a sound plays on the wrong device, or not at all, on Windows.**
+The log says the output device is busy, for example `Unable to init device Chat (GoXLR). Result: Busy`. Another app is
+using that device on its own (exclusive mode), so Cuebot plays on your default device instead. In Windows, open
+**Sound settings > More sound settings > Playback**, open the device's **Properties > Advanced** and untick **Allow
+applications to take exclusive control of this device**, or close the app that uses it.
+
 **The window does not show up on Linux.**
 Start Cuebot from a terminal to see what it says, or try `--backend=x11`. See [Linux](linux.md).
 

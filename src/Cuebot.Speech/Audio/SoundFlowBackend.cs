@@ -183,15 +183,71 @@ internal sealed class SoundFlowBackend : IAudioBackend
     {
         var info = FindInfo(playback: true, deviceId);
         if (deviceId is not null && info is null) _log?.Warn(LogSource, $"Output device \"{deviceId}\" disappeared; using the default device.");
-        var device = _engine.InitializePlaybackDevice(info, OutputFormat, new MiniAudioDeviceConfig
-        {
-            PeriodSizeInMilliseconds = 10,
-            Pulse = new PulseSettings { StreamNamePlayback = "Cuebot" },
-        });
-        device.Start();
-        _log?.Info(LogSource, $"Opened output device {info?.Name ?? "(default)"} via {Name}");
+        var (device, opened) = OpenWithFallback(info, info?.Name, Init, message => _log?.Warn(LogSource, message), Thread.Sleep);
+        _log?.Info(LogSource, $"Opened output device {opened ?? "(default)"} via {Name}");
         return device;
+
+        AudioPlaybackDevice Init(DeviceInfo? target)
+        {
+            var device = _engine.InitializePlaybackDevice(target, OutputFormat, new MiniAudioDeviceConfig
+            {
+                PeriodSizeInMilliseconds = 10,
+                Pulse = new PulseSettings { StreamNamePlayback = "Cuebot" },
+            });
+            device.Start();
+            return device;
+        }
     }
+
+    /// <summary>
+    /// Opens the chosen output; when it refuses (Windows answers "Busy" while another app holds it in exclusive mode),
+    /// tries once more, then plays on the default device instead of staying silent. Returns the device and the name of
+    /// the one opened (null for the default). When the default fails too, throws with an explanation.
+    /// </summary>
+    internal static (T Device, string? Name) OpenWithFallback<T, TInfo>(TInfo? info, string? name, Func<TInfo?, T> open,
+        Action<string> warn, Action<int> wait) where TInfo : struct
+    {
+        if (info is null) return (OpenDefault(null), null);
+        try
+        {
+            return (open(info), name);
+        }
+        catch (Exception first) when (first is not OutOfMemoryException)
+        {
+            wait(250);   // "Busy" can be brief, e.g. while another app switches the device's format
+            try
+            {
+                return (open(info), name);
+            }
+            catch (Exception ex) when (ex is not OutOfMemoryException)
+            {
+                warn($"Could not open the output device \"{name}\" ({ex.Message}); playing on the default device instead. "
+                     + (IsBusy(ex) ? BusyHint(name) : "Check the device in your system's sound settings."));
+                return (OpenDefault(name), null);
+            }
+        }
+
+        T OpenDefault(string? wanted)
+        {
+            try
+            {
+                return open(null);
+            }
+            catch (Exception ex) when (ex is not OutOfMemoryException && IsBusy(ex))
+            {
+                throw new InvalidOperationException(
+                    $"The {(wanted is null ? "default output device" : $"output device \"{wanted}\" and the default device")} refused to play: busy. "
+                    + BusyHint(wanted), ex);
+            }
+        }
+    }
+
+    internal static bool IsBusy(Exception ex) => ex.Message.Contains("Busy", StringComparison.OrdinalIgnoreCase);
+
+    private static string BusyHint(string? name) =>
+        $"Another app may be using {(name is null ? "it" : $"\"{name}\"")} on its own (exclusive mode). On Windows: Sound settings > "
+        + "More sound settings > Playback, open the device's Properties > Advanced and untick \"Allow applications to take exclusive control "
+        + "of this device\", or close the app that uses it.";
 
     /// <summary>Called when a voice ends: closes the device after <see cref="IdleClose"/> without sounds.</summary>
     private void Release(OutputDevice output)

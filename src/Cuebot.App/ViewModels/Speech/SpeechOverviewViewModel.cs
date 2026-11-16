@@ -154,22 +154,20 @@ public sealed partial class SpeechOverviewViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task Speak()
+    private Task Speak()
     {
         Error = "";
         if (!Speech.Enabled)
         {
             Error = "Speech is off. Turn it on to speak.";
-            return;
+            return Task.CompletedTask;
         }
-        try
-        {
-            await Speech.SpeakAsync(TestText, new SpeakOptions { Alias = _testAlias.Length > 0 ? _testAlias : null, Source = "test" });
-        }
-        catch (Exception ex)
-        {
-            Error = ex.Message;
-        }
+        // Queued like any text (it may wait behind others or a paused queue), so the button doesn't wait for it; a failure
+        // when it plays (an output device that refuses...) shows here, not only in the log.
+        var spoken = Speech.SpeakAsync(TestText, new SpeakOptions { Alias = _testAlias.Length > 0 ? _testAlias : null, Source = "test" }, wait: true);
+        _ = spoken.ContinueWith(t => Error = t.Exception?.InnerException?.Message ?? "Could not speak.", CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.FromCurrentSynchronizationContext());
+        return Task.CompletedTask;
     }
 
     [RelayCommand]
