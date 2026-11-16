@@ -207,6 +207,30 @@ Use your own test accounts as the targets, never a real viewer. Nothing below wa
 - [ ] **Portal, must stay a Twitch mod**: tick it for a test mod, remove them as moderator on Twitch. Within five
       minutes their portal pages say access is paused; mod them again and it comes back.
 
+### 4c. While live: Twitch moderation depth (phase 3 of docs/UNIFIED_MOD_CHAT_PLAN.md)
+
+Use the test channel and test accounts only. Nothing below was confirmed against a live channel yet.
+
+- [ ] **Held lane**: from a test account, write something AutoMod holds (or a blocked term). It appears on the Chat
+      page's **Held** tab within a few seconds with the reason. **Allow** one: it appears in chat. **Deny** another:
+      it never does. The mod log shows both. Allow one on twitch.tv instead: the line says "Allowed by" the mod.
+- [ ] **Shield Mode**: turn it on and off from **Mod tools**. Twitch's mod view agrees, and turning it on on twitch.tv
+      updates the tab and the mod log with the mod's name.
+- [ ] **Suspicious users**: **Restrict** a test account from the Chatter tab. Its messages show **[suspicious]**, and
+      only mods see them on twitch.tv. **Not suspicious** clears it.
+- [ ] **Unban requests**: ban a test account, send an unban request from it, **Load** it on **Mod tools**, deny it with
+      an answer; the test account sees the answer. Send another, approve it: the ban is lifted and the ban's row in the
+      mod log says lifted.
+- [ ] **Blocked terms**: block `cuebottest*` from **Mod tools**; it shows on twitch.tv. Remove it.
+- [ ] **channel.moderate in the log**: from twitch.tv, as a second mod, do each of: ban, timeout, unban, delete,
+      clear, slow mode on and off, followers-only, emote-only, unique chat, warn, VIP and unVIP, add a blocked term. Each
+      appears once in the **Mod log** tab with that mod's name. Then ban a test account from Cuebot: one row only (not
+      a second "on Twitch" row).
+- [ ] **Shared chat**: in a shared chat session, a mod of the other channel bans someone there; the log shows
+      "shared-ban" with "in <channel>'s chat".
+- [ ] **Missing permission**: untick **Shield mode** on the Twitch Settings tab and sign in again. The Shield Mode
+      button is greyed out and says to sign in again and allow it. Tick it, sign in again, and it works.
+
 ### 5. While live: Fourthwall
 
 These can only be confirmed with a real shop. Small real amounts are enough.

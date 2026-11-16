@@ -96,6 +96,13 @@ public sealed partial class ChatLineViewModel : ObservableObject
 
     public bool HasActionNote => !string.IsNullOrEmpty(ActionNote);
 
+    /// <summary>"suspicious: monitored (likely ban evader)" when the platform flags the author; null otherwise.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSuspiciousNote))]
+    private string? _suspiciousNote;
+
+    public bool HasSuspiciousNote => !string.IsNullOrEmpty(SuspiciousNote);
+
     /// <summary>False when the platform gave the message no id of its own, so it cannot be deleted.</summary>
     public bool CanDelete => Message.CanDelete && !IsDeleted;
 
@@ -170,6 +177,8 @@ public sealed partial class ChatViewModel : PageViewModel
         // One way into moderation (permission, safety, log); a page given only the platform lookup gets one without a log.
         _moderation = _services.ModerationActions
                       ?? (_services.Moderation is { } lookup ? new ModerationService(lookup) : null);
+        Queues = new ModerationQueuesViewModel(_moderation, OnUi);
+        Queues.QueueChanged += OnQueueChanged;
         PlatformFilters = [ChatHub.AllPlatforms, .. hub.Platforms];
         PlatformChips.Add(ChatHub.AllPlatforms);
         SendTargets = [ChatHub.AllPlatforms, .. hub.Platforms];
@@ -222,6 +231,10 @@ public sealed partial class ChatViewModel : PageViewModel
     }
     public IReadOnlyList<string> SendTargets { get; }
     public ChatOptionsViewModel Options { get; }
+
+    /// <summary>The Held lane and the Mod tools tab (Shield Mode, unban requests, blocked terms), for platforms with queues.</summary>
+    public ModerationQueuesViewModel Queues { get; }
+
     public bool HasQuickActions => QuickActions.Count > 0;
 
     /// <summary>Raised after a line is appended, so the view can keep the newest message in sight.</summary>
@@ -276,6 +289,7 @@ public sealed partial class ChatViewModel : PageViewModel
         RebuildTools();
         RefreshUserLog();
         RefreshSendAs();
+        Queues.Refresh();
     }
 
     // ---------------------------------------------------------------- user details (right pane)
@@ -349,6 +363,9 @@ public sealed partial class ChatViewModel : PageViewModel
 
     private static readonly ModerationAction[] UserToolActions = [ModerationAction.Unban, ModerationAction.Warn];
 
+    private static readonly ModerationAction[] SuspiciousToolActions =
+        [ModerationAction.MonitorUser, ModerationAction.RestrictUser, ModerationAction.ClearSuspicious];
+
     private static readonly ModerationAction[] ChannelToolActions =
     [
         ModerationAction.Clear, ModerationAction.SlowMode, ModerationAction.FollowersOnly, ModerationAction.SubscribersOnly, ModerationAction.EmoteOnly,
@@ -361,8 +378,14 @@ public sealed partial class ChatViewModel : PageViewModel
         UserTools.Clear();
         ChannelTools.Clear();
         if (_moderation is not null && SelectedLine is { } line && CanPunish(line))
+        {
             foreach (var action in UserToolActions)
                 UserTools.Add(new ModToolViewModel(line.Platform, CapabilityFor(line.Platform, action), RunUserToolAsync));
+            // Suspicious user tools, where the platform has them (Twitch).
+            if (_moderation.QueuesFor(line.Platform) is not null)
+                foreach (var action in SuspiciousToolActions)
+                    UserTools.Add(new ModToolViewModel(line.Platform, CapabilityFor(line.Platform, action), RunUserToolAsync));
+        }
         if (_moderation is not null && ToolPlatform is { } platform)
             foreach (var action in ChannelToolActions)
             {
@@ -475,6 +498,25 @@ public sealed partial class ChatViewModel : PageViewModel
             }
         }
         RefreshModeration();
+    }
+
+    /// <summary>"suspicious: restricted (possible ban evader)" for a flagged chatter; null otherwise.</summary>
+    private string? SuspiciousNote(string platform, string userId)
+    {
+        if (userId.Length == 0 || _moderation?.QueuesFor(platform)?.SuspiciousUser(userId) is not { Level: not SuspiciousLevel.None } flagged)
+            return null;
+        var level = flagged.Level == SuspiciousLevel.Restricted ? "restricted" : "monitored";
+        return $"suspicious: {level}" + (flagged.Why.Length > 0 ? $" ({flagged.Why})" : "");
+    }
+
+    /// <summary>Re-flags the lines of a chatter whose suspicious status changed.</summary>
+    private void OnQueueChanged(ModerationQueueChange change)
+    {
+        if (change.Kind != ModerationQueueKind.SuspiciousUsers || change.ItemId.Length == 0) return;
+        var note = SuspiciousNote(change.Platform, change.ItemId);
+        foreach (var line in Messages.Where(l => l.Message.UserId == change.ItemId
+                                                 && string.Equals(l.Platform, change.Platform, StringComparison.OrdinalIgnoreCase)))
+            line.SuspiciousNote = note;
     }
 
     /// <summary>Timeout and Ban make no sense for the channel's own account (the platforms refuse them).</summary>
@@ -613,6 +655,7 @@ public sealed partial class ChatViewModel : PageViewModel
         var line = new ChatLineViewModel(message, Segment(message, raw), ChatHighlighter.Evaluate(message, raw, _settings.Highlights), raw)
         {
             IsDeleted = _hub.IsDeleted(message),
+            SuspiciousNote = SuspiciousNote(message.Platform, message.UserId),
         };
         LoadImages(line);
         LookUpPronouns(line);

@@ -93,7 +93,9 @@ use. The **Custom power-up redemption** trigger starts an action when one is use
 - **Chat modes**: tick **Emote-only**, **Follower-only (minutes followed)**, **Slow mode (seconds)**, **Subscriber-only** or
   **Unique chat** (no copy-paste spam), then press **Apply**. Nothing changes until you do. **Load current** shows what is
   on right now.
-- **Shield mode** is Twitch's emergency button against hate raids: tick it and press **Apply shield mode**.
+- **Shield mode** is Twitch's emergency button against hate raids: tick it and press **Apply shield mode**. You can
+  also switch it on the **Chat** page, on the **Mod tools** tab, together with held AutoMod messages, unban requests,
+  blocked terms and suspicious chatters. See [Moderating your chat](../chat/moderation.md#twitch-held-messages-shield-mode-and-more).
 - Clear the whole chat (click twice to confirm), or post a highlighted **Announcement** with **Send announcement**.
 
 **Settings:** the permissions above, plus:

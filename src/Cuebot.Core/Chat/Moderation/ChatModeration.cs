@@ -106,6 +106,9 @@ public sealed class ChatModerationService(IEnumerable<IChatModerator> moderators
     private readonly IReadOnlyList<IChatModerator> _moderators = moderators.ToArray();
     private readonly IReadOnlyList<IChatAnnouncer> _announcers = announcers.ToArray();
 
+    /// <summary>Every registered moderator.</summary>
+    public IReadOnlyList<IChatModerator> Moderators => _moderators;
+
     public IChatModerator? ModeratorFor(string platform) =>
         _moderators.FirstOrDefault(m => string.Equals(m.Platform, platform, StringComparison.OrdinalIgnoreCase));
 

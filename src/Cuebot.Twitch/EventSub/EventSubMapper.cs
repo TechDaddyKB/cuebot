@@ -922,6 +922,150 @@ internal static class EventSubMapper
         return new BotEvent(type, args);
     }
 
+    /// <summary>
+    /// channel.moderate v2, every action, as the platform-neutral <see cref="NeutralChatEvents.ModerationAction"/> for the
+    /// mod log: the action under the log's name, the moderator, the person, and for chat modes and terms what changed.
+    /// Null for actions Cuebot does not know.
+    /// </summary>
+    public static BotEvent? ModerationAction(JsonElement e)
+    {
+        var action = e.Str("action");
+        var detail = e.Child(action) ?? default;
+        var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["platform"] = TwitchChatAdapter.PlatformName,
+            ["moderator"] = e.Str("moderator_user_name"),
+            ["moderatorUserId"] = e.Str("moderator_user_id"),
+            ["moderatorUserName"] = e.Str("moderator_user_login"),
+        };
+        void Person(JsonElement d)
+        {
+            if (d.ValueKind != JsonValueKind.Object) return;
+            args["user"] = d.Str("user_name");
+            args["userName"] = d.Str("user_login");
+            args["userId"] = d.Str("user_id");
+        }
+        string Mode(string name, bool on, string? value = null) => $"{name} {(on ? "on" : "off")}" + (value is null ? "" : $" ({value})");
+
+        string logName;
+        switch (action)
+        {
+            case "ban" or "warn":
+                Person(detail);
+                logName = action;
+                args["reason"] = detail.Str("reason");
+                break;
+            case "timeout":
+                Person(detail);
+                logName = "timeout";
+                args["reason"] = detail.Str("reason");
+                args["duration"] = SecondsUntil(detail.Str("expires_at"));
+                break;
+            case "unban" or "untimeout":
+                Person(detail);
+                logName = "unban";
+                args["reason"] = action == "untimeout" ? "timeout lifted" : "";
+                break;
+            case "delete":
+                Person(detail);
+                logName = "delete";
+                args["messageId"] = detail.Str("message_id");
+                args["message"] = detail.Str("message_body");
+                break;
+            case "clear":
+                logName = "clear";
+                break;
+            case "emoteonly" or "emoteonlyoff":
+                logName = "mode";
+                args["reason"] = Mode("Emote-only", action == "emoteonly");
+                break;
+            case "followers":
+                logName = "mode";
+                args["reason"] = Mode("Followers-only", true, detail.Int("follow_duration_minutes").ToString(CultureInfo.InvariantCulture));
+                break;
+            case "followersoff":
+                logName = "mode";
+                args["reason"] = Mode("Followers-only", false);
+                break;
+            case "slow":
+                logName = "mode";
+                args["reason"] = Mode("Slow mode", true, detail.Int("wait_time_seconds").ToString(CultureInfo.InvariantCulture));
+                break;
+            case "slowoff":
+                logName = "mode";
+                args["reason"] = Mode("Slow mode", false);
+                break;
+            case "subscribers" or "subscribersoff":
+                logName = "mode";
+                args["reason"] = Mode("Subscribers-only", action == "subscribers");
+                break;
+            case "uniquechat" or "uniquechatoff":
+                logName = "mode";
+                args["reason"] = Mode("Unique chat", action == "uniquechat");
+                break;
+            case "vip" or "unvip" or "mod" or "unmod":
+                Person(detail);
+                logName = action;
+                break;
+            case "raid":
+                Person(detail);
+                logName = "raid";
+                args["reason"] = $"{detail.Int("viewer_count").ToString(CultureInfo.InvariantCulture)} viewers";
+                break;
+            case "unraid":
+                Person(detail);
+                logName = "unraid";
+                break;
+            case "add_blocked_term" or "remove_blocked_term" or "add_permitted_term" or "remove_permitted_term":
+                detail = e.Child("automod_terms") ?? default;
+                logName = action switch
+                {
+                    "add_blocked_term" => "term-add",
+                    "remove_blocked_term" => "term-remove",
+                    "add_permitted_term" => "permit-add",
+                    _ => "permit-remove",
+                };
+                args["reason"] = string.Join(", ", detail.ValueKind == JsonValueKind.Object ? detail.Strings("terms") : []);
+                args["fromAutomod"] = detail.ValueKind == JsonValueKind.Object && detail.Bool("from_automod");
+                break;
+            case "approve_unban_request" or "deny_unban_request":
+                detail = e.Child("unban_request") ?? default;
+                Person(detail);
+                logName = action == "approve_unban_request" ? "unban-request-approve" : "unban-request-deny";
+                args["reason"] = detail.ValueKind == JsonValueKind.Object ? detail.Str("moderator_message") : "";
+                break;
+            case "shared_chat_ban" or "shared_chat_timeout" or "shared_chat_unban" or "shared_chat_untimeout" or "shared_chat_delete":
+                Person(detail);
+                logName = action switch
+                {
+                    "shared_chat_ban" => "shared-ban",
+                    "shared_chat_timeout" => "shared-timeout",
+                    "shared_chat_delete" => "shared-delete",
+                    _ => "shared-unban",
+                };
+                var source = e.Str("source_broadcaster_user_name") is { Length: > 0 } name ? name : e.Str("source_broadcaster_user_login");
+                var why = detail.Str("reason");
+                args["reason"] = $"in {source}'s chat" + (why.Length > 0 ? ": " + why : "");
+                args["channelId"] = e.Str("source_broadcaster_user_id");
+                if (action == "shared_chat_timeout") args["duration"] = SecondsUntil(detail.Str("expires_at"));
+                if (action == "shared_chat_delete")
+                {
+                    args["messageId"] = detail.Str("message_id");
+                    args["message"] = detail.Str("message_body");
+                }
+                break;
+            default:
+                return null;
+        }
+        args["action"] = logName;
+        return new BotEvent(NeutralChatEvents.ModerationAction, args);
+    }
+
+    private static int SecondsUntil(string expiresAt) =>
+        DateTimeOffset.TryParse(expiresAt, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var expires)
+            ? Math.Max(0, (int)Math.Round((expires - DateTimeOffset.UtcNow).TotalSeconds))
+            : 0;
+
     // ---------------------------------------------------------------- guest star
 
     private static BotEvent GuestStarGuest(JsonElement e)

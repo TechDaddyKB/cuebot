@@ -66,6 +66,43 @@ public sealed record ModerationCommand(string Platform, ModerationAction Action)
 
     public string? ViaLinkId { get; init; }
 
+    /// <summary>The queue item acted on: an unban request id, a blocked term id.</summary>
+    public string ItemId { get; init; } = "";
+
+    /// <summary>The blocked term to add, or the text of the one removed (for the log).</summary>
+    public string Term { get; init; } = "";
+
+    /// <summary>Allow or deny a message the platform held.</summary>
+    public static ModerationCommand ForHeld(HeldChatMessage held, bool allow) =>
+        new(held.Platform, allow ? ModerationAction.ApproveHeld : ModerationAction.DenyHeld)
+        {
+            TargetUserId = held.UserId,
+            TargetName = held.UserName,
+            TargetLogin = held.UserLogin,
+            MessageId = held.Id,
+            MessageText = held.Text,
+        };
+
+    /// <summary>Approve (which lifts the ban) or deny an unban request, with an optional answer to the viewer.</summary>
+    public static ModerationCommand ForUnbanRequest(UnbanRequestInfo request, bool approve, string? answer = null) =>
+        new(request.Platform, approve ? ModerationAction.ApproveUnbanRequest : ModerationAction.DenyUnbanRequest)
+        {
+            TargetUserId = request.UserId,
+            TargetName = request.UserName,
+            TargetLogin = request.UserLogin,
+            ItemId = request.Id,
+            MessageText = request.Text,
+            Reason = string.IsNullOrWhiteSpace(answer) ? null : answer.Trim(),
+        };
+
+    /// <summary>Add a blocked term.</summary>
+    public static ModerationCommand BlockTerm(string platform, string term) =>
+        new(platform, ModerationAction.AddBlockedTerm) { Term = term.Trim() };
+
+    /// <summary>Remove a blocked term.</summary>
+    public static ModerationCommand UnblockTerm(BlockedTermInfo term) =>
+        new(term.Platform, ModerationAction.RemoveBlockedTerm) { ItemId = term.Id, Term = term.Text };
+
     /// <summary>A command about a chat message and its author.</summary>
     public static ModerationCommand For(ChatMessage message, ModerationAction action) => new(message.Platform, action)
     {
@@ -126,6 +163,12 @@ public sealed class ModerationService : IDisposable
     private readonly TimeProvider _time;
     private readonly Dictionary<string, Queue<DateTimeOffset>> _rate = new(StringComparer.Ordinal);
 
+    // Echo matching: Cuebot's commands still waiting for the platform, and own rows that already absorbed an echo.
+    private readonly object _echoGate = new();
+    private readonly List<PendingEcho> _pending = [];
+    private readonly HashSet<string> _absorbed = new(StringComparer.Ordinal);
+    private readonly IReadOnlyList<IModerationQueues> _queues;
+
     public ModerationService(ChatModerationService moderators, ModLog? log = null, ChatHub? hub = null,
         IEnumerable<IProtectedAccounts>? protectedAccounts = null, IEnumerable<IPlatformQuota>? quotas = null,
         IEnumerable<IChannelRoles>? roles = null, Func<ModerationSettings>? settings = null, AppLog? appLog = null, TimeProvider? time = null)
@@ -140,8 +183,43 @@ public sealed class ModerationService : IDisposable
         _settings = settings ?? (() => defaults);
         _appLog = appLog;
         _time = time ?? TimeProvider.System;
-        if (_hub is not null && Log is not null) _hub.ModerationSeen += RecordExternal;
+        if (_hub is not null && Log is not null)
+        {
+            _hub.ModerationSeen += RecordExternal;
+            _hub.ModerationActionSeen += RecordExternal;
+        }
+        _queues = moderators.Moderators.OfType<IModerationQueues>().ToArray();
+        foreach (var queues in _queues) queues.Changed += OnQueuesChanged;
     }
+
+    /// <summary>Raised (on a background thread) when any platform's moderation queues change.</summary>
+    public event Action<ModerationQueueChange>? QueuesChanged;
+
+    /// <summary>The platforms that have moderation queues (held messages, Shield Mode...).</summary>
+    public IReadOnlyList<IModerationQueues> Queues => _queues;
+
+    /// <summary>The moderation queues of <paramref name="platform"/>; null when it has none.</summary>
+    public IModerationQueues? QueuesFor(string platform) =>
+        _queues.FirstOrDefault(q => string.Equals(q.Platform, platform, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Held messages still waiting for a decision, on every platform, oldest first.</summary>
+    public IReadOnlyList<HeldChatMessage> PendingHeldMessages() =>
+        _queues.SelectMany(SafeHeld).Where(h => h.IsPending).OrderBy(h => h.HeldAt).ToArray();
+
+    private IEnumerable<HeldChatMessage> SafeHeld(IModerationQueues queues)
+    {
+        try
+        {
+            return queues.HeldMessages;
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            _appLog?.Warn("Moderation", $"{queues.Platform} could not list held messages: {ex.Message}");
+            return [];
+        }
+    }
+
+    private void OnQueuesChanged(ModerationQueueChange change) => QueuesChanged?.Invoke(change);
 
     /// <summary>The mod log; null when this Cuebot keeps none (tests, a page without one).</summary>
     public ModLog? Log { get; }
@@ -166,6 +244,9 @@ public sealed class ModerationService : IDisposable
             _appLog?.Warn("Moderation", $"{platform} could not describe {action}: {ex.Message}");
             return ModerationCapability.NotAvailable(action, $"{platform} is not ready.");
         }
+        // Moderators written before the queue tools existed answer them with their default; they cannot do them.
+        if (ModerationCapability.IsQueueTool(action) && moderator is not IModerationQueues)
+            return ModerationCapability.NotAvailable(action, $"Cuebot cannot do this on {platform}.");
         if (action == ModerationAction.Warn && capability.State == ModerationToolState.Closest && !_settings().SoftWarnings)
             return ModerationCapability.NotAvailable(action, "Soft warnings (a chat message to the viewer) are turned off.");
         return capability;
@@ -222,7 +303,7 @@ public sealed class ModerationService : IDisposable
             return Skip(command, actor, reason, capability, noQuota);
 
         ModLogEntry? undoes = null;
-        if (command.Action == ModerationAction.Unban && command.TargetUserId.Length > 0)
+        if (command.Action is ModerationAction.Unban or ModerationAction.ApproveUnbanRequest && command.TargetUserId.Length > 0)
             undoes = Log?.FindInForce(platform, command.TargetUserId);
 
         var requested = command.Action == ModerationAction.Timeout ? command.Duration ?? TimeSpan.FromMinutes(10) : (TimeSpan?)null;
@@ -237,8 +318,14 @@ public sealed class ModerationService : IDisposable
             Enabled = command.Enabled,
             ModeValue = command.ModeValue,
             PlatformRef = undoes?.PlatformRef,
+            ItemId = command.ItemId,
+            Term = command.Term.Trim(),
         };
 
+        // The platform may report the action (channel.moderate) before its answer arrives: remember it as pending.
+        var pending = new PendingEcho(platform, ModerationCapability.LogName(command.Action), command.TargetUserId, command.MessageId,
+            RowReason(command, reason), _time.GetUtcNow());
+        lock (_echoGate) _pending.Add(pending);
         ModerationOutcome outcome;
         try
         {
@@ -247,6 +334,10 @@ public sealed class ModerationService : IDisposable
         catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
         {
             outcome = ModerationOutcome.Failed(ex.Message);
+        }
+        finally
+        {
+            lock (_echoGate) _pending.Remove(pending);
         }
         if (!outcome.Ok) _appLog?.Warn("Moderation", $"{Name(command.Action)} on {platform} failed: {outcome.Error}");
 
@@ -259,6 +350,8 @@ public sealed class ModerationService : IDisposable
             Undoes = outcome.Ok ? undoes?.Id : null,
         });
         if (outcome.Ok && undoes is not null && entry is not null) Log!.MarkUndone(undoes.Id, entry.Id);
+        // The echo already came: this row must not absorb a later, real outside action.
+        if (pending.Consumed && entry is not null) Absorb(entry.Id);
 
         return new ModerationResult(outcome.Ok ? ModResult.Ok : ModResult.Failed,
             outcome.Ok ? Done(command, applied, requested) : outcome.Error ?? "The platform refused it.")
@@ -273,7 +366,12 @@ public sealed class ModerationService : IDisposable
 
     public void Dispose()
     {
-        if (_hub is not null) _hub.ModerationSeen -= RecordExternal;
+        if (_hub is not null)
+        {
+            _hub.ModerationSeen -= RecordExternal;
+            _hub.ModerationActionSeen -= RecordExternal;
+        }
+        foreach (var queues in _queues) queues.Changed -= OnQueuesChanged;
     }
 
     // ---------------------------------------------------------------- safety rules
@@ -281,7 +379,7 @@ public sealed class ModerationService : IDisposable
     private async Task<string?> WhyProtectedAsync(ModerationCommand command, CancellationToken ct)
     {
         if (!ModerationCapability.TargetsUser(command.Action) && command.Action != ModerationAction.Delete) return null;
-        if (command.Action == ModerationAction.Unban) return null;
+        if (command.Action is ModerationAction.Unban or ModerationAction.ClearSuspicious) return null;
         var name = command.TargetName.Length > 0 ? command.TargetName : "This person";
         if (command.TargetRoles.HasFlag(ChatRoles.Broadcaster)) return $"{name} is the broadcaster. Only the streamer can do this.";
         if (command.TargetRoles.HasFlag(ChatRoles.Moderator)) return $"{name} is a moderator. Only the streamer can do this.";
@@ -364,17 +462,23 @@ public sealed class ModerationService : IDisposable
         TargetName = command.TargetName,
         MessageId = command.MessageId,
         MessageText = command.MessageText,
-        Reason = command.Action switch
-        {
-            ModerationAction.SlowMode or ModerationAction.FollowersOnly or ModerationAction.SubscribersOnly or ModerationAction.EmoteOnly =>
-                $"{ModerationCapability.Label(command.Action)} {(command.Enabled ? "on" : "off")}"
-                + (command.ModeValue is { } v && command.Enabled ? $" ({v.ToString(CultureInfo.InvariantCulture)})" : "")
-                + (reason.Length > 0 ? ": " + reason : ""),
-            _ => reason,
-        },
+        Reason = RowReason(command, reason),
         ViaLinkId = command.ViaLinkId,
         Result = result,
         Error = error,
+    };
+
+    /// <summary>The log row's reason: what changed for chat modes and Shield Mode, the term for blocked terms.</summary>
+    private static string RowReason(ModerationCommand command, string reason) => command.Action switch
+    {
+        ModerationAction.SlowMode or ModerationAction.FollowersOnly or ModerationAction.SubscribersOnly or ModerationAction.EmoteOnly
+            or ModerationAction.ShieldMode =>
+            $"{ModerationCapability.Label(command.Action)} {(command.Enabled ? "on" : "off")}"
+            + (command.ModeValue is { } v && command.Enabled && command.Action != ModerationAction.ShieldMode
+                ? $" ({v.ToString(CultureInfo.InvariantCulture)})" : "")
+            + (reason.Length > 0 ? ": " + reason : ""),
+        ModerationAction.AddBlockedTerm or ModerationAction.RemoveBlockedTerm => command.Term.Trim(),
+        _ => reason,
     };
 
     private static string Done(ModerationCommand c, TimeSpan? applied, TimeSpan? requested)
@@ -391,6 +495,16 @@ public sealed class ModerationService : IDisposable
             ModerationAction.Clear => $"Cleared {c.Platform} chat",
             ModerationAction.Pin => "Pinned the message",
             ModerationAction.Unpin => "Unpinned the message",
+            ModerationAction.ShieldMode => $"Turned Shield Mode {(c.Enabled ? "on" : "off")} on {c.Platform}",
+            ModerationAction.ApproveHeld => $"Allowed {who}'s held message",
+            ModerationAction.DenyHeld => $"Denied {who}'s held message",
+            ModerationAction.MonitorUser => $"{who} is now monitored",
+            ModerationAction.RestrictUser => $"{who} is now restricted",
+            ModerationAction.ClearSuspicious => $"{who} is no longer marked suspicious",
+            ModerationAction.ApproveUnbanRequest => $"Approved {who}'s unban request",
+            ModerationAction.DenyUnbanRequest => $"Denied {who}'s unban request",
+            ModerationAction.AddBlockedTerm => $"Blocked \"{c.Term.Trim()}\" on {c.Platform}",
+            ModerationAction.RemoveBlockedTerm => c.Term.Length > 0 ? $"Unblocked \"{c.Term.Trim()}\" on {c.Platform}" : $"Unblocked the term on {c.Platform}",
             _ => $"{ModerationCapability.Label(c.Action)} {(c.Enabled ? "on" : "off")} on {c.Platform}",
         };
     }
@@ -414,36 +528,141 @@ public sealed class ModerationService : IDisposable
 
     // ---------------------------------------------------------------- actions made outside Cuebot
 
+    /// <summary>A command sent to a platform whose answer has not come yet; an echo that arrives meanwhile consumes it.</summary>
+    private sealed record PendingEcho(string Platform, string Action, string TargetUserId, string MessageId, string Reason, DateTimeOffset At)
+    {
+        public bool Consumed { get; set; }
+    }
+
+    /// <summary>The log names of Cuebot's own actions a platform event of <paramref name="action"/> can be the echo of.</summary>
+    private static string[] OwnActionsFor(string action) => action switch
+    {
+        "unban" => ["unban", "unban-request-approve"],
+        _ => [action],
+    };
+
+    /// <summary>
+    /// True when a platform event is the echo of Cuebot's own action: same action, same person or message, and for chat
+    /// modes, Shield Mode and blocked terms the same switch or term.
+    /// </summary>
+    private static bool SameAction(string ownAction, string ownTarget, string ownMessage, string ownReason, ExternalModerationNotice n)
+    {
+        if (!OwnActionsFor(n.Action).Contains(ownAction, StringComparer.Ordinal)) return false;
+        if (n.MessageId.Length > 0 && ownMessage.Length > 0) return n.MessageId == ownMessage;
+        if (n.TargetUserId.Length > 0 || ownTarget.Length > 0) return n.TargetUserId == ownTarget;
+        return ownAction switch
+        {
+            "mode" or "shield" => string.Equals(SwitchName(ownReason), SwitchName(n.Reason), StringComparison.OrdinalIgnoreCase),
+            "term-add" or "term-remove" => string.Equals(ownReason.Trim(), n.Reason.Trim(), StringComparison.OrdinalIgnoreCase),
+            _ => true,
+        };
+    }
+
+    /// <summary>"Slow mode" from "Slow mode on (30): spam".</summary>
+    private static string SwitchName(string reason)
+    {
+        foreach (var marker in new[] { " on", " off" })
+        {
+            var at = reason.IndexOf(marker, StringComparison.Ordinal);
+            if (at > 0) return reason[..at];
+        }
+        return reason;
+    }
+
+    private void Absorb(string rowId)
+    {
+        lock (_echoGate)
+        {
+            if (_absorbed.Count > 2000) _absorbed.Clear();
+            _absorbed.Add(rowId);
+        }
+    }
+
+    /// <summary>True when the event is Cuebot's own action coming back (pending or logged in the last two minutes).</summary>
+    private bool IsEcho(ExternalModerationNotice n, ModLog log)
+    {
+        var since = _time.GetUtcNow() - EchoWindow;
+        lock (_echoGate)
+        {
+            foreach (var p in _pending)
+                if (!p.Consumed && string.Equals(p.Platform, n.Platform, StringComparison.OrdinalIgnoreCase)
+                    && SameAction(p.Action, p.TargetUserId, p.MessageId, p.Reason, n))
+                {
+                    p.Consumed = true;
+                    return true;
+                }
+        }
+        foreach (var action in OwnActionsFor(n.Action))
+            foreach (var row in log.OwnSince(n.Platform, action, since))
+            {
+                lock (_echoGate)
+                    if (!_absorbed.Contains(row.Id) && SameAction(row.Action, row.TargetUserId, row.MessageId, row.Reason, n))
+                    {
+                        _absorbed.Add(row.Id);
+                        return true;
+                    }
+            }
+        return false;
+    }
+
+    /// <summary>A deletion, ban or timeout seen in the chat (platforms without a full moderation feed).</summary>
     private void RecordExternal(ChatModerationNotice notice)
+    {
+        if (notice.LoggedElsewhere) return;
+        var text = notice.Kind == ChatModerationKind.MessageDeleted && notice.MessageId.Length > 0
+            ? _hub?.RecentMessages().LastOrDefault(m => m.Platform == notice.Platform && m.Id == notice.MessageId)?.Text ?? ""
+            : "";
+        RecordExternal(new ExternalModerationNotice(notice.Platform, notice.Kind switch
+        {
+            ChatModerationKind.MessageDeleted => "delete",
+            ChatModerationKind.UserBanned => "ban",
+            _ => "timeout",
+        }, notice.Time)
+        {
+            Moderator = notice.Moderator,
+            TargetUserId = notice.UserId,
+            TargetName = notice.User,
+            MessageId = notice.MessageId,
+            MessageText = text,
+            DurationSeconds = notice.DurationSeconds,
+            Reason = notice.Reason,
+        });
+    }
+
+    /// <summary>
+    /// Records an action a platform reported (made on its website, by another tool, or by Cuebot), unless it is
+    /// Cuebot's own action echoed back. Lifting a ban or approving an unban request marks the ban in the log as lifted.
+    /// </summary>
+    public void RecordExternal(ExternalModerationNotice notice)
     {
         if (Log is not { } log) return;
         try
         {
-            var action = notice.Kind switch
-            {
-                ChatModerationKind.MessageDeleted => "delete",
-                ChatModerationKind.UserBanned => "ban",
-                _ => "timeout",
-            };
-            if (log.FindOwnSince(notice.Platform, action, notice.UserId, notice.MessageId, _time.GetUtcNow() - EchoWindow) is not null) return;
-            var text = notice.MessageId.Length > 0
-                ? _hub?.RecentMessages().LastOrDefault(m => m.Platform == notice.Platform && m.Id == notice.MessageId)?.Text ?? ""
-                : "";
-            log.Append(new ModLogEntry
+            if (IsEcho(notice, log)) return;
+            var text = notice.MessageText;
+            if (text.Length == 0 && notice.Action == "delete" && notice.MessageId.Length > 0)
+                text = _hub?.RecentMessages().LastOrDefault(m => m.Platform == notice.Platform && m.Id == notice.MessageId)?.Text ?? "";
+            var undoes = notice.Action is "unban" or "unban-request-approve" && notice.TargetUserId.Length > 0
+                ? log.FindInForce(notice.Platform, notice.TargetUserId)
+                : null;
+            var entry = log.Append(new ModLogEntry
             {
                 ActorKind = ModActorKind.External,
                 ActorName = notice.Moderator.Length > 0 ? notice.Moderator : $"Someone on {notice.Platform}",
                 Platform = notice.Platform,
-                Action = action,
-                TargetUserId = notice.UserId,
-                TargetName = notice.User,
+                ChannelId = notice.ChannelId,
+                Action = notice.Action,
+                TargetUserId = notice.TargetUserId,
+                TargetName = notice.TargetName,
                 MessageId = notice.MessageId,
                 MessageText = text,
                 DurationRequestedSeconds = notice.DurationSeconds,
                 DurationAppliedSeconds = notice.DurationSeconds,
                 Reason = notice.Reason,
                 Result = ModResult.Ok,
+                Undoes = undoes?.Id,
             });
+            if (undoes is not null) log.MarkUndone(undoes.Id, entry.Id);
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {

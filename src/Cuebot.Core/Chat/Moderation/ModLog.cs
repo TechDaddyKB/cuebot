@@ -64,7 +64,13 @@ public sealed record ModLogEntry
     /// <summary>The YouTube live chat id where relevant.</summary>
     public string? ChannelId { get; init; }
 
-    /// <summary><c>ban</c>, <c>timeout</c>, <c>unban</c>, <c>delete</c>, <c>warn</c>, <c>clear</c>, <c>mode</c>, <c>pin</c>, <c>unpin</c>...</summary>
+    /// <summary>
+    /// <c>ban</c>, <c>timeout</c>, <c>unban</c>, <c>delete</c>, <c>warn</c>, <c>clear</c>, <c>mode</c>, <c>pin</c>, <c>unpin</c>;
+    /// phase 3: <c>shield</c>, <c>held-approve</c>, <c>held-deny</c>, <c>suspicious-monitor</c>, <c>suspicious-restrict</c>,
+    /// <c>suspicious-clear</c>, <c>unban-request-approve</c>, <c>unban-request-deny</c>, <c>term-add</c>, <c>term-remove</c>;
+    /// seen only from the platform: <c>vip</c>, <c>unvip</c>, <c>mod</c>, <c>unmod</c>, <c>raid</c>, <c>unraid</c>,
+    /// <c>permit-add</c>, <c>permit-remove</c> and <c>shared-</c> plus ban, timeout, unban or delete (another channel of a shared chat).
+    /// </summary>
     public string Action { get; init; } = "";
 
     public string TargetUserId { get; init; } = "";
@@ -298,6 +304,14 @@ public sealed class ModLog : IDisposable
         return Query(where, 1, ("$platform", platform), ("$action", action), ("$since", since.ToUnixTimeMilliseconds()),
             ("$key", messageId.Length > 0 ? messageId : targetUserId)).FirstOrDefault();
     }
+
+    /// <summary>
+    /// Rows of <paramref name="action"/> that Cuebot itself made (not <see cref="ModActorKind.External"/>) and that
+    /// worked, since <paramref name="since"/>, newest first: the candidates a platform event may be the echo of.
+    /// </summary>
+    public IReadOnlyList<ModLogEntry> OwnSince(string platform, string action, DateTimeOffset since, int limit = 50) =>
+        Query("WHERE platform = $platform COLLATE NOCASE AND action = $action AND actor_kind <> 'External' AND at >= $since AND result = 'Ok'",
+            limit, ("$platform", platform), ("$action", action), ("$since", since.ToUnixTimeMilliseconds()));
 
     /// <summary>Checks every row's link to the previous one and the content of rows not redacted. Null when intact.</summary>
     public string? FindBrokenRow()

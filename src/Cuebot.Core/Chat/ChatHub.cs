@@ -21,6 +21,13 @@ public sealed class ChatHub : IDisposable
     public const string UserBannedEvent = "chat.userBanned";
     public const string UserTimedOutEvent = "chat.userTimedOut";
 
+    /// <summary>
+    /// A moderation action a platform reports in full, whoever made it (Twitch <c>channel.moderate</c>). Args: platform,
+    /// action (the mod log's name: ban, timeout, unban, delete, mode, term-add...), moderator, moderatorUserId, userId,
+    /// user, userName, messageId, message, duration (seconds), reason, channelId (another channel of a shared chat).
+    /// </summary>
+    public const string ModerationActionEvent = "chat.moderationAction";
+
     private const int HistorySize = 500;
 
     private readonly EventBus _bus;
@@ -51,6 +58,9 @@ public sealed class ChatHub : IDisposable
     /// website, another tool), so every client can mark the lines and the mod log can record outside actions.
     /// </summary>
     public event Action<ChatModerationNotice>? ModerationSeen;
+
+    /// <summary>Raised for every <see cref="ModerationActionEvent"/>: the mod log records these actions made outside Cuebot.</summary>
+    public event Action<Moderation.ExternalModerationNotice>? ModerationActionSeen;
 
     /// <summary>Platforms that have a chat adapter, e.g. "Twitch", "Rumble".</summary>
     public IReadOnlyList<string> Platforms => _adapters.Select(a => a.Platform).Distinct().ToArray();
@@ -123,6 +133,11 @@ public sealed class ChatHub : IDisposable
     private void OnEvent(BotEvent e)
     {
         if (e.Type is MessageEvent or ActivityEvent) return;
+        if (e.Type == ModerationActionEvent)
+        {
+            if (Moderation.ExternalModerationNotice.From(e) is { } action) ModerationActionSeen?.Invoke(action);
+            return;
+        }
         if (e.Type is MessageDeletedEvent or UserBannedEvent or UserTimedOutEvent)
         {
             if (ChatModerationNotice.From(e) is { } notice) Add(notice);
@@ -241,6 +256,12 @@ public sealed record ChatModerationNotice(string Platform, ChatModerationKind Ki
 
     public string Reason { get; init; } = "";
 
+    /// <summary>
+    /// The platform also reports this action in full (<see cref="ChatHub.ModerationActionEvent"/>), so the mod log takes
+    /// it from there instead (arg <c>modLogged</c>).
+    /// </summary>
+    public bool LoggedElsewhere { get; init; }
+
     internal static ChatModerationNotice? From(BotEvent e)
     {
         var a = e.Args;
@@ -262,6 +283,7 @@ public sealed record ChatModerationNotice(string Platform, ChatModerationKind Ki
             DurationSeconds = kind == ChatModerationKind.UserTimedOut && duration > 0 ? duration : null,
             Moderator = a.GetString("moderator") is { Length: > 0 } mod ? mod : a.GetString("moderatorName"),
             Reason = a.GetString("reason"),
+            LoggedElsewhere = a.GetValueOrDefault("modLogged") is true,
         };
     }
 }

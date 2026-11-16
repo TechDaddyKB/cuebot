@@ -19,6 +19,39 @@ public enum ModerationAction
     EmoteOnly,
     Pin,
     Unpin,
+
+    // Phase 3 ("Twitch depth"): the tools of a platform's moderation queues (<see cref="IModerationQueues"/>). A platform
+    // whose moderator does not implement that interface does not have them.
+
+    /// <summary>Turns Shield Mode on (<see cref="ModerationRequest.Enabled"/>) or off.</summary>
+    ShieldMode,
+
+    /// <summary>Lets a message the platform held (AutoMod) into chat; <see cref="ModerationRequest.MessageId"/> is the held message.</summary>
+    ApproveHeld,
+
+    /// <summary>Keeps a held message out of chat.</summary>
+    DenyHeld,
+
+    /// <summary>Marks a chatter as suspicious: their messages are flagged for moderators.</summary>
+    MonitorUser,
+
+    /// <summary>Marks a chatter as restricted: only moderators see their messages.</summary>
+    RestrictUser,
+
+    /// <summary>Removes a chatter's monitored or restricted status.</summary>
+    ClearSuspicious,
+
+    /// <summary>Approves an unban request (<see cref="ModerationRequest.ItemId"/>), which lifts the ban.</summary>
+    ApproveUnbanRequest,
+
+    /// <summary>Denies an unban request.</summary>
+    DenyUnbanRequest,
+
+    /// <summary>Adds <see cref="ModerationRequest.Term"/> to the platform's blocked terms.</summary>
+    AddBlockedTerm,
+
+    /// <summary>Removes the blocked term <see cref="ModerationRequest.ItemId"/>.</summary>
+    RemoveBlockedTerm,
 }
 
 /// <summary>What a tool does on one platform.</summary>
@@ -86,6 +119,12 @@ public sealed record ModerationCapability(ModerationAction Action, ModerationToo
     /// <summary>All the tools, in toolbar order.</summary>
     public static IReadOnlyList<ModerationAction> AllActions { get; } = Enum.GetValues<ModerationAction>();
 
+    /// <summary>
+    /// The tools of a platform's moderation queues (Shield Mode, held messages, suspicious users, unban requests,
+    /// blocked terms). Only a moderator that implements <see cref="IModerationQueues"/> offers them.
+    /// </summary>
+    public static bool IsQueueTool(ModerationAction action) => action >= ModerationAction.ShieldMode;
+
     /// <summary>What a moderator written before capabilities existed offers: its three flags, nothing else.</summary>
     public static ModerationCapability FromLegacy(ModerationAction action, ChatModerationActions available)
     {
@@ -104,6 +143,16 @@ public sealed record ModerationCapability(ModerationAction Action, ModerationToo
     public static string LogName(ModerationAction action) => action switch
     {
         ModerationAction.SlowMode or ModerationAction.FollowersOnly or ModerationAction.SubscribersOnly or ModerationAction.EmoteOnly => "mode",
+        ModerationAction.ShieldMode => "shield",
+        ModerationAction.ApproveHeld => "held-approve",
+        ModerationAction.DenyHeld => "held-deny",
+        ModerationAction.MonitorUser => "suspicious-monitor",
+        ModerationAction.RestrictUser => "suspicious-restrict",
+        ModerationAction.ClearSuspicious => "suspicious-clear",
+        ModerationAction.ApproveUnbanRequest => "unban-request-approve",
+        ModerationAction.DenyUnbanRequest => "unban-request-deny",
+        ModerationAction.AddBlockedTerm => "term-add",
+        ModerationAction.RemoveBlockedTerm => "term-remove",
         _ => action.ToString().ToLowerInvariant(),
     };
 
@@ -116,12 +165,23 @@ public sealed record ModerationCapability(ModerationAction Action, ModerationToo
         ModerationAction.SubscribersOnly => "Subscribers-only",
         ModerationAction.EmoteOnly => "Emote-only",
         ModerationAction.Clear => "Clear chat",
+        ModerationAction.ShieldMode => "Shield Mode",
+        ModerationAction.ApproveHeld => "Allow held message",
+        ModerationAction.DenyHeld => "Deny held message",
+        ModerationAction.MonitorUser => "Monitor",
+        ModerationAction.RestrictUser => "Restrict",
+        ModerationAction.ClearSuspicious => "Not suspicious",
+        ModerationAction.ApproveUnbanRequest => "Approve unban request",
+        ModerationAction.DenyUnbanRequest => "Deny unban request",
+        ModerationAction.AddBlockedTerm => "Block term",
+        ModerationAction.RemoveBlockedTerm => "Unblock term",
         _ => action.ToString(),
     };
 
     /// <summary>Actions about one person (they need a target user).</summary>
     public static bool TargetsUser(ModerationAction action) =>
-        action is ModerationAction.Timeout or ModerationAction.Ban or ModerationAction.Unban or ModerationAction.Warn;
+        action is ModerationAction.Timeout or ModerationAction.Ban or ModerationAction.Unban or ModerationAction.Warn
+            or ModerationAction.MonitorUser or ModerationAction.RestrictUser or ModerationAction.ClearSuspicious;
 }
 
 /// <summary>One request to a platform moderator.</summary>
@@ -148,6 +208,12 @@ public sealed record ModerationRequest(ModerationAction Action)
 
     /// <summary>What the platform returned when the action being undone was made (the YouTube ban id, needed to unban).</summary>
     public string? PlatformRef { get; init; }
+
+    /// <summary>The queue item acted on: an unban request id, a blocked term id.</summary>
+    public string ItemId { get; init; } = "";
+
+    /// <summary>The blocked term to add (or, for the log, the one removed).</summary>
+    public string Term { get; init; } = "";
 }
 
 /// <summary>What a platform call did.</summary>

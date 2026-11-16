@@ -183,6 +183,8 @@
                                      IsVisible="{Binding Badges, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                           <TextBlock Text="{Binding Pronouns}" Classes="muted" FontSize="12" IsVisible="{Binding HasPronouns}" />
                           <TextBlock Text="{Binding ActionNote}" Classes="muted" FontSize="12" IsVisible="{Binding HasActionNote}" />
+                          <TextBlock x:Name="SuspiciousNoteText" Text="{Binding SuspiciousNote}" Classes="muted" FontSize="12" IsVisible="{Binding HasSuspiciousNote}"
+                                     ToolTip.Tip="Twitch flags this chatter as suspicious. Monitored: their messages show, marked for mods. Restricted: only mods see them." />
                         </WrapPanel>
                       </StackPanel>
                     </DataTemplate>
@@ -285,6 +287,128 @@
               </ListBox.ItemTemplate>
             </ListBox>
           </Panel>
+        </TabItem>
+        <TabItem x:Name="HeldTab" Header="{Binding Queues.HeldHeader}" IsVisible="{Binding Queues.HasQueues}"
+                 ToolTip.Tip="Messages Twitch's AutoMod (or your blocked terms) held back. Nobody else sees them until a mod allows them.">
+          <DockPanel DataContext="{Binding Queues}" x:DataType="vmc:ModerationQueuesViewModel">
+            <TextBlock DockPanel.Dock="Top" Classes="error" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,4"
+                       Text="{Binding HeldNote}" IsVisible="{Binding HasHeldNote}" />
+            <TextBlock DockPanel.Dock="Bottom" Classes="muted" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"
+                       Text="{Binding Status}" IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <Panel>
+              <TextBlock Classes="muted" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" Margin="12"
+                         IsVisible="{Binding !HasHeldLines}"
+                         Text="Nothing is held. When AutoMod holds a message back, it waits here until you allow or deny it." />
+              <ListBox x:Name="HeldList" ItemsSource="{Binding HeldLines}" Background="Transparent">
+                <ListBox.ItemTemplate>
+                  <DataTemplate DataType="vmc:HeldLineViewModel">
+                    <Grid ColumnDefinitions="Auto,*">
+                      <Border Width="4" CornerRadius="2" Background="{Binding PlatformBrush}" Margin="0,0,10,0" />
+                      <StackPanel Grid.Column="1" Spacing="3">
+                        <TextBlock TextWrapping="Wrap">
+                          <Run Text="{Binding User}" FontWeight="SemiBold" /><Run Text=": " /><Run Text="{Binding Text}" />
+                        </TextBlock>
+                        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap">
+                          <Run Text="{Binding Time}" /><Run Text=" · " /><Run Text="{Binding Reason}" />
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsPending}">
+                          <Button Content="Allow" Command="{Binding AllowCommand}" IsEnabled="{Binding !IsBusy}" Padding="10,3"
+                                  ToolTip.Tip="Lets this message into the chat for everyone." />
+                          <Button Content="Deny" Command="{Binding DenyCommand}" IsEnabled="{Binding !IsBusy}" Padding="10,3"
+                                  ToolTip.Tip="Keeps this message out of the chat. The viewer is not punished." />
+                        </StackPanel>
+                        <TextBlock Classes="muted" FontSize="12" Text="{Binding Outcome}" IsVisible="{Binding !IsPending}" />
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </Panel>
+          </DockPanel>
+        </TabItem>
+        <TabItem x:Name="ModToolsTab" Header="Mod tools" IsVisible="{Binding Queues.HasQueues}"
+                 ToolTip.Tip="Shield Mode, unban requests and blocked terms.">
+          <ScrollViewer DataContext="{Binding Queues}" x:DataType="vmc:ModerationQueuesViewModel">
+            <StackPanel Spacing="10" Margin="0,4,6,0">
+              <ComboBox ItemsSource="{Binding Platforms}" SelectedItem="{Binding Platform}" IsVisible="{Binding HasPlatformChoice}"
+                        ToolTip.Tip="The platform these tools work on." />
+              <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Refresh" Command="{Binding ReloadCommand}" Padding="8,3"
+                        ToolTip.Tip="Reads Shield Mode, the unban requests and the blocked terms again." />
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"
+                           Text="{Binding Status}" IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </DockPanel>
+
+              <!-- Shield Mode -->
+              <StackPanel Spacing="4">
+                <TextBlock Classes="label" Text="SHIELD MODE" />
+                <TextBlock x:Name="ShieldText" Text="{Binding ShieldText}" TextWrapping="Wrap" />
+                <Button x:Name="ShieldButton" Content="{Binding ShieldButton}" Command="{Binding ToggleShieldCommand}" IsEnabled="{Binding CanShield}"
+                        Classes.danger="{Binding !IsShieldOn}"
+                        ToolTip.Tip="Shield Mode switches on the strict settings you chose on Twitch, for example during a hate raid. Click again to switch it off."
+                        ToolTip.ShowOnDisabled="True" />
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding ShieldNote}" IsVisible="{Binding HasShieldNote}" />
+              </StackPanel>
+
+              <!-- Unban requests -->
+              <StackPanel Spacing="4">
+                <DockPanel>
+                  <Button DockPanel.Dock="Right" Content="Load" Command="{Binding LoadUnbanRequestsCommand}" IsEnabled="{Binding CanUnbanRequests}" Padding="8,3"
+                          ToolTip.Tip="Shows the unban requests that are waiting for an answer." />
+                  <TextBlock Classes="label" Text="UNBAN REQUESTS" VerticalAlignment="Center" />
+                </DockPanel>
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding UnbanRequestsNote}" IsVisible="{Binding HasUnbanRequestsNote}" />
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding UnbanRequestsText}"
+                           IsVisible="{Binding UnbanRequestsText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <ItemsControl x:Name="UnbanRequestList" ItemsSource="{Binding UnbanRequests}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="vmc:UnbanRequestLineViewModel">
+                      <StackPanel Spacing="4" Margin="0,4">
+                        <TextBlock TextWrapping="Wrap">
+                          <Run Text="{Binding User}" FontWeight="SemiBold" /><Run Text=": " /><Run Text="{Binding Text}" />
+                        </TextBlock>
+                        <TextBlock Classes="muted" FontSize="12" Text="{Binding Time}" />
+                        <TextBox Text="{Binding Answer}" PlaceholderText="Answer to the viewer (optional)"
+                                 ToolTip.Tip="The viewer sees this with your decision. Keep it short and kind." />
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <Button Content="Approve" Command="{Binding ApproveCommand}" Padding="10,3" ToolTip.Tip="Lifts the ban: they can chat again." />
+                          <Button Content="Deny" Command="{Binding DenyCommand}" Padding="10,3" ToolTip.Tip="Keeps the ban." />
+                        </StackPanel>
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+
+              <!-- Blocked terms -->
+              <StackPanel Spacing="4">
+                <DockPanel>
+                  <Button DockPanel.Dock="Right" Content="Load" Command="{Binding LoadBlockedTermsCommand}" IsEnabled="{Binding CanBlockedTerms}" Padding="8,3"
+                          ToolTip.Tip="Shows the words and phrases Twitch keeps out of your chat." />
+                  <TextBlock Classes="label" Text="BLOCKED TERMS" VerticalAlignment="Center" />
+                </DockPanel>
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding BlockedTermsNote}" IsVisible="{Binding HasBlockedTermsNote}" />
+                <Grid ColumnDefinitions="*,6,Auto" IsEnabled="{Binding CanBlockedTerms}">
+                  <TextBox x:Name="NewTermBox" Text="{Binding NewTerm}" PlaceholderText="Word or phrase to block"
+                           ToolTip.Tip="Messages with this word or phrase are held back by Twitch. Use * as a wildcard, like spoil*." />
+                  <Button Grid.Column="2" Content="Block" Command="{Binding AddTermCommand}" ToolTip.Tip="Adds the term to your blocked terms on Twitch." />
+                </Grid>
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding BlockedTermsText}"
+                           IsVisible="{Binding BlockedTermsText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <ItemsControl x:Name="BlockedTermList" ItemsSource="{Binding BlockedTerms}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="vmc:BlockedTermLineViewModel">
+                      <DockPanel Margin="0,2">
+                        <Button DockPanel.Dock="Right" Content="Remove" Command="{Binding RemoveCommand}" Padding="8,2" FontSize="12"
+                                ToolTip.Tip="Allows this word or phrase again." />
+                        <TextBlock Text="{Binding Text}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                      </DockPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </StackPanel>
+          </ScrollViewer>
         </TabItem>
       </TabControl>
     </Border>

@@ -38,7 +38,14 @@ public static class TwitchServiceCollectionExtensions
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IChatModerator>(sp =>
         {
             var twitch = sp.GetRequiredService<TwitchService>();
-            return new TwitchChatModerator(() => twitch.Api, () => twitch.State == Cuebot.Core.ConnectionState.Connected && twitch.IsAuthorized);
+            var moderator = new TwitchChatModerator(() => twitch.Api, () => twitch.State == Cuebot.Core.ConnectionState.Connected && twitch.IsAuthorized);
+            // Held messages, Shield Mode and suspicious users come from the Twitch events.
+            sp.GetRequiredService<EventBus>().Subscribe(moderator.OnEvent);
+            twitch.StatusChanged += () =>
+            {
+                if (twitch.State == Cuebot.Core.ConnectionState.Connected) _ = moderator.RefreshAsync();
+            };
+            return moderator;
         });
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IProtectedAccounts>(sp =>
             new TwitchProtectedAccounts(() => sp.GetRequiredService<TwitchService>().Api));

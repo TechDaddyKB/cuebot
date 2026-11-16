@@ -43,7 +43,8 @@ internal sealed class TwitchEventRouter(
     SentMessageTracker sent,
     Func<int>? pyramidMinWidth = null,
     TwitchCounters? counters = null,
-    Func<string>? broadcasterLogin = null)
+    Func<string>? broadcasterLogin = null,
+    Func<bool>? moderationFeed = null)
 {
     private const int RememberedMessages = 300;
 
@@ -138,8 +139,11 @@ internal sealed class TwitchEventRouter(
     public IReadOnlyList<BotEvent> Route(string subscriptionType, JsonElement payload, bool botSession = false)
     {
         var primary = EventSubMapper.Map(subscriptionType, payload, broadcasterId());
-        if (primary is null) return [];
-        return Route(primary, botSession);
+        // channel.moderate reports every action with the moderator's name: the mod log takes it from there.
+        var logged = subscriptionType == "channel.moderate" ? EventSubMapper.ModerationAction(payload) : null;
+        if (primary is null) return logged is null ? [] : [logged];
+        var events = Route(primary, botSession);
+        return logged is null ? events : [.. events, logged];
     }
 
     /// <summary>
@@ -403,6 +407,27 @@ internal sealed class TwitchEventRouter(
                 counters?.ResetStreamCounters();
                 events.Add(primary);
                 break;
+            case TwitchEventTypes.ShieldModeBegin or TwitchEventTypes.ShieldModeEnd:
+                events.Add(primary);
+                events.Add(Logged(primary, "shield", "Shield Mode " + (primary.Type == TwitchEventTypes.ShieldModeBegin ? "on" : "off"), person: false));
+                break;
+            case TwitchEventTypes.SuspiciousUserUpdate:
+                events.Add(primary);
+                var suspicious = Str(primary, "lowTrustStatus") switch
+                {
+                    "active_monitoring" => "suspicious-monitor",
+                    "restricted" => "suspicious-restrict",
+                    _ => "suspicious-clear",
+                };
+                // Twitch's own detection has no moderator: not a moderation action.
+                if (Str(primary, "moderatorUserId").Length > 0) events.Add(Logged(primary, suspicious, ""));
+                break;
+            case TwitchEventTypes.AutomodMessageUpdated:
+                events.Add(primary);
+                var held = Str(primary, "status").ToLowerInvariant() switch { "approved" => "held-approve", "denied" => "held-deny", _ => "" };
+                if (held.Length > 0 && Str(primary, "moderatorUserId").Length > 0)
+                    events.Add(Logged(primary, held, "", messageId: Str(primary, "messageId"), message: Str(primary, "message")));
+                break;
             default:
                 events.Add(primary);
                 break;
@@ -476,7 +501,29 @@ internal sealed class TwitchEventRouter(
         foreach (var key in _timeouts.Where(t => t.Value <= now).Select(t => t.Key).ToArray()) _timeouts.Remove(key);
     }
 
-    private static BotEvent Neutral(string type, BotEvent source, bool includeDuration)
+    /// <summary>A <see cref="NeutralChatEvents.ModerationAction"/> for the mod log, from an event that names its moderator.</summary>
+    private static BotEvent Logged(BotEvent source, string action, string reason, bool person = true, string messageId = "", string message = "")
+    {
+        var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["platform"] = TwitchChatAdapter.PlatformName,
+            ["action"] = action,
+            ["moderator"] = person ? Str(source, "moderator") : Str(source, "user"),
+            ["moderatorUserId"] = person ? Str(source, "moderatorUserId") : Str(source, "userId"),
+            ["reason"] = reason,
+            ["messageId"] = messageId,
+            ["message"] = message,
+        };
+        if (person)
+        {
+            args["userId"] = Str(source, "userId");
+            args["user"] = Str(source, "user");
+            args["userName"] = Str(source, "userName");
+        }
+        return new BotEvent(NeutralChatEvents.ModerationAction, args);
+    }
+
+    private BotEvent Neutral(string type, BotEvent source, bool includeDuration)
     {
         var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
@@ -485,6 +532,8 @@ internal sealed class TwitchEventRouter(
             ["user"] = Str(source, "user"),
             ["userName"] = Str(source, "userName"),
         };
+        // channel.moderate reports this too, in more detail: the mod log takes it from there.
+        if (moderationFeed?.Invoke() == true) args["modLogged"] = true;
         // Who did it, for the mod log's record of actions made outside Cuebot.
         if (Str(source, "moderator") is { Length: > 0 } moderator) args["moderator"] = moderator;
         if (includeDuration)

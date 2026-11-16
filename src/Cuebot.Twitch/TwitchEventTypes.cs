@@ -177,4 +177,10 @@ public static class NeutralChatEvents
 
     /// <summary>Args: platform, userId, user, userName, duration (seconds), reason.</summary>
     public const string UserTimedOut = "chat.userTimedOut";
+
+    /// <summary>
+    /// Any moderation action, for the mod log (see <c>ChatHub.ModerationActionEvent</c>). Args: platform, action, moderator,
+    /// moderatorUserId, userId, user, userName, messageId, message, duration, reason, channelId.
+    /// </summary>
+    public const string ModerationAction = "chat.moderationAction";
 }

@@ -48,7 +48,7 @@ public sealed class ChatMessageText : TextBlock
 
     private void OnLineChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(ChatLineViewModel.Segments) or nameof(ChatLineViewModel.Pronouns) or nameof(ChatLineViewModel.IsDeleted))
+        if (e.PropertyName is nameof(ChatLineViewModel.Segments) or nameof(ChatLineViewModel.Pronouns) or nameof(ChatLineViewModel.IsDeleted) or nameof(ChatLineViewModel.SuspiciousNote))
             Rebuild();
     }
 
@@ -58,6 +58,7 @@ public sealed class ChatMessageText : TextBlock
         inlines.Clear();
         if (Line is not { } line) return;
 
+        if (line.HasSuspiciousNote) inlines.Add(new Run("[suspicious] ") { Foreground = Muted() });
         if (line.Badges.Length > 0) inlines.Add(new Run(line.Badges));
         var name = new Run(line.User) { FontWeight = FontWeight.SemiBold };
         if (line.UserBrush is { } brush) name.Foreground = brush;

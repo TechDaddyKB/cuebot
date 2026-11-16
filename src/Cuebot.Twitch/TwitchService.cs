@@ -65,7 +65,7 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable, Cuebot.Core.
         var sent = new SentMessageTracker();
         var counters = new TwitchCounters(() => Settings, settings.ScheduleSave);
         _router = new TwitchEventRouter(time, () => Settings.UserId, () => Settings.Bot.UserId, sent, counters: counters,
-            broadcasterLogin: () => Settings.Login);
+            broadcasterLogin: () => Settings.Login, moderationFeed: () => HasModerationFeed);
         Api = new TwitchApi(_helix, _tokens, _botHelix, _botTokens, () => Settings, () => _connection is not null, Publish, sent, counters);
     }
 
@@ -98,6 +98,14 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable, Cuebot.Core.
 
     public ConnectionState BotState { get; private set; } = ConnectionState.Disconnected;
     public string BotStatusMessage { get; private set; } = "No bot account";
+
+    /// <summary>
+    /// True while channel.moderate is subscribed: it reports every moderation action with the moderator's name, so the
+    /// mod log takes bans, timeouts and deletions from it rather than from channel.ban and the chat.
+    /// </summary>
+    internal bool HasModerationFeed =>
+        _connection is not null && !UnavailableEvents.Contains("channel.moderate")
+        && EventSubSubscriptions.All.Single(s => s.Type == "channel.moderate").IsAuthorized(Settings.Scopes.ToHashSet(StringComparer.Ordinal));
 
     /// <summary>Event types the broadcaster session could not subscribe to (missing scopes or refused).</summary>
     public IReadOnlyList<string> UnavailableEvents { get; private set; } = [];

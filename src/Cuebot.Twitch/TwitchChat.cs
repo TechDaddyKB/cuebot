@@ -177,11 +177,17 @@ internal sealed class TwitchChannelRoles(Func<TwitchApi> api, Cuebot.Core.Loggin
 
 /// <summary>
 /// Moderation for the combined chat, as the broadcaster (Helix moderation): delete, timeout (1 s to 14 days), ban,
-/// unban, warn, clear, the four chat modes and pins. Each tool is offered while connected and only when the broadcaster
-/// granted its scope; otherwise it says which permission is missing.
+/// unban, warn, clear, the four chat modes and pins, plus the queue tools (Shield Mode, AutoMod held messages,
+/// suspicious users, unban requests, blocked terms; see TwitchChatModerator.Queues.cs). Each tool is offered while
+/// connected and only when the broadcaster granted its scope; otherwise it says which permission is missing.
 /// </summary>
-internal sealed class TwitchChatModerator(Func<TwitchApi> api, Func<bool> connected) : Cuebot.Core.Chat.Moderation.IChatModerator
+internal sealed partial class TwitchChatModerator(Func<TwitchApi> api, Func<bool> connected, TimeProvider? time = null)
+    : Cuebot.Core.Chat.Moderation.IChatModerator
 {
+    private TwitchApi Api => api();
+    private bool IsConnected => connected();
+    private TimeProvider Clock => time ?? TimeProvider.System;
+
     /// <summary>Helix's longest timeout and reason.</summary>
     internal static readonly TimeSpan MaxTimeout = TimeSpan.FromSeconds(1_209_600);
     internal const int MaxReason = 500;
@@ -228,6 +234,14 @@ internal sealed class TwitchChatModerator(Func<TwitchApi> api, Func<bool> connec
             Cuebot.Core.Chat.Moderation.ModerationAction.SlowMode => works with { Note = "3 to 120 seconds between messages." },
             Cuebot.Core.Chat.Moderation.ModerationAction.FollowersOnly => works with { Note = "Viewers must have followed for 0 minutes to 90 days." },
             Cuebot.Core.Chat.Moderation.ModerationAction.Pin => works with { Note = "Stays pinned until the stream ends." },
+            Cuebot.Core.Chat.Moderation.ModerationAction.DenyUnbanRequest or Cuebot.Core.Chat.Moderation.ModerationAction.ApproveUnbanRequest
+                => works with { MaxReasonLength = MaxReason },
+            Cuebot.Core.Chat.Moderation.ModerationAction.ShieldMode => works with
+            {
+                Note = "Applies your Shield Mode settings from Twitch (for example followers-only and stricter AutoMod).",
+            },
+            Cuebot.Core.Chat.Moderation.ModerationAction.MonitorUser => works with { Note = "Their messages stay visible, flagged for mods." },
+            Cuebot.Core.Chat.Moderation.ModerationAction.RestrictUser => works with { Note = "Only mods see their messages." },
             _ => works,
         };
     }
@@ -240,6 +254,14 @@ internal sealed class TwitchChatModerator(Func<TwitchApi> api, Func<bool> connec
         Cuebot.Core.Chat.Moderation.ModerationAction.SlowMode or Cuebot.Core.Chat.Moderation.ModerationAction.FollowersOnly
             or Cuebot.Core.Chat.Moderation.ModerationAction.SubscribersOnly or Cuebot.Core.Chat.Moderation.ModerationAction.EmoteOnly
             => TwitchScopes.ManageChatSettings,
+        Cuebot.Core.Chat.Moderation.ModerationAction.ShieldMode => TwitchScopes.ManageShieldMode,
+        Cuebot.Core.Chat.Moderation.ModerationAction.ApproveHeld or Cuebot.Core.Chat.Moderation.ModerationAction.DenyHeld => TwitchScopes.ManageAutomod,
+        Cuebot.Core.Chat.Moderation.ModerationAction.MonitorUser or Cuebot.Core.Chat.Moderation.ModerationAction.RestrictUser
+            or Cuebot.Core.Chat.Moderation.ModerationAction.ClearSuspicious => TwitchScopes.ManageSuspiciousUsers,
+        Cuebot.Core.Chat.Moderation.ModerationAction.ApproveUnbanRequest or Cuebot.Core.Chat.Moderation.ModerationAction.DenyUnbanRequest
+            => TwitchScopes.ManageUnbanRequests,
+        Cuebot.Core.Chat.Moderation.ModerationAction.AddBlockedTerm or Cuebot.Core.Chat.Moderation.ModerationAction.RemoveBlockedTerm
+            => TwitchScopes.ManageBlockedTerms,
         _ => TwitchScopes.ManageChatMessages,   // delete, clear, pin, unpin
     };
 
@@ -295,6 +317,8 @@ internal sealed class TwitchChatModerator(Func<TwitchApi> api, Func<bool> connec
             case Cuebot.Core.Chat.Moderation.ModerationAction.Unpin:
                 await twitch.UnpinMessageAsync(r.MessageId, ct).ConfigureAwait(false);
                 break;
+            default:
+                return await ExecuteQueueToolAsync(twitch, r, ct).ConfigureAwait(false);
         }
         return Cuebot.Core.Chat.Moderation.ModerationOutcome.Done();
     }
