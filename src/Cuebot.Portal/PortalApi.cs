@@ -3,6 +3,7 @@ using Cuebot.Core.Actions;
 using Cuebot.Core.Commands;
 using Cuebot.Portal.Assistant;
 using Cuebot.Portal.Changes;
+using Cuebot.Portal.Chat;
 using Cuebot.Portal.Members;
 using Cuebot.Portal.Overlays;
 using Cuebot.Portal.Rewards;
@@ -20,7 +21,7 @@ namespace Cuebot.Portal;
 public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, ProfileService profile, CommandStore commands,
     ActionEngine engine, Registry registry, PortalControls? controls = null, PortalUploads? uploads = null,
     PortalOverlays? overlays = null, PortalAssistant? assistant = null, PortalRewards? rewards = null,
-    PortalModeratorCheck? moderatorCheck = null)
+    PortalModeratorCheck? moderatorCheck = null, PortalChat? chat = null)
 {
     private readonly PortalFiles _files = new(uploads?.Store);
 
@@ -41,6 +42,8 @@ public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, 
             if (overlays is not null && PortalOverlays.Handles(name)) return await overlays.HandleAsync(member, role, name, request).ConfigureAwait(false);
             if (PortalRewards.Handles(name))
                 return rewards is null ? Error("This Cuebot has no rewards.") : await rewards.HandleAsync(member, role, name, request).ConfigureAwait(false);
+            if (PortalChat.Handles(name))
+                return chat is null ? Error("This Cuebot has no chat.") : await chat.HandleAsync(member, role, name, request).ConfigureAwait(false);
             if (PortalAssistant.Handles(name))
                 return assistant is null ? Error("This Cuebot has no assistant.") : await assistant.HandleAsync(member, role, name, request).ConfigureAwait(false);
             return name switch

@@ -10,7 +10,9 @@ export type { Answer, PushHandlers };
 export type Permission =
   | "RunActions" | "CreateCommands" | "EditCommands" | "DeleteCommands" | "CreateActions" | "EditActions" | "DeleteActions"
   | "AudioLevels" | "StreamControl" | "ShowCritical" | "UploadSounds" | "UploadMedia" | "EditOverlays" | "CreateOverlays"
-  | "ViewActivity" | "ViewLogs" | "UndoOthers" | "UseAssistant" | "ManageRewards";
+  | "ViewActivity" | "ViewLogs" | "UndoOthers" | "UseAssistant" | "ManageRewards"
+  | "ViewChat" | "ChatDeleteTimeout" | "ChatBan" | "ChatModes" | "BlockedTerms" | "ViewModLog" | "NotesRead" | "NotesAdd"
+  | "NotesDelete" | "ProposeLinks" | "ConfirmLinks" | "LinkedTimeouts" | "LinkedBans";
 
 export interface Me {
   name: string;

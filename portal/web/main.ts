@@ -107,7 +107,7 @@ async function chooseProvider(target: Target): Promise<void> {
   }
   show(target.invite ? "Join as a mod" : "Sign in again",
     target.invite
-      ? "The streamer invited you to help with their stream. Sign in so their Cuebot knows it's you. Your account is only used to recognise you; Cuebot does not post or read anything with it."
+      ? "The streamer invited you to help with their stream. Sign in so their Cuebot knows it's you. Your account is only used to recognise you; Cuebot does not post or read anything with it. Their Cuebot keeps a log of what each mod does there, such as deleted messages, timeouts and bans."
       : "Your sign-in on this device has expired. Sign in with the same account as before.",
     buttons);
 }

@@ -43,6 +43,7 @@ Mods open `portal.techdaddydigital.com` on their phone or computer, or use the *
 | Page | What it does | Who (default roles) |
 |---|---|---|
 | **Home** | Quick buttons for the actions they may run, live activity (follows, subs, raids, tips), and **Needs a yes**: Cuebot's questions, like switching the stream category to the game you play (see [Game categories](../platforms/game-categories.md)) | Everyone; **Needs a yes** for roles that may control the stream (Lead Mod, Tech Lead) |
+| **Chat** | Your Twitch, YouTube, Kick and Rumble chat in one list, with delete, timeout, ban and the mod log (see [Chat for mods](chat.md)) | Everyone; chat modes and clear chat for Lead Mod and Tech Lead |
 | **Assistant** | Ask your Assistant to set things up for them, with only what their role allows (see [The Assistant for mods](#the-assistant-for-mods)) | Lead Mod, Tech Lead (new portals; see below) |
 | **Actions** | Run actions, and change or add them, with the steps their level allows | Everyone runs; Lead Mod and Tech Lead change |
 | **Commands** | Add and change chat commands | Everyone |

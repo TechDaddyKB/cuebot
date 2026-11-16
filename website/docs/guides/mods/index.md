@@ -7,5 +7,7 @@ and the phone app puts your buttons, your stream's numbers and your mods' change
 
 - [The mod portal](mod-portal.md): let your mods run actions, change commands, upload sounds and more, from their own
   phone or browser.
+- [Chat for mods](chat.md): your chat from every platform in one list, with delete, timeout, ban and a log of
+  what each mod did.
 - [The phone app](phone-app.md): your decks, your dashboard and your mods' changes on Android, and mod mode for
   helping someone else.

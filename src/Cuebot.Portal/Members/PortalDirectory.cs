@@ -43,6 +43,15 @@ public sealed class PortalDirectory
             if (_settings.Roles.Count == 0)
             {
                 _settings.Roles.AddRange(DefaultRoles.Create());
+                _settings.Version = PortalSettings.CurrentVersion;
+                _save();
+            }
+            else if (_settings.Version < PortalSettings.CurrentVersion)
+            {
+                // Version 2 added the chat rights: roles saved before get sensible ones (DefaultRoles.AddChatPermissions).
+                if (_settings.Version < 2)
+                    foreach (var role in _settings.Roles) DefaultRoles.AddChatPermissions(role);
+                _settings.Version = PortalSettings.CurrentVersion;
                 _save();
             }
         }

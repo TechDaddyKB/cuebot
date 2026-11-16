@@ -6,6 +6,7 @@ import { ActionsPage } from "./pages/actions.js";
 import { AssistantPage } from "./pages/assistant.js";
 import { AudioPage } from "./pages/audio.js";
 import { ChangesPage } from "./pages/changes.js";
+import { ChatPage } from "./pages/chat.js";
 import { CommandsPage } from "./pages/commands.js";
 import { HomePage } from "./pages/home.js";
 import { OverlaysPage } from "./pages/overlays.js";
@@ -26,6 +27,7 @@ interface PageInfo {
 
 export const PAGES: PageInfo[] = [
   { id: "home", title: "Home", page: HomePage },
+  { id: "chat", title: "Chat", page: () => <ChatPage />, needs: ["ViewChat"] },
   { id: "assistant", title: "Assistant", page: AssistantPage, needs: ["UseAssistant"] },
   { id: "actions", title: "Actions", page: ActionsPage, needs: ["RunActions", "CreateActions", "EditActions", "DeleteActions"] },
   { id: "commands", title: "Commands", page: CommandsPage, needs: ["CreateCommands", "EditCommands", "DeleteCommands"] },
@@ -69,6 +71,18 @@ export function App({ host }: { host: PortalHost }) {
     history.replaceState(null, "", `#${id}`);
   };
   const Page = page.page;
+
+  // The popped-out chat (a second window): the chat only, full height, without the menu.
+  if (location.hash === "#chat-popout" && portal.can("ViewChat")) {
+    return (
+      <PortalContext.Provider value={portal}>
+        <div class="popout-shell">
+          {notice && <div class={`notice ${notice.kind}`} role="status">{notice.text}</div>}
+          <ChatPage popout />
+        </div>
+      </PortalContext.Provider>
+    );
+  }
 
   return (
     <PortalContext.Provider value={portal}>

@@ -33,12 +33,14 @@ public sealed class PortalSignInHandlerTests
     private readonly PortalDirectory _dir = new(new PortalSettings(), () => { });
     private readonly FakeExchange _exchange = new();
     private readonly List<(Guid Member, string Op)> _apiCalls = [];
+    private readonly List<string?> _apiDevices = [];
     private readonly PortalSignInHandler _handler;
     private readonly ECDsa _device = ECDsa.Create(ECCurve.NamedCurves.nistP256);
 
     public PortalSignInHandlerTests() => _handler = new PortalSignInHandler(_dir, _exchange, (m, r) =>
     {
         _apiCalls.Add((m, (string)r["op"]!));
+        _apiDevices.Add((string?)r[PortalSignInHandler.DeviceKey]);
         if ((string)r["op"]! == "audio.list") throw new Cuebot.Obs.Protocol.ObsRequestException("GetInputVolume", 604, "The specified input does not support audio.");
         return Task.FromResult(new JsonObject { ["ok"] = true, ["name"] = _dir.Member(m)!.Name, ["role"] = _dir.RoleOf(_dir.Member(m)!)!.Name });
     });
@@ -102,6 +104,15 @@ public sealed class PortalSignInHandlerTests
         Assert.True((bool)after["ok"]!);
         Assert.Equal(2, (int)after["req"]!);
         Assert.Contains((link.MemberId!.Value, "actions.list"), _apiCalls);
+    }
+
+    [Fact]
+    public async Task The_api_gets_the_signed_in_device_never_the_one_the_request_names()
+    {
+        var link = NewLink();
+        await SignIn(link, _dir.CreateInvite(DefaultRoles.StandardModId).Secret);
+        await Send(link, new JsonObject { ["op"] = "chat.history", [PortalSignInHandler.DeviceKey] = "someone-else" });
+        Assert.Equal(link.DeviceId!.Value.ToString(), _apiDevices[^1]);
     }
 
     [Fact]

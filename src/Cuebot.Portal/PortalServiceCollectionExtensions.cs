@@ -10,6 +10,7 @@ using Cuebot.Core.Storage;
 using Cuebot.Assistant;
 using Cuebot.Portal.Assistant;
 using Cuebot.Portal.Changes;
+using Cuebot.Portal.Chat;
 using Cuebot.Portal.Members;
 using Cuebot.Portal.Overlays;
 using Cuebot.Portal.Relay;
@@ -82,7 +83,11 @@ public static class PortalServiceCollectionExtensions
             sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<ActionEngine>(),
             sp.GetRequiredService<Registry>(), sp.GetRequiredService<PortalControls>(), sp.GetRequiredService<PortalUploads>(),
             sp.GetRequiredService<PortalOverlays>(), sp.GetRequiredService<PortalAssistant>(), sp.GetRequiredService<PortalRewards>(),
-            sp.GetRequiredService<PortalModeratorCheck>()));
+            sp.GetRequiredService<PortalModeratorCheck>(), sp.GetRequiredService<PortalChat>()));
+        // The combined chat: sets ModerationService.Permissions (members' rights) when it is made, which is at start,
+        // with the relay client; its push topics are offered once the relay client exists.
+        services.AddSingleton(sp => new PortalChat(sp.GetRequiredService<PortalDirectory>(), sp.GetService<ChatHub>(),
+            sp.GetService<Cuebot.Core.Chat.Moderation.ModerationService>(), sp.GetService<AppLog>()));
         services.AddSingleton(sp => new PortalModeratorCheck(sp.GetRequiredService<PortalDirectory>(),
             sp.GetServices<Cuebot.Core.Chat.Moderation.IChannelRoles>(), sp.GetService<AppLog>()));
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IProtectedAccounts>(sp => new PortalProtectedAccounts(sp.GetRequiredService<PortalDirectory>()));
@@ -90,11 +95,13 @@ public static class PortalServiceCollectionExtensions
         services.AddSingleton(sp =>
         {
             var api = sp.GetRequiredService<PortalApi>();
-            return new PortalRelayClient(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<AppLog>())
+            var client = new PortalRelayClient(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<AppLog>())
             {
                 LinkHandler = new PortalSignInHandler(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<IPortalIdentityExchange>(),
                     api.HandleAsync, sp.GetRequiredService<AppLog>()),
             };
+            sp.GetRequiredService<PortalChat>().Attach(client.Push);
+            return client;
         });
         services.AddSingleton<IConnectionStatus>(sp => sp.GetRequiredService<PortalRelayClient>());
         // Server push to signed-in devices (topics such as "chat" are registered by the features that publish them).

@@ -250,6 +250,7 @@ nav:
       - Mods and your phone:
           - guides/mods/index.md
           - The mod portal: guides/mods/mod-portal.md
+          - Chat for mods: guides/mods/chat.md
           - The phone app: guides/mods/phone-app.md
       - The AI assistant:
           - guides/ai/index.md

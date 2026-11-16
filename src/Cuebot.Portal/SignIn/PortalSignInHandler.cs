@@ -25,6 +25,9 @@ public sealed class PortalSignInHandler(PortalDirectory directory, IPortalIdenti
     Func<Guid, JsonObject, Task<JsonObject>>? api = null, AppLog? log = null) : IPortalLinkHandler
 {
     public const int MaxSignInAttempts = 5;
+
+    /// <summary>Set on every request handed to the API: the id of the device signed in on this link.</summary>
+    public const string DeviceKey = "$device";
     private const string LogSource = "Mod portal";
 
     public async Task<byte[]?> HandleAsync(PortalLinkContext link, byte[] message, CancellationToken ct)
@@ -34,6 +37,9 @@ public sealed class PortalSignInHandler(PortalDirectory directory, IPortalIdenti
         catch (JsonException) { return Encode(Error("That message was not understood."), null); }
         var req = request["req"]?.DeepClone();
         request.Remove("req");
+        // The signed-in device, for features that record it (the mod log); never what the device claims.
+        request.Remove(DeviceKey);
+        if (link.DeviceId is { } deviceId) request[DeviceKey] = deviceId.ToString();
         var op = request["op"] is JsonValue v && v.GetValueKind() == JsonValueKind.String ? v.GetValue<string>() : "";
         JsonObject answer;
         try

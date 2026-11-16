@@ -37,6 +37,29 @@ public enum PortalPermission
     UseAssistant,
     /// <summary>Create, change and delete Twitch and Kick channel point rewards (ones Cuebot made).</summary>
     ManageRewards,
+
+    // The combined chat (docs/UNIFIED_MOD_CHAT_PLAN.md, section 8). Moderation is never a "change": it applies at once
+    // and is written to the mod log.
+
+    /// <summary>See the combined chat of every platform.</summary>
+    ViewChat,
+    /// <summary>Delete messages, time people out and warn them.</summary>
+    ChatDeleteTimeout,
+    /// <summary>Ban and unban (lift a ban or a timeout).</summary>
+    ChatBan,
+    /// <summary>Chat modes (slow, followers-, subscribers-, emote-only), clear chat, Shield Mode and pins.</summary>
+    ChatModes,
+    BlockedTerms,
+    /// <summary>See the mod log: every mod's actions (decision 10).</summary>
+    ViewModLog,
+    NotesRead,
+    NotesAdd,
+    NotesDelete,
+    /// <summary>Suggest that two accounts are one person (a second person confirms).</summary>
+    ProposeLinks,
+    ConfirmLinks,
+    LinkedTimeouts,
+    LinkedBans,
 }
 
 /// <summary>Whether a member's changes go live at once.</summary>
@@ -145,6 +168,12 @@ public sealed class PortalInvite
 /// <summary>portal.json: the mod portal's identity key, roles, members and open invites.</summary>
 public sealed class PortalSettings
 {
+    /// <summary>
+    /// The version of this file's layout. 2 added the chat permissions (<see cref="PortalDirectory"/> gives roles saved
+    /// by version 1 the defaults of DefaultRoles on load).
+    /// </summary>
+    public const int CurrentVersion = 2;
+
     public int Version { get; set; } = 1;
 
     /// <summary>Let mods connect through the shared relay (relay.techdaddydigital.com).</summary>

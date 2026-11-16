@@ -177,4 +177,20 @@ public sealed class PortalApiTests : IDisposable
         Assert.Contains("mount", (string?)answer["js"]);
         Assert.NotEmpty((string?)answer["css"] ?? "");
     }
+
+    [Fact]
+    public async Task Chat_ops_go_to_the_chat_or_say_there_is_none()
+    {
+        var sam = Member(DefaultRoles.StandardModId);
+        var none = await _api.HandleAsync(sam.Id, new JsonObject { ["op"] = "chat.history" });
+        Assert.Contains("no chat", (string)none["error"]!);
+
+        var chat = new Cuebot.Portal.Chat.PortalChat(_dir, hub: null, moderation: null);
+        var api = new PortalApi(_dir, new PortalChanges(new PortalChangeLog(), () => { }, _dir, []), _profile, _commands, _engine,
+            new Registry([], []), chat: chat);
+        var answer = await api.HandleAsync(sam.Id, new JsonObject { ["op"] = "chat.history" });
+        Assert.Equal("This Cuebot has no chat.", (string)answer["error"]!);   // PortalChat's own answer: no ChatHub here
+        var refused = await api.HandleAsync(Member(_dir.SaveRole(new PortalRole { Name = "Sounds" }).Id).Id, new JsonObject { ["op"] = "chat.history" });
+        Assert.Contains("role", (string)refused["error"]!);
+    }
 }
