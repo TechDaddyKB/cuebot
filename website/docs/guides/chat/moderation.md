@@ -148,3 +148,9 @@ Mods who moderate from the mod portal act with your account, so Cuebot adds a fe
 - Each mod can make at most 10 bans and 30 timeouts in 10 minutes.
 - On Twitch and Kick their name goes in front of the reason, like `[mod: Sam] spam`, so the platform's own log shows
   who it was.
+
+## Linked accounts
+
+When one viewer chats on several platforms, you can link their accounts, keep notes on them, and ban or time out all
+of them at once, with a preview first and one **Undo**. It is off by default while its privacy side is being reviewed:
+see [Linked accounts and linked bans](identity-links.md).

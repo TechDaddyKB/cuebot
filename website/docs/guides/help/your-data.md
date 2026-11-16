@@ -41,3 +41,7 @@ Sign-ins and keys are **never** put in backups. If you restore a [backup](backup
 
 Cuebot has no tracking and sends no statistics. It only connects to a service when you set it up, and only sends what
 that job needs. The [privacy policy](https://techdaddydigital.com/privacy/) lists exactly what goes where.
+
+When a viewer asks what you hold about them, or to be forgotten, use **Export data** and **Forget viewer…** on the
+**Users & Groups** page. With [linked accounts](../chat/identity-links.md#when-a-viewer-asks-what-you-hold-or-to-be-forgotten)
+this covers every account confirmed as the same person, and the mod log.

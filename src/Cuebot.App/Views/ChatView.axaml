@@ -77,6 +77,36 @@
           <TextBlock Classes="muted" FontSize="12" Text="{Binding QuotaText}" IsVisible="{Binding HasQuotaText}" TextWrapping="Wrap" />
         </StackPanel>
 
+        <!-- The last linked action (Undo for 24 hours) and accounts newly linked to a banned person -->
+        <StackPanel x:Name="LinkStrips" DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,4">
+          <Border x:Name="LastIncidentStrip" Classes="inset" Padding="8,4" IsVisible="{Binding HasLastIncident}">
+            <DockPanel>
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                <Button Content="Undo" Command="{Binding UndoLastIncidentCommand}" Padding="8,2"
+                        ToolTip.Tip="Lifts every ban and timeout of this linked action that worked. Deleted messages cannot be restored." />
+                <Button Content="Dismiss" Command="{Binding DismissLastIncidentCommand}" Padding="8,2" />
+              </StackPanel>
+              <TextBlock Text="{Binding LastIncidentText}" TextWrapping="Wrap" VerticalAlignment="Center" FontSize="12.5" />
+            </DockPanel>
+          </Border>
+          <ItemsControl x:Name="LaterArrivalList" ItemsSource="{Binding LaterArrivals}" IsVisible="{Binding HasLaterArrivals}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vmc:LaterArrivalViewModel">
+                <Border Classes="inset" Padding="8,4" Margin="0,0,0,4">
+                  <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                      <Button Content="Apply here too" Command="{Binding ApplyCommand}" Padding="8,2"
+                              ToolTip.Tip="Bans this account too, through the link. The reason box is used, or a reason naming the other platforms." />
+                      <Button Content="Not now" Command="{Binding DismissCommand}" Padding="8,2" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" VerticalAlignment="Center" FontSize="12.5" />
+                  </DockPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
         <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0">
           <!-- Quick actions (global ones work without a selection) -->
           <ItemsControl x:Name="QuickActionBar" ItemsSource="{Binding QuickActions}" IsVisible="{Binding HasQuickActions}">
@@ -228,6 +258,124 @@
                              IsVisible="{Binding ModerationHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Text="{Binding ModerationHint}" />
                 </StackPanel>
 
+                <!-- Linked accounts (identity links; only while the streamer has them on) -->
+                <StackPanel x:Name="LinkSection" Spacing="6" IsVisible="{Binding ShowLinkTools}">
+                  <TextBlock Classes="label" Text="LINKED ACCOUNTS" />
+                  <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" IsVisible="{Binding !HasLinkedAccounts}"
+                             Text="Not linked to accounts on other platforms." />
+                  <ItemsControl x:Name="LinkedAccountList" ItemsSource="{Binding LinkedAccounts}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate DataType="vmc:LinkedAccountRowViewModel">
+                        <Grid ColumnDefinitions="Auto,*" Margin="0,2">
+                          <Border Width="4" CornerRadius="2" Background="{Binding PlatformBrush}" Margin="0,0,8,0" />
+                          <StackPanel Grid.Column="1" Spacing="2">
+                            <TextBlock TextWrapping="Wrap" FontSize="12.5">
+                              <Run Text="{Binding Platform}" FontWeight="SemiBold" /><Run Text=": " /><Run Text="{Binding Name}" />
+                            </TextBlock>
+                            <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding StatusText}"
+                                       ToolTip.Tip="{Binding UserId, StringFormat='Platform user id: {0}'}" />
+                            <WrapPanel ItemSpacing="4" LineSpacing="4">
+                              <Button Content="Confirm" Command="{Binding ConfirmCommand}" IsVisible="{Binding CanConfirm}" Padding="6,1" FontSize="12"
+                                      ToolTip.Tip="You agree these are the same person. The mod who suggested it cannot confirm it." />
+                              <Button Content="Wrong" Command="{Binding RejectCommand}" IsVisible="{Binding CanReject}" Padding="6,1" FontSize="12"
+                                      ToolTip.Tip="Marks the suggestion wrong; it will not be suggested again." />
+                              <Button Content="Unlink…" Command="{Binding UnlinkCommand}" IsVisible="{Binding CanUnlink}" Padding="6,1" FontSize="12"
+                                      ToolTip.Tip="Takes this account out of the person, and offers to reverse what the link caused." />
+                            </WrapPanel>
+                          </StackPanel>
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                  <!-- Unlink question -->
+                  <Border x:Name="UnlinkPanel" Classes="inset" Padding="8" IsVisible="{Binding HasPendingUnlink}">
+                    <ContentControl Content="{Binding PendingUnlink}">
+                      <ContentControl.ContentTemplate>
+                        <DataTemplate DataType="vmc:UnlinkViewModel">
+                          <StackPanel Spacing="4">
+                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <CheckBox Content="This link was wrong" IsChecked="{Binding MarkedWrong}"
+                                      ToolTip.Tip="Remembered as wrong so it is not suggested again; reversing its actions starts ticked." />
+                            <CheckBox Content="Unlink all of this person's accounts" IsChecked="{Binding Dissolve}" />
+                            <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding Question}" IsVisible="{Binding HasReversible}" />
+                            <ItemsControl ItemsSource="{Binding Reversible}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="vmc:ReversibleRowViewModel">
+                                  <CheckBox Content="{Binding Text}" IsChecked="{Binding Reverse}" FontSize="12" />
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBox Text="{Binding Reason}" PlaceholderText="Why (optional, for the mod log)" />
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                              <Button Content="Unlink" Command="{Binding ConfirmCommand}" Classes="danger" />
+                              <Button Content="Cancel" Command="{Binding CancelCommand}" />
+                            </StackPanel>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ContentControl.ContentTemplate>
+                    </ContentControl>
+                  </Border>
+
+                  <ItemsControl x:Name="NameHintList" ItemsSource="{Binding NameHints}" IsVisible="{Binding HasNameHints}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate DataType="vmc:NameHintViewModel">
+                        <DockPanel Margin="0,0,0,2">
+                          <Button DockPanel.Dock="Right" Content="Same person…" Command="{Binding UseCommand}" Padding="6,1" FontSize="12"
+                                  ToolTip.Tip="Only a hint: the same name proves nothing. This fills in a suggestion you can check first." />
+                          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding Text}" VerticalAlignment="Center" />
+                        </DockPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                  <WrapPanel ItemSpacing="6" LineSpacing="6">
+                    <Button x:Name="SamePersonButton" Content="Same person as…" Command="{Binding ToggleProposeFormCommand}"
+                            ToolTip.Tip="Suggest that an account on another platform is this person. It stays a suggestion until someone else confirms it." />
+                    <Button x:Name="VerifyButton" Content="Verify with !link" Command="{Binding StartVerificationCommand}"
+                            ToolTip.Tip="Gives you a one-time code (10 minutes). Send it privately to this viewer; they type !link CODE from their other account." />
+                  </WrapPanel>
+                  <TextBox x:Name="VerificationBox" Text="{Binding VerificationText}" IsReadOnly="True" TextWrapping="Wrap" IsVisible="{Binding HasVerification}" />
+
+                  <StackPanel x:Name="ProposeForm" Spacing="4" IsVisible="{Binding ShowProposeForm}">
+                    <Grid ColumnDefinitions="Auto,6,*">
+                      <ComboBox ItemsSource="{Binding LinkPlatforms}" SelectedItem="{Binding ProposePlatform}" MinWidth="96" />
+                      <TextBox Grid.Column="2" Text="{Binding ProposeName}" PlaceholderText="Their name in that chat" />
+                    </Grid>
+                    <TextBox Text="{Binding ProposeEvidence}" PlaceholderText="What shows it (e.g. they said &quot;I'm X on Twitch&quot;)" />
+                    <TextBox Text="{Binding ProposeNote}" PlaceholderText="Note (optional)" />
+                    <Button Content="Suggest link" Command="{Binding ProposeCommand}" />
+                    <StackPanel Spacing="4" IsVisible="{Binding HasLinkConflict}">
+                      <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding LinkConflict}" />
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Button Content="Merge the two" Command="{Binding MergeLinkCommand}" />
+                        <Button Content="Move the account" Command="{Binding MoveLinkCommand}" />
+                      </StackPanel>
+                    </StackPanel>
+                  </StackPanel>
+                  <TextBlock x:Name="LinkStatusText" Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding LinkStatus}" IsVisible="{Binding HasLinkStatus}" />
+
+                  <TextBlock Classes="label" Text="NOTES" Margin="0,6,0,0" />
+                  <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{x:Static vm:ChatViewModel.NoteWarning}" />
+                  <ItemsControl x:Name="NoteList" ItemsSource="{Binding Notes}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate DataType="vmc:NoteRowViewModel">
+                        <DockPanel Margin="0,2">
+                          <Button DockPanel.Dock="Right" Content="Delete" Command="{Binding DeleteCommand}" Padding="6,1" FontSize="12" VerticalAlignment="Top" />
+                          <StackPanel>
+                            <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="12.5" />
+                            <TextBlock Classes="muted" FontSize="11.5" Text="{Binding Byline}" />
+                          </StackPanel>
+                        </DockPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <Grid ColumnDefinitions="*,6,Auto">
+                    <TextBox Text="{Binding NoteDraft}" PlaceholderText="Add a note" TextWrapping="Wrap" AcceptsReturn="False" />
+                    <Button Grid.Column="2" Content="Add" Command="{Binding AddNoteCommand}" VerticalAlignment="Top" />
+                  </Grid>
+                </StackPanel>
+
                 <!-- This person's rows in the mod log -->
                 <StackPanel Spacing="4" IsVisible="{Binding HasUserLog}">
                   <TextBlock Classes="label" Text="MOD LOG" />
@@ -281,6 +429,12 @@
                       <TextBlock Classes="muted" FontSize="12">
                         <Run Text="{Binding Platform}" /><Run Text=" · " /><Run Text="{Binding Time}" />
                       </TextBlock>
+                      <WrapPanel ItemSpacing="4" LineSpacing="4">
+                        <Button Content="Undo incident" Command="{Binding UndoIncidentCommand}" IsVisible="{Binding CanUndoIncident}" Padding="6,1" FontSize="12"
+                                ToolTip.Tip="Lifts every ban and timeout of this decision (on every platform it touched) that is still in force." />
+                        <Button Content="Undo this mod's last hour" Command="{Binding UndoMemberCommand}" IsVisible="{Binding CanUndoMember}" Padding="6,1" FontSize="12"
+                                ToolTip.Tip="Lifts the bans and timeouts this mod made in the last hour and withdraws their link suggestions." />
+                      </WrapPanel>
                     </StackPanel>
                   </Grid>
                 </DataTemplate>
@@ -422,6 +576,15 @@
         </DockPanel>
         <ScrollViewer DataContext="{Binding Options}" x:DataType="vmc:ChatOptionsViewModel">
           <StackPanel Spacing="6" Margin="0,0,8,0">
+            <StackPanel x:Name="ModerationOptions" Spacing="6" IsVisible="{Binding HasModerationSettings}" Margin="0,0,0,8">
+              <TextBlock Text="Moderation" FontWeight="SemiBold" />
+              <CheckBox x:Name="IdentityLinksBox" Content="Identity links (off by default)" IsChecked="{Binding IdentityLinks}" />
+              <TextBlock x:Name="IdentityLinksText" Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{x:Static vmc:ChatOptionsViewModel.IdentityLinksText}" />
+              <CheckBox x:Name="MirroringBox" Content="Automatic mirroring (off by default)" IsChecked="{Binding AutomaticMirroring}" IsEnabled="{Binding CanMirror}"
+                        ToolTip.ShowOnDisabled="True" ToolTip.Tip="Needs identity links." />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{x:Static vmc:ChatOptionsViewModel.AutomaticMirroringText}" />
+            </StackPanel>
+
             <TextBlock Text="Display" FontWeight="SemiBold" />
             <CheckBox x:Name="ShowEmotesBox" Content="Show emotes as images" IsChecked="{Binding ShowEmotes}" ToolTip.Tip="Ticked: emotes appear as little pictures. Unticked: you see just their names as text." />
             <CheckBox Content="Show pronouns (Twitch, alejo.io)" IsChecked="{Binding ShowPronouns}" ToolTip.Tip="Shows he/she/they next to a chatter when they have set it on alejo.io (a pronoun website)." />
@@ -477,6 +640,62 @@
           </StackPanel>
         </ScrollViewer>
       </DockPanel>
+    </Border>
+
+    <!-- The linked ban / timeout dialog: a preview of every linked account, then the result per row -->
+    <Border x:Name="LinkedActionOverlay" Grid.ColumnSpan="5" Background="#99000000" IsVisible="{Binding HasLinkedAction}" ZIndex="10">
+      <Border Classes="card" MaxWidth="900" MaxHeight="640" Margin="24" Padding="16" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <ContentControl Content="{Binding LinkedAction}">
+          <ContentControl.ContentTemplate>
+            <DataTemplate DataType="vmc:LinkedActionViewModel">
+              <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+                  <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="16" TextWrapping="Wrap" />
+                  <TextBlock Classes="muted" FontSize="12" Text="{Binding Intro}" TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,8,0,0">
+                  <TextBox x:Name="LinkedReason" Text="{Binding Reason}" PlaceholderText="Reason (required)" IsEnabled="{Binding !IsDone}"
+                           ToolTip.Tip="One reason for all of them. Twitch and Kick also get your name in front and the platform's length limit." />
+                  <TextBlock x:Name="LinkedStatus" Text="{Binding Status}" TextWrapping="Wrap" FontSize="12.5"
+                             IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button x:Name="LinkedRun" Content="{Binding RunLabel}" Command="{Binding RunCommand}" Classes.danger="{Binding Confirming}" IsVisible="{Binding !IsDone}" />
+                    <Button Content="Undo incident" Command="{Binding UndoCommand}" IsVisible="{Binding CanUndo}" />
+                    <Button x:Name="LinkedClose" Content="Close" Command="{Binding CloseCommand}" />
+                  </StackPanel>
+                </StackPanel>
+                <ScrollViewer>
+                  <ItemsControl x:Name="LinkedRows" ItemsSource="{Binding Rows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate DataType="vmc:LinkedRowViewModel">
+                        <Grid ColumnDefinitions="Auto,Auto,2*,2*,2*,2*" Margin="0,3">
+                          <CheckBox IsChecked="{Binding IsTicked}" IsEnabled="{Binding CanTick}" IsVisible="{Binding !ByHand}" VerticalAlignment="Top" />
+                          <Border Grid.Column="1" Width="4" CornerRadius="2" Background="{Binding PlatformBrush}" Margin="4,0,8,0" />
+                          <TextBlock Grid.Column="2" Text="{Binding Account}" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,8,0" />
+                          <TextBlock Grid.Column="3" Text="{Binding LinkText}" TextWrapping="Wrap" Classes="muted" FontSize="12" Margin="0,0,8,0" />
+                          <StackPanel Grid.Column="4" Margin="0,0,8,0">
+                            <TextBlock Text="{Binding WillHappen}" TextWrapping="Wrap" FontSize="12.5" />
+                            <TextBlock Text="{Binding Result}" TextWrapping="Wrap" FontSize="12.5" FontWeight="SemiBold" IsVisible="{Binding HasResult}" />
+                          </StackPanel>
+                          <StackPanel Grid.Column="5" Spacing="4">
+                            <TextBlock Text="{Binding Notes}" TextWrapping="Wrap" Classes="muted" FontSize="12" IsVisible="{Binding HasNotes}" />
+                            <WrapPanel ItemSpacing="4" LineSpacing="4">
+                              <Button Content="Open website" Command="{Binding OpenWebsiteCommand}" IsVisible="{Binding ByHand}" Padding="6,1" FontSize="12" />
+                              <Button Content="I did it" Command="{Binding IDidItCommand}" IsVisible="{Binding AwaitingManual}" Padding="6,1" FontSize="12"
+                                      ToolTip.Tip="Records that you did it on the website, as part of this incident." />
+                              <Button Content="Retry" Command="{Binding RetryCommand}" IsVisible="{Binding CanRetry}" Padding="6,1" FontSize="12" />
+                            </WrapPanel>
+                          </StackPanel>
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </DockPanel>
+            </DataTemplate>
+          </ContentControl.ContentTemplate>
+        </ContentControl>
+      </Border>
     </Border>
   </Grid>
 </UserControl>

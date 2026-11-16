@@ -181,3 +181,14 @@ internal sealed class YouTubeProtectedAccounts(YouTubeService youtube) : IProtec
         return youtube.IsBotSignedIn && userId == youtube.Settings.Bot.ChannelId ? "This is your YouTube bot account." : null;
     }
 }
+
+/// <summary>
+/// Reads a linked YouTube account again (YouTube's developer policies: API data is refreshed or deleted within 30 days),
+/// so identity links can keep it (docs/UNIFIED_MOD_CHAT_PLAN.md, section 9.3).
+/// </summary>
+internal sealed class YouTubeAccountLookup(YouTubeService youtube) : Cuebot.Core.Users.IAccountLookup
+{
+    public string Platform => YouTubeChatAdapter.PlatformName;
+
+    public Task<string?> CurrentNameAsync(string userId, CancellationToken ct = default) => youtube.ChannelTitleAsync(userId, ct);
+}

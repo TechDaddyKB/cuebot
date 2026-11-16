@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Cuebot.Core.Chat.Emotes;
+using Cuebot.Core.Chat.Moderation;
 using Cuebot.Core.Storage;
 
 namespace Cuebot.App.ViewModels.Chat;
@@ -47,11 +48,15 @@ public sealed partial class ChatOptionsViewModel : ObservableObject
     private readonly Action _persist;
     private readonly EmoteService? _emotes;
     private readonly JsonFile<EmoteSettings>? _emoteSettings;
+    private readonly JsonFile<ModerationSettings>? _moderation;
     private readonly bool _loading = true;
 
     public ChatOptionsViewModel(ChatPageSettings settings, Action persist, EmoteService? emotes,
-        JsonFile<EmoteSettings>? emoteSettings, Func<IEnumerable<string>> actionNames)
+        JsonFile<EmoteSettings>? emoteSettings, Func<IEnumerable<string>> actionNames, JsonFile<ModerationSettings>? moderation = null)
     {
+        _moderation = moderation;
+        _identityLinks = moderation?.Value.IdentityLinksEnabled ?? false;
+        _automaticMirroring = moderation?.Value.AutomaticMirroring ?? false;
         _settings = settings;
         _persist = persist;
         _emotes = emotes;
@@ -80,6 +85,50 @@ public sealed partial class ChatOptionsViewModel : ObservableObject
 
     /// <summary>Raised after any option changed and was saved.</summary>
     public event Action? Changed;
+
+    /// <summary>Raised after the identity links or automatic mirroring switch changed.</summary>
+    public event Action? ModerationChanged;
+
+    /// <summary>The moderation switches are offered (the page has moderation.json).</summary>
+    public bool HasModerationSettings => _moderation is not null;
+
+    /// <summary>Plain words on the identity links switch: what it does and that it waits for a review (decision 12).</summary>
+    public const string IdentityLinksText =
+        "Lets you and your mods record that accounts on different platforms belong to one person (suggested, confirmed by a " +
+        "second person, or verified by the viewer with !link), keep notes on viewers, and ban or time out all of a person's " +
+        "accounts at once. Pending review: the wording to show viewers, the GDPR position and how long links and notes are " +
+        "kept are still being checked by a legal and privacy reviewer. Leave this off until that review is done, unless you " +
+        "accept that.";
+
+    public const string AutomaticMirroringText =
+        "A ban on any platform, including one made on the platform's own website, is applied at once to the person's " +
+        "verified and confirmed accounts, never to suggested ones. Each mirrored ban is logged, you are notified, and it can " +
+        "be undone as one incident.";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanMirror))]
+    private bool _identityLinks;
+
+    [ObservableProperty] private bool _automaticMirroring;
+
+    /// <summary>Automatic mirroring needs identity links.</summary>
+    public bool CanMirror => IdentityLinks && HasModerationSettings;
+
+    partial void OnIdentityLinksChanged(bool value)
+    {
+        if (!value) AutomaticMirroring = false;
+        SaveModeration(s => s.IdentityLinksEnabled = value);
+    }
+
+    partial void OnAutomaticMirroringChanged(bool value) => SaveModeration(s => s.AutomaticMirroring = value && IdentityLinks);
+
+    private void SaveModeration(Action<ModerationSettings> change)
+    {
+        if (_loading || _moderation is null) return;
+        change(_moderation.Value);
+        _moderation.ScheduleSave();
+        ModerationChanged?.Invoke();
+    }
 
     public Func<IEnumerable<string>> ActionNames { get; }
     public ObservableCollection<QuickActionEditViewModel> QuickActions { get; } = [];

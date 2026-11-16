@@ -129,6 +129,7 @@ public sealed class AppHost : IAsyncDisposable
         Get<ActionEngine>().Start();
         Get<TimerService>().Start();
         Get<Cuebot.Core.Users.ViewerData>().Start();   // YouTube data retention
+        GetAll<Cuebot.Core.Users.IdentityLinks>().FirstOrDefault()?.Start();   // link and note retention, YouTube 30-day refresh
         log.Info("Cuebot", $"Stored sign-ins and keys are encrypted (key kept by the {Cuebot.Core.Storage.SecretStore.For(Get<AppPaths>().Root).ProtectorName})");
         var pruned = Cuebot.Core.Storage.DataRetention.PruneDataFolder(Get<AppPaths>(), DateTime.Now);
         if (pruned > 0) log.Info("Cuebot", $"Deleted {pruned} report(s) and cached image(s) older than {Cuebot.Core.Storage.DataRetention.KeepDays} days");

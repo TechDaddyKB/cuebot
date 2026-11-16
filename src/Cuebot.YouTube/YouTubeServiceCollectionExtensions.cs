@@ -35,6 +35,7 @@ public static class YouTubeServiceCollectionExtensions
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IChatModerator>(sp => new YouTubeChatModerator(sp.GetRequiredService<YouTubeService>()));
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IPlatformQuota>(sp => YouTubeQuotaBudget.For(sp.GetRequiredService<YouTubeService>()));
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IProtectedAccounts>(sp => new YouTubeProtectedAccounts(sp.GetRequiredService<YouTubeService>()));
+        services.AddSingleton<Cuebot.Core.Users.IAccountLookup>(sp => new YouTubeAccountLookup(sp.GetRequiredService<YouTubeService>()));
         services.AddSingleton<IChatSender, YouTubeChatSender>();
         services.AddSingleton<ITriggerProvider, YouTubeTriggers>();
         services.AddSingleton(sp => new SubActionSet(YouTubeSubActions.Create(sp.GetRequiredService<YouTubeService>()).ToArray()));

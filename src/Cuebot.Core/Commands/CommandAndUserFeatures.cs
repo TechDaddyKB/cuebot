@@ -31,7 +31,7 @@ internal static class CommandAndUserFeatures
         services.AddSingleton<IViewerDataStore>(sp => sp.GetRequiredService<GroupStore>());
         services.AddSingleton<IViewerDataStore>(sp => sp.GetRequiredService<CommandStore>());
         services.AddSingleton(sp => new ViewerData(sp.GetServices<IViewerDataStore>(), sp.GetRequiredService<UserRegistry>(),
-            sp.GetRequiredService<AppLog>()));
+            sp.GetRequiredService<AppLog>(), persons: sp.GetServices<IPersonDataStore>()));
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<CommandService>());
         services.AddSingleton<IPeriodicService>(sp => new Timers.CronClock(sp.GetRequiredService<EventBus>(), sp.GetRequiredService<ProfileService>()));
         services.AddSingleton<ITriggerProvider, Timers.CronTriggers>();

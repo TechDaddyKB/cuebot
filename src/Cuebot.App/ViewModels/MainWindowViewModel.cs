@@ -111,7 +111,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new Cuebot.App.ViewModels.Assistant.AssistantViewModel(host.Get<Cuebot.Assistant.AssistantService>()),
             queues,
             new TimersViewModel(host.Get<ProfileService>(), host.Get<TimerService>()),
-            new UsersViewModel(host.Get<Cuebot.Core.Users.UserRegistry>(), host.Get<Cuebot.Core.Users.GroupStore>(), host.Get<Cuebot.Core.Users.ViewerData>()),
+            new UsersViewModel(host.Get<Cuebot.Core.Users.UserRegistry>(), host.Get<Cuebot.Core.Users.GroupStore>(), host.Get<Cuebot.Core.Users.ViewerData>(),
+                Path.Combine(host.Get<Cuebot.Core.AppPaths>().Root, "exports")),
             new VariablesViewModel(host.Get<Cuebot.Core.Variables.VariableViewer>()),
             new WatchersViewModel(host.Get<Cuebot.Core.SystemTools.WatcherService>()),
             new TwitchViewModel(host.Get<TwitchService>()),
@@ -216,6 +217,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Status.ProblemsRequested += () => SelectedPage = Support;
         SyncGroupSelection(Dashboard);
         WatchModApprovals(host);
+        WatchModerationNotices(host);
         WatchRequests(host);
 
         PageViewModel Page(string title) => Pages.First(p => p.Title == title);
@@ -433,6 +435,34 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _requests.Added += r => _ = NotifyAsync(host, new Cuebot.Core.Desktop.Notifications.DesktopNotification("Cuebot needs a yes",
             r.Detail.Length > 0 ? $"{r.Title} {r.Detail}" : r.Title) { Id = "cuebot-request", DurationSeconds = 15 }, log);
         RequestsChanged();
+    }
+
+    private const string ModerationToastId = "moderation.linked";
+
+    /// <summary>
+    /// Linked actions by mods, automatic mirroring and accounts newly linked to a banned person (identity links,
+    /// docs/UNIFIED_MOD_CHAT_PLAN.md section 7.4) notify the streamer, like "Live and tell me" changes. Clicking the
+    /// notification opens the Chat page, where the mod log has "Undo incident".
+    /// </summary>
+    private void WatchModerationNotices(AppHost host)
+    {
+        if (host.GetAll<Cuebot.Core.Chat.Moderation.ModerationService>().FirstOrDefault() is not { } moderation) return;
+        var log = host.Get<AppLog>();
+        moderation.StreamerNotice += notice =>
+        {
+            log.Info("Moderation", $"{notice.Title}: {notice.Message}");
+            _ = NotifyAsync(host, new Cuebot.Core.Desktop.Notifications.DesktopNotification(notice.Title, notice.Message)
+            {
+                Id = ModerationToastId,
+                DurationSeconds = 10,
+            }, log);
+        };
+        host.Get<Cuebot.Core.Events.EventBus>().Subscribe(e =>
+        {
+            if (e.Type == Cuebot.Core.Desktop.Notifications.DesktopEvents.ToastActivated
+                && string.Equals(e.Args.GetValueOrDefault("toastId") as string, ModerationToastId, StringComparison.Ordinal))
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => SelectedPage = Pages.FirstOrDefault(p => p.Title == "Chat") ?? SelectedPage);
+        });
     }
 
     private static async Task NotifyAsync(AppHost host, Cuebot.Core.Desktop.Notifications.DesktopNotification notification, AppLog log)

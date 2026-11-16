@@ -30,6 +30,55 @@ public sealed class ModerationSettings
     public bool SoftWarnings { get; set; } = true;
 
     public ModLogRetention Retention => new ModLogRetention(MessageTextDays, TimeoutDays, BanMonthsAfterEnd).Clamped();
+
+    /// <summary>
+    /// Identity links (phase 4) and linked actions (phase 5): linked accounts, notes and <c>!link</c> verification on
+    /// user cards, the linked ban and timeout preview. Off by default: the viewer wording, the GDPR position and the
+    /// retention periods are waiting for a legal and privacy review (docs/UNIFIED_MOD_CHAT_PLAN.md, decision 12). While
+    /// off nothing about links is shown, <c>!link</c> gets no answer, no action goes through a link and nothing is
+    /// suggested; links already stored stay (and keep their retention) until the streamer turns it back on or erases them.
+    /// </summary>
+    public bool IdentityLinksEnabled { get; set; }
+
+    /// <summary>
+    /// Automatic mirroring (decision 6): a ban seen on any platform, including one made on the platform's website, is
+    /// applied to the person's verified and confirmed links without a preview. Off by default; needs
+    /// <see cref="IdentityLinksEnabled"/>. Never goes through suggested links.
+    /// </summary>
+    public bool AutomaticMirroring { get; set; }
+
+    /// <summary>Linked bans (one incident touching more than one account) one portal member may start per hour.</summary>
+    public int MemberLinkedBansPerHour { get; set; } = 5;
+
+    /// <summary>Days a suggested link nobody confirmed is kept (at most 60).</summary>
+    public int UnconfirmedLinkDays { get; set; } = IdentityRetention.Default.UnconfirmedLinkDays;
+
+    /// <summary>Months a note is kept after its last edit (at most 24).</summary>
+    public int NoteMonthsAfterEdit { get; set; } = IdentityRetention.Default.NoteMonthsAfterEdit;
+
+    public IdentityRetention LinkRetention =>
+        new IdentityRetention(UnconfirmedLinkDays, BanMonthsAfterEnd, NoteMonthsAfterEdit).Clamped();
+}
+
+/// <summary>
+/// How long identity data is kept (section 9.2, decision 8; pending the review of decision 12). Links stand while
+/// they are active; rejected suggestions and the link rows of the mod log go <see cref="LinkMonthsAfterEnd"/> months
+/// after the link ended. YouTube accounts follow the 30-day refresh rule on top of this.
+/// </summary>
+public sealed record IdentityRetention(int UnconfirmedLinkDays = 60, int LinkMonthsAfterEnd = 24, int NoteMonthsAfterEdit = 24)
+{
+    public static IdentityRetention Default { get; } = new();
+
+    /// <summary>YouTube's developer policies: API data is refreshed or deleted within 30 days.</summary>
+    public const int YouTubeRefreshDays = 30;
+
+    /// <summary>Refreshing starts this many days in, so a failed lookup is retried before the 30 days are up.</summary>
+    public const int YouTubeRefreshStartDays = 25;
+
+    public IdentityRetention Clamped() => new(
+        Math.Clamp(UnconfirmedLinkDays, 1, Default.UnconfirmedLinkDays),
+        Math.Clamp(LinkMonthsAfterEnd, 1, Default.LinkMonthsAfterEnd),
+        Math.Clamp(NoteMonthsAfterEdit, 1, Default.NoteMonthsAfterEdit));
 }
 
 /// <summary>One moderation decision, from any client (desktop Chat page, mod portal, action steps).</summary>
@@ -71,6 +120,9 @@ public sealed record ModerationCommand(string Platform, ModerationAction Action)
 
     /// <summary>The blocked term to add, or the text of the one removed (for the log).</summary>
     public string Term { get; init; } = "";
+
+    /// <summary>For an unban: the mod log row it lifts (undoing an incident); the newest ban or timeout in force when null.</summary>
+    public string? UndoesRowId { get; init; }
 
     /// <summary>Allow or deny a message the platform held.</summary>
     public static ModerationCommand ForHeld(HeldChatMessage held, bool allow) =>
@@ -136,6 +188,31 @@ public sealed record ModerationResult(ModResult Result, string Message)
 public interface IModerationPermissions
 {
     string? Refuse(ModActor actor, ModerationCommand command);
+
+    /// <summary>
+    /// Identity links and notes (phase 4): null allows <paramref name="operation"/>, otherwise the reason it is refused.
+    /// The default lets members view, propose and write notes, and keeps confirming, rejecting, unlinking and deleting
+    /// others' notes for the streamer until the portal maps them to its roles ("Confirm links", "Notes: delete").
+    /// </summary>
+    string? RefuseLink(ModActor actor, Users.LinkOperation operation) => LinkPermissionDefaults.Refuse(actor, operation);
+}
+
+/// <summary>What members may do with identity links when no portal decides (<see cref="IModerationPermissions.RefuseLink"/>).</summary>
+public static class LinkPermissionDefaults
+{
+    public static string? Refuse(ModActor actor, Users.LinkOperation operation)
+    {
+        if (actor.Kind == ModActorKind.Streamer) return null;
+        if (actor.Kind != ModActorKind.Member) return "Only the streamer and mods can do this.";
+        return operation switch
+        {
+            Users.LinkOperation.Confirm => "Your role does not include confirming links.",
+            Users.LinkOperation.Reject => "Your role does not include rejecting links.",
+            Users.LinkOperation.Unlink => "Your role does not include unlinking accounts.",
+            Users.LinkOperation.DeleteNote => "Your role does not include deleting other people's notes.",
+            _ => null,
+        };
+    }
 }
 
 /// <summary>
@@ -146,7 +223,7 @@ public interface IModerationPermissions
 /// writes the mod log. It also records deletions, bans and timeouts made outside Cuebot (on a website) as
 /// <see cref="ModActorKind.External"/>.
 /// </summary>
-public sealed class ModerationService : IDisposable
+public sealed partial class ModerationService : IDisposable
 {
     /// <summary>A platform event this long after Cuebot's own action on the same target is that action echoed back.</summary>
     private static readonly TimeSpan EchoWindow = TimeSpan.FromMinutes(2);
@@ -275,8 +352,15 @@ public sealed class ModerationService : IDisposable
         return (applied, $"{platform}: {FormatDuration(applied)}, {how} {FormatDuration(requested)}");
     }
 
-    /// <summary>Runs one command as <paramref name="actor"/>. Never throws for platform errors; the result says what happened.</summary>
-    public async Task<ModerationResult> ExecuteAsync(ModerationCommand command, ModActor actor, CancellationToken ct = default)
+    /// <summary>
+    /// Runs one command as <paramref name="actor"/>. Never throws for platform errors; the result says what happened.
+    /// A ban that worked is mirrored to the person's verified and confirmed links when the streamer turned automatic
+    /// mirroring on.
+    /// </summary>
+    public Task<ModerationResult> ExecuteAsync(ModerationCommand command, ModActor actor, CancellationToken ct = default) =>
+        ExecuteCoreAsync(command, actor, mirror: true, ct);
+
+    private async Task<ModerationResult> ExecuteCoreAsync(ModerationCommand command, ModActor actor, bool mirror, CancellationToken ct)
     {
         var platform = command.Platform;
         var capability = Capability(platform, command.Action);
@@ -303,7 +387,9 @@ public sealed class ModerationService : IDisposable
             return Skip(command, actor, reason, capability, noQuota);
 
         ModLogEntry? undoes = null;
-        if (command.Action is ModerationAction.Unban or ModerationAction.ApproveUnbanRequest && command.TargetUserId.Length > 0)
+        if (command.Action is ModerationAction.Unban && command.UndoesRowId is { } undoesId)
+            undoes = Log?.Get(undoesId);
+        else if (command.Action is ModerationAction.Unban or ModerationAction.ApproveUnbanRequest && command.TargetUserId.Length > 0)
             undoes = Log?.FindInForce(platform, command.TargetUserId);
 
         var requested = command.Action == ModerationAction.Timeout ? command.Duration ?? TimeSpan.FromMinutes(10) : (TimeSpan?)null;
@@ -352,6 +438,8 @@ public sealed class ModerationService : IDisposable
         if (outcome.Ok && undoes is not null && entry is not null) Log!.MarkUndone(undoes.Id, entry.Id);
         // The echo already came: this row must not absorb a later, real outside action.
         if (pending.Consumed && entry is not null) Absorb(entry.Id);
+        if (mirror && outcome.Ok && entry is not null && command.Action == ModerationAction.Ban && command.ViaLinkId is null)
+            await MirrorAsync(entry, ct).ConfigureAwait(false);
 
         return new ModerationResult(outcome.Ok ? ModResult.Ok : ModResult.Failed,
             outcome.Ok ? Done(command, applied, requested) : outcome.Error ?? "The platform refused it.")
@@ -366,6 +454,7 @@ public sealed class ModerationService : IDisposable
 
     public void Dispose()
     {
+        if (_links is not null) _links.Changed -= OnLinksChanged;
         if (_hub is not null)
         {
             _hub.ModerationSeen -= RecordExternal;
@@ -663,6 +752,8 @@ public sealed class ModerationService : IDisposable
                 Undoes = undoes?.Id,
             });
             if (undoes is not null) log.MarkUndone(undoes.Id, entry.Id);
+            // A ban made on the website (or by another tool) reaches the person's other accounts when mirroring is on.
+            if (entry.Action == "ban") LastMirror = Task.Run(() => MirrorAsync(entry, CancellationToken.None));
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {

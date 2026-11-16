@@ -77,12 +77,14 @@ public sealed partial class UsersViewModel : PageViewModel
     private readonly UserRegistry _users;
     private readonly GroupStore _groups;
     private readonly ViewerData? _viewerData;
+    private readonly string? _exportFolder;
     private readonly Dictionary<string, GroupRowViewModel> _groupRows = new(StringComparer.OrdinalIgnoreCase);
     private bool _usersRefreshPosted;
     private bool _loading;
 
-    public UsersViewModel(UserRegistry users, GroupStore groups, ViewerData? viewerData = null) : base("Users & Groups")
+    public UsersViewModel(UserRegistry users, GroupStore groups, ViewerData? viewerData = null, string? exportFolder = null) : base("Users & Groups")
     {
+        _exportFolder = exportFolder;
         _users = users;
         _groups = groups;
         _viewerData = viewerData;
@@ -123,6 +125,7 @@ public sealed partial class UsersViewModel : PageViewModel
     {
         AddSelectedUserToGroupCommand.NotifyCanExecuteChanged();
         ForgetSelectedUserCommand.NotifyCanExecuteChanged();
+        ExportSelectedUserCommand.NotifyCanExecuteChanged();
         IsConfirmingForget = false;
     }
 
@@ -132,8 +135,37 @@ public sealed partial class UsersViewModel : PageViewModel
     [ObservableProperty] private bool _isConfirmingForget;
 
     public string ForgetPrompt => SelectedUser is { } u
-        ? $"Forget {u.Name} ({u.Platform}) everywhere? This removes their stored points and other values, group memberships, command counts and voice settings, and their name from quotes. It cannot be undone; logs and older backups keep what they already have."
+        ? $"Forget {u.Name} ({u.Platform}) everywhere? This removes their stored points and other values, group memberships, command counts and voice settings, and their name from quotes. " +
+          "With identity links it does the same for every account confirmed or verified as the same person, deletes their links and notes, and blanks their names and messages in the mod log (an active ban keeps its row and the platform user id, so the ban still works). " +
+          "It cannot be undone; daily logs and older backups keep what they already have. Export their data first if they asked for a copy."
         : "";
+
+    private bool CanExportSelectedUser() => SelectedUser is not null && _viewerData is not null && _exportFolder is not null;
+
+    /// <summary>
+    /// Saves everything held about the viewer (and their linked accounts) as JSON in the data folder's exports folder, for
+    /// an access request; the status says where.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanExportSelectedUser))]
+    private void ExportSelectedUser()
+    {
+        if (SelectedUser is not { } row || _viewerData is null || _exportFolder is null) return;
+        try
+        {
+            var json = _viewerData.Export(row.User.Platform, row.User.UserId, row.User.UserName)
+                .ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            Directory.CreateDirectory(_exportFolder);
+            var safe = string.Concat((row.User.Platform + "-" + (row.User.UserId.Length > 0 ? row.User.UserId : row.User.UserName))
+                .Select(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' ? c : '_'));
+            var path = Path.Combine(_exportFolder, $"viewer-{safe}-{DateTime.Now:yyyyMMdd-HHmmss}.json");
+            File.WriteAllText(path, json);
+            UsersStatus = $"Saved {row.Name}'s data to {path}. Send it to them privately, then delete the file.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            UsersStatus = "Could not save the export: " + ex.Message;
+        }
+    }
 
     private bool CanForgetSelectedUser() => SelectedUser is not null && _viewerData is not null;
 

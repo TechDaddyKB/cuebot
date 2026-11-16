@@ -61,6 +61,8 @@
           <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
             <Button DockPanel.Dock="Right" Content="Forget viewer…" Command="{Binding ForgetSelectedUserCommand}" Margin="8,0,0,0"
                     ToolTip.Tip="Deletes everything Cuebot saved about the selected viewer, for example when they ask you to delete their data. You are asked to confirm first." />
+            <Button DockPanel.Dock="Right" Content="Export data" Command="{Binding ExportSelectedUserCommand}" Margin="8,0,0,0"
+                    ToolTip.Tip="Saves what Cuebot holds about the selected viewer (and accounts linked to them) as a JSON file, for when they ask for a copy." />
             <TextBlock DockPanel.Dock="Right" Text="{Binding UsersStatus}" Classes="muted" VerticalAlignment="Center" />
             <TextBlock Text="{Binding UsersSummary}" Classes="muted" />
           </DockPanel>

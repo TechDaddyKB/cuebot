@@ -25,6 +25,9 @@ public sealed class ChatPageServices
     /// <summary>The one way into moderation (permissions, safety rules, the mod log). Without it the page uses <see cref="Moderation"/> unlogged.</summary>
     public ModerationService? ModerationActions { get; init; }
 
+    /// <summary>moderation.json: the identity links and automatic mirroring switches on the options panel.</summary>
+    public JsonFile<ModerationSettings>? ModerationSettings { get; init; }
+
     /// <summary>Opens a web page (website moderation tools); the system browser when null.</summary>
     public Action<string>? OpenUrl { get; init; }
     public ActionEngine? Engine { get; init; }
@@ -48,6 +51,7 @@ public sealed class ChatPageServices
             Pronouns = host.GetAll<PronounService>().FirstOrDefault(),
             Moderation = host.GetAll<ChatModerationService>().FirstOrDefault(),
             ModerationActions = host.GetAll<ModerationService>().FirstOrDefault(),
+            ModerationSettings = host.GetAll<JsonFile<ModerationSettings>>().FirstOrDefault(),
             Engine = host.Get<ActionEngine>(),
             ActionNames = () => host.Get<ProfileService>().Snapshot.Actions.Select(a => a.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase),
             Settings = new JsonFile<ChatPageSettings>(paths.File("chat-page.json"), log),

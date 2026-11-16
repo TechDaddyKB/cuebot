@@ -231,6 +231,43 @@ Use the test channel and test accounts only. Nothing below was confirmed against
 - [ ] **Missing permission**: untick **Shield mode** on the Twitch Settings tab and sign in again. The Shield Mode
       button is greyed out and says to sign in again and allow it. Tick it, sign in again, and it works.
 
+### 4d. While live: identity links and linked bans (phases 4 and 5 of docs/UNIFIED_MOD_CHAT_PLAN.md)
+
+Identity links are off by default and wait for the legal and privacy review (plan decision 12). Run this only on the
+test channel, with your own test accounts on at least two platforms. Never link or ban a real viewer. Nothing below
+was confirmed against a live channel yet. Turn **Identity links** on in the Chat page's **Options** first, and off
+again afterwards.
+
+- [ ] **Off means off**: with the switch off, a test account typing `!link ABC234` gets no answer, the Chatter tab has
+      no Linked accounts or Notes, and Ban acts on the one account only.
+- [ ] **!link**: on the Twitch test account's Chatter tab click **Verify with !link**, whisper the code to it, then type
+      `!link CODE` from the YouTube test account. Chat answers "thanks, that's confirmed", both cards show
+      **verified**, the mod log has two `link-verify` rows. The same code a second time gets no answer; a code typed
+      11 minutes later gets none either.
+- [ ] **Suggest and confirm**: as a portal test mod, suggest Twitch test account = Kick test account. The mod cannot
+      confirm it; you can (and it says "confirmed by").
+- [ ] **Protected**: suggesting a link to your own channel, a VIP, a moderator or the bot account is refused.
+- [ ] **Linked ban preview**: ban the Twitch test account. The window lists Twitch (clicked), YouTube (verified), Kick
+      (confirmed), Rumble (by hand) with the YouTube quota cost. The second confirmation says "Ban 3 accounts on 3
+      platforms?". All three platforms show the ban; Rumble's **Open website** opens the popout and **I did it** records
+      it. You get a notification when a portal mod does this.
+- [ ] **Partial failure**: sign Kick out first, ban again: Twitch and YouTube are done, Kick shows the failure and
+      **Retry** works after signing in again.
+- [ ] **Undo incident**: from the mod log, **Undo incident** lifts the bans on Twitch, YouTube (with the stored ban id,
+      200 quota units) and Kick; the dialog says deleted messages cannot be restored.
+- [ ] **Later arrival**: with the Twitch test account banned, verify a new Kick test account to it: the chat page shows
+      "Apply here too?" and a notification. **Apply here too** bans it on Kick.
+- [ ] **Automatic mirroring**: turn it on, ban the Twitch test account on twitch.tv itself. Within seconds the linked
+      YouTube and Kick accounts are banned, the mod log shows "Automatic mirroring", and you get a notification. A
+      suggested link is not banned. Turn it off.
+- [ ] **Unlink, marked wrong**: unlink the Kick test account with **This link was wrong**: its ban made through the
+      link is offered ticked for reversal and is lifted on Kick.
+- [ ] **Forget viewer**: on Users & Groups, **Export data** for the Twitch test account writes a JSON file listing the
+      linked accounts, notes and mod log rows. **Forget viewer…** then removes the links and notes; a still-active ban
+      keeps its mod log row (name blank, user id kept) and still works on the platform.
+- [ ] **YouTube 30-day refresh**: not practical live; covered by tests (`IdentityLinksTests`). With a YouTube test
+      account linked, check the log after a day for no "could not refresh" warnings while signed in.
+
 ### 5. While live: Fourthwall
 
 These can only be confirmed with a real shop. Small real amounts are enough.

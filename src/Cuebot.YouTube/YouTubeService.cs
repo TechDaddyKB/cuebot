@@ -508,6 +508,16 @@ public sealed class YouTubeService : IConnectable, IAsyncDisposable, Cuebot.Core
     }
 
     /// <summary>
+    /// The channel's current title, or null when YouTube no longer has it (one channels.list call, 1 quota unit). Throws
+    /// when Cuebot is not signed in or YouTube cannot be asked. Used to refresh linked accounts within 30 days.
+    /// </summary>
+    internal async Task<string?> ChannelTitleAsync(string channelId, CancellationToken ct = default)
+    {
+        RequireSignedIn();
+        return (await _api.GetChannelAsync(_broadcaster, channelId, ct).ConfigureAwait(false))?.Title;
+    }
+
+    /// <summary>
     /// Resolves a user reference to a channel id: a channel id ("UC..."), a display name seen in chat recently, or an
     /// @handle (one channels.list call).
     /// </summary>

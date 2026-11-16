@@ -77,10 +77,30 @@ public sealed partial class ModToolViewModel : ObservableObject
     private Task Run() => _run(this);
 }
 
-/// <summary>One mod log row on the chat page.</summary>
-public sealed class ModLogLineViewModel(ModLogEntry entry)
+/// <summary>
+/// One mod log row on the chat page. With the undo callbacks it offers "Undo incident" on a ban or timeout still in force
+/// and, on a mod's row, "Undo this mod's last hour".
+/// </summary>
+public sealed class ModLogLineViewModel(ModLogEntry entry, Func<ModLogLineViewModel, Task>? undoIncident = null,
+    Func<ModLogLineViewModel, Task>? undoMember = null, Func<DateTimeOffset>? now = null)
 {
     public ModLogEntry Entry { get; } = entry;
+
+    public bool CanUndoIncident => undoIncident is not null && Entry.Result is ModResult.Ok or ModResult.Manual && Entry.UndoneBy is null
+                                   && (Entry.Action == "ban" || (Entry.Action == "timeout"
+                                       && Entry.At.AddSeconds(Entry.DurationAppliedSeconds ?? Entry.DurationRequestedSeconds ?? 0) > (now?.Invoke() ?? DateTimeOffset.UtcNow)));
+
+    public bool CanUndoMember => undoMember is not null && Entry.ActorKind == ModActorKind.Member && Entry.ActorMemberId is not null
+                                 && Entry.At > (now?.Invoke() ?? DateTimeOffset.UtcNow).AddHours(-1);
+
+    public CommunityToolkit.Mvvm.Input.IAsyncRelayCommand UndoIncidentCommand =>
+        field ??= new CommunityToolkit.Mvvm.Input.AsyncRelayCommand(() => undoIncident?.Invoke(this) ?? Task.CompletedTask);
+
+    public CommunityToolkit.Mvvm.Input.IAsyncRelayCommand UndoMemberCommand =>
+        field ??= new CommunityToolkit.Mvvm.Input.AsyncRelayCommand(() => undoMember?.Invoke(this) ?? Task.CompletedTask);
+
+    /// <summary>"through a link" for rows made because of an identity link.</summary>
+    public bool ViaLink => Entry.ViaLinkId is not null && !ModLog.LinkActions.Contains(Entry.Action);
     public string Platform => Entry.Platform;
     public IBrush PlatformBrush { get; } = PlatformColors.For(entry.Platform);
     public string Time => Entry.At.ToLocalTime().ToString("MMM d HH:mm", CultureInfo.CurrentCulture);
@@ -110,6 +130,13 @@ public sealed class ModLogLineViewModel(ModLogEntry entry)
                 "warn" => $"warned {who}",
                 "clear" => "cleared the chat",
                 "mode" => Entry.Reason.Length > 0 ? Entry.Reason : "changed a chat mode",
+                "link" => $"suggested a link for {who}",
+                "link-confirm" => $"confirmed the link of {who}",
+                "link-verify" => $"{who} was verified with !link",
+                "link-reject" => $"rejected a suggested link for {who}",
+                "link-move" => $"moved {who} to another person",
+                "link-merge" => $"merged {who} into another person",
+                "unlink" => $"unlinked {who}",
                 _ => $"{Entry.Action} {who}",
             };
         }
@@ -130,6 +157,7 @@ public sealed class ModLogLineViewModel(ModLogEntry entry)
                 _ => "Done by hand",
             });
             if (Entry.UndoneAt is { } undone) parts.Add($"Lifted {undone.ToLocalTime().ToString("MMM d HH:mm", CultureInfo.CurrentCulture)}");
+            if (ViaLink) parts.Add("Through a linked account");
             return string.Join(" · ", parts);
         }
     }

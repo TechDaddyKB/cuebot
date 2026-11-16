@@ -132,18 +132,18 @@ public sealed record ModLogRetention(int MessageTextDays = 60, int TimeoutDays =
 /// Rows are hash-chained (each row's hash covers the previous row's hash and its own content), which makes edits and
 /// gaps detectable, not impossible. Two things change a row after it is written: the undo pointer (<c>undone_by</c>,
 /// outside the hash) and retention, which blanks personal fields and marks the row redacted (the chain still checks;
-/// the blanked content no longer can). Schema version 1; phase 4 adds identity link and note tables as version 2.
-/// Thread-safe.
+/// the blanked content no longer can). Schema version 2 adds the identity link and note tables (phase 4,
+/// <c>ModLog.Identity.cs</c>); a version 1 file is upgraded in place. Thread-safe.
 /// </summary>
-public sealed class ModLog : IDisposable
+public sealed partial class ModLog : IDisposable
 {
     public const string FileName = "modlog.db";
 
     /// <summary>
-    /// <c>PRAGMA user_version</c>. 1: <c>mod_actions</c>. Reserved for 2 (phase 4): <c>identity_links</c>,
-    /// <c>identity_accounts</c>, <c>identity_evidence</c> and <c>mod_notes</c>.
+    /// <c>PRAGMA user_version</c>. 1: <c>mod_actions</c>. 2 (phase 4): <c>identity_persons</c>, <c>identity_accounts</c>,
+    /// <c>identity_confirmations</c>, <c>identity_evidence</c>, <c>identity_rejections</c> and <c>mod_notes</c>.
     /// </summary>
-    public const int SchemaVersion = 1;
+    public const int SchemaVersion = 2;
 
     private const string Columns =
         "id, incident_id, at, actor_kind, actor_member_id, actor_name, actor_device_id, platform, channel_id, action, " +
@@ -178,7 +178,8 @@ public sealed class ModLog : IDisposable
         if (version > SchemaVersion)
             throw new InvalidOperationException($"The mod log was written by a newer Cuebot (version {version}); update Cuebot.");
         if (version == SchemaVersion) return;
-        Execute("""
+        if (version < 1)
+            Execute("""
             CREATE TABLE IF NOT EXISTS mod_actions (
                 seq INTEGER PRIMARY KEY AUTOINCREMENT,
                 id TEXT NOT NULL UNIQUE,
@@ -213,6 +214,7 @@ public sealed class ModLog : IDisposable
             CREATE INDEX IF NOT EXISTS ix_mod_actions_at ON mod_actions(at);
             PRAGMA user_version = 1;
             """);
+        if (version < 2) MigrateIdentity();
     }
 
     /// <summary>
@@ -357,11 +359,12 @@ public sealed class ModLog : IDisposable
             ThrowIfDisposed();
             using var tx = _db.BeginTransaction();
             var changed = Execute($"UPDATE mod_actions SET message_text = '', redacted = 1 WHERE message_text <> '' AND at < {text}", tx);
-            changed += Execute($"UPDATE mod_actions SET {person} WHERE action NOT IN ('ban', 'unban') AND {hasPerson} AND at < {shortRows}", tx);
+            changed += Execute($"UPDATE mod_actions SET {person} WHERE action NOT IN ('ban', 'unban') AND NOT {LinkActionSql} AND {hasPerson} AND at < {shortRows}", tx);
             // A ban ends when it is lifted; one that never took effect (failed, skipped) ended when it was made.
             changed += Execute($"UPDATE mod_actions SET {person} WHERE action = 'ban' AND {hasPerson} AND " +
                                $"((undone_at IS NOT NULL AND undone_at < {bans}) OR (result <> 'Ok' AND at < {bans}))", tx);
             changed += Execute($"UPDATE mod_actions SET {person} WHERE action = 'unban' AND {hasPerson} AND at < {bans}", tx);
+            changed += ApplyLinkRowRetention(r, now, tx);
             tx.Commit();
             return changed;
         }

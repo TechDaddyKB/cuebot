@@ -183,7 +183,7 @@ public sealed partial class ChatViewModel : PageViewModel
         PlatformChips.Add(ChatHub.AllPlatforms);
         SendTargets = [ChatHub.AllPlatforms, .. hub.Platforms];
         Options = new ChatOptionsViewModel(_settings, () => _services.Settings?.ScheduleSave(), _services.Emotes,
-            _services.EmoteSettings, _services.ActionNames ?? (() => []));
+            _services.EmoteSettings, _services.ActionNames ?? (() => []), _services.ModerationSettings);
         Options.Changed += OnOptionsChanged;
         RebuildQuickActions();
 
@@ -201,6 +201,7 @@ public sealed partial class ChatViewModel : PageViewModel
             log.Changed += e => OnUi(() => AddLogLine(e));
         }
         RefreshSendAs();
+        WireLinks();
         if (_services.Emotes is { } emotes)
         {
             emotes.EnsureStarted();
@@ -290,6 +291,7 @@ public sealed partial class ChatViewModel : PageViewModel
         RefreshUserLog();
         RefreshSendAs();
         Queues.Refresh();
+        RefreshLinks();
     }
 
     // ---------------------------------------------------------------- user details (right pane)
@@ -467,8 +469,8 @@ public sealed partial class ChatViewModel : PageViewModel
     private void AddLogLine(ModLogEntry entry)
     {
         var existing = ModLogLines.FirstOrDefault(l => l.Entry.Id == entry.Id);
-        if (existing is not null) ModLogLines[ModLogLines.IndexOf(existing)] = new ModLogLineViewModel(entry);
-        else ModLogLines.Insert(0, new ModLogLineViewModel(entry));
+        if (existing is not null) ModLogLines[ModLogLines.IndexOf(existing)] = LogLine(entry);
+        else ModLogLines.Insert(0, LogLine(entry));
         while (ModLogLines.Count > MaxLogLines) ModLogLines.RemoveAt(ModLogLines.Count - 1);
         OnPropertyChanged(nameof(HasModLogLines));
         if (SelectedLine is { } line && entry.Platform == line.Platform && entry.TargetUserId == line.Message.UserId) RefreshUserLog();
@@ -478,7 +480,7 @@ public sealed partial class ChatViewModel : PageViewModel
     {
         UserLogLines.Clear();
         if (_moderation?.Log is { } log && SelectedLine is { Message.UserId.Length: > 0 } line)
-            foreach (var entry in log.ForTarget(line.Platform, line.Message.UserId, 30)) UserLogLines.Add(new ModLogLineViewModel(entry));
+            foreach (var entry in log.ForTarget(line.Platform, line.Message.UserId, 30)) UserLogLines.Add(LogLine(entry));
         OnPropertyChanged(nameof(HasUserLog));
     }
 
@@ -545,6 +547,13 @@ public sealed partial class ChatViewModel : PageViewModel
     private async Task BanSelected()
     {
         if (SelectedLine is not { } line) return;
+        if (IsLinked(line))
+        {
+            // The linked dialog shows the preview and asks again for bans on more than one platform.
+            ConfirmingBan = false;
+            await BanAsync(line);
+            return;
+        }
         if (!ConfirmingBan)
         {
             ConfirmingBan = true;
@@ -957,10 +966,15 @@ public sealed partial class ChatViewModel : PageViewModel
         RefreshModeration();
     }
 
-    public Task TimeoutAsync(ChatLineViewModel line, TimeSpan duration) =>
-        RunAsync(Command(line, ModerationAction.Timeout) with { Duration = duration });
+    /// <summary>Times the author out; when their account is linked, opens the linked action dialog with the preview instead.</summary>
+    public Task TimeoutAsync(ChatLineViewModel line, TimeSpan duration) => IsLinked(line)
+        ? OpenLinkedAsync(Command(line, ModerationAction.Timeout) with { Duration = duration })
+        : RunAsync(Command(line, ModerationAction.Timeout) with { Duration = duration });
 
-    public Task BanAsync(ChatLineViewModel line) => RunAsync(Command(line, ModerationAction.Ban));
+    /// <summary>Bans the author; when their account is linked, opens the linked action dialog with the preview instead.</summary>
+    public Task BanAsync(ChatLineViewModel line) => IsLinked(line)
+        ? OpenLinkedAsync(Command(line, ModerationAction.Ban))
+        : RunAsync(Command(line, ModerationAction.Ban));
 
     /// <summary>Runs a quick action with the line's arguments (message and/or user, by scope).</summary>
     public async Task RunQuickActionAsync(QuickActionDefinition quick, ChatLineViewModel? line)
