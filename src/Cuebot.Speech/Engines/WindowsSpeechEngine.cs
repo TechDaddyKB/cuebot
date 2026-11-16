@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Runtime.Versioning;
 using System.Speech.Synthesis;
 
@@ -24,11 +23,11 @@ internal sealed class WindowsSpeechEngine : ITtsEngine
         return SynthesizeInBackground(request, ct);
     }
 
-    /// <summary>SSML used when the pitch differs from normal (SAPI has no numeric pitch property).</summary>
-    internal static string BuildSsml(string text, int pitch, string? culture) =>
-        "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang=\""
-        + Ssml.Escape(string.IsNullOrEmpty(culture) ? "en-US" : culture) + "\">"
-        + Prosody.ProsodyElement(text, rate: 0, pitch) + "</speak>";
+    /// <summary>
+    /// Cuebot shifts the pitch: SAPI has no pitch property, and the SSML prosody pitch it reads is ignored by the
+    /// natural voices (such as "Microsoft Ana Online"), so the slider did nothing for them.
+    /// </summary>
+    public PitchSupport PitchSupport => PitchSupport.Cuebot;
 
     [SupportedOSPlatform("windows")]
     private static Task<SynthesizedAudio> SynthesizeInBackground(SynthesisRequest request, CancellationToken ct) =>
@@ -63,9 +62,7 @@ internal sealed class WindowsSpeechEngine : ITtsEngine
         using var stream = new MemoryStream();
         synthesizer.SetOutputToWaveStream(stream);
         ct.ThrowIfCancellationRequested(); // rendering to memory is fast, so it is not interrupted midway
-        if (request.Pitch == 0) synthesizer.Speak(request.Text);
-        else synthesizer.SpeakSsml(BuildSsml(request.Text, request.Pitch,
-            synthesizer.Voice?.Culture?.Name ?? CultureInfo.CurrentCulture.Name));
+        synthesizer.Speak(request.Text);   // pitch: SpeechService shifts the WAV (see PitchSupport)
         synthesizer.SetOutputToNull(); // finalizes the WAV header
         ct.ThrowIfCancellationRequested();
         return stream.ToArray();

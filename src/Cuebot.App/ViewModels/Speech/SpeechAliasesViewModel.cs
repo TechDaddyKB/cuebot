@@ -226,6 +226,24 @@ public sealed partial class VoiceAliasEditorViewModel : ObservableObject
     public double Rate { get => Alias.Rate; set => SetInt(Alias.Rate, SpeechText.Clamp(value, -10, 10), v => Alias.Rate = v); }
     public double Pitch { get => Alias.Pitch; set => SetInt(Alias.Pitch, SpeechText.Clamp(value, -10, 10), v => Alias.Pitch = v); }
 
+    /// <summary>Engines of this alias' voices that can't change pitch at all (<see cref="PitchSupport.None"/>).</summary>
+    private IReadOnlyList<string> NoPitchEngines =>
+    [
+        .. Voices.Select(v => _ctx.Voices.Engine(v.Voice.EngineId)).OfType<ITtsEngine>()
+            .Where(e => e.PitchSupport == PitchSupport.None).Select(e => e.DisplayName).Distinct(),
+    ];
+
+    /// <summary>False when no voice of the alias can change pitch: the slider is switched off.</summary>
+    public bool CanChangePitch =>
+        Voices.Count == 0 || Voices.Any(v => _ctx.Voices.Engine(v.Voice.EngineId)?.PitchSupport != PitchSupport.None);
+
+    /// <summary>Says which voices ignore the pitch slider; empty when they all follow it.</summary>
+    public string PitchNote => NoPitchEngines is { Count: > 0 } engines
+        ? $"{string.Join(", ", engines)} can't change pitch{(CanChangePitch ? ", so those voices ignore it" : "")}."
+        : "";
+
+    public bool HasPitchNote => PitchNote.Length > 0;
+
     /// <summary>"None" plus every style the alias' voices support.</summary>
     public IReadOnlyList<Choice> Styles =>
     [
@@ -284,6 +302,9 @@ public sealed partial class VoiceAliasEditorViewModel : ObservableObject
 
     internal void OnStylesChanged()
     {
+        OnPropertyChanged(nameof(CanChangePitch));
+        OnPropertyChanged(nameof(PitchNote));
+        OnPropertyChanged(nameof(HasPitchNote));
         OnPropertyChanged(nameof(Styles));
         OnPropertyChanged(nameof(HasStyles));
         OnPropertyChanged(nameof(Style));

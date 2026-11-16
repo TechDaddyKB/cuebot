@@ -18,6 +18,11 @@ internal sealed class FakeTtsEngine(string id = "fake", bool available = true, p
     public bool IsAvailable => available;
     public string? UnavailableReason => available ? null : "fake engine disabled";
 
+    public PitchSupport PitchSupport { get; set; } = PitchSupport.Engine;
+
+    /// <summary>When set, each clip is this WAV instead of constant samples.</summary>
+    public byte[]? Audio { get; set; }
+
     /// <summary>When set, synthesis throws this exception.</summary>
     public Exception? Failure { get; set; }
 
@@ -41,6 +46,7 @@ internal sealed class FakeTtsEngine(string id = "fake", bool available = true, p
         lock (_history) _history.Add(call);
         _calls.Writer.TryWrite(call);
         if (Failure is not null) throw Failure;
+        if (Audio is not null) return Task.FromResult(SynthesizedAudio.Wav(Audio));
         var pcm = new byte[Samples * 2];
         for (var i = 0; i < pcm.Length; i += 2) BitConverter.TryWriteBytes(pcm.AsSpan(i), SampleValue);
         return Task.FromResult(SynthesizedAudio.Wav(Wav.FromPcm16(pcm, 16000, 1)));

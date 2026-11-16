@@ -30,6 +30,19 @@ public sealed record SynthesisRequest(string Text, string VoiceId)
     public string Style { get; init; } = "";
 }
 
+/// <summary>Who changes the pitch for an engine's voices.</summary>
+public enum PitchSupport
+{
+    /// <summary>The engine itself (SSML prosody, an API parameter...).</summary>
+    Engine,
+
+    /// <summary>Cuebot, on the engine's WAV audio (<see cref="PitchShifter"/>).</summary>
+    Cuebot,
+
+    /// <summary>Nobody: the engine has no pitch and its audio isn't WAV. The pitch slider is switched off.</summary>
+    None,
+}
+
 /// <summary>Audio bytes and their container format.</summary>
 public sealed record SynthesizedAudio(byte[] Data, AudioFormat Format)
 {
@@ -57,6 +70,9 @@ public interface ITtsEngine
     string? UnavailableReason { get; }
 
     Task<IReadOnlyList<VoiceInfo>> GetVoicesAsync(CancellationToken ct);
+
+    /// <summary>Who changes the pitch for this engine's voices (default: the engine).</summary>
+    PitchSupport PitchSupport => PitchSupport.Engine;
 
     /// <returns>Complete audio, usually WAV; cloud engines may return MP3 or OGG.</returns>
     Task<SynthesizedAudio> SynthesizeAsync(SynthesisRequest request, CancellationToken ct);

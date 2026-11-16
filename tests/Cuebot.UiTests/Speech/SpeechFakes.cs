@@ -16,6 +16,7 @@ internal sealed class FakeEngine(string id, string name, Func<bool> available, I
     public string DisplayName => name;
     public bool IsAvailable => available();
     public string? UnavailableReason => IsAvailable ? null : $"{name} needs credentials.";
+    public PitchSupport PitchSupport { get; set; } = PitchSupport.Engine;
 
     public Task<IReadOnlyList<VoiceInfo>> GetVoicesAsync(CancellationToken ct)
     {

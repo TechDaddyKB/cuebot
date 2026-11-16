@@ -13,7 +13,20 @@
             <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
               <TextBlock Text="Speech queue" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
               <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
-                <ToggleButton Content="Pause" IsChecked="{Binding Paused}" ToolTip.Tip="Holds the waiting line so nothing new starts. The text being read right now finishes." />
+                <!-- Which state the queue is in, so Play and Pause never leave you guessing. -->
+                <Border Name="SpeechQueueStatePill" CornerRadius="10" Padding="10,3" VerticalAlignment="Center" Margin="0,0,4,0"
+                        BorderThickness="1" BorderBrush="{DynamicResource CuebotGood}" Classes.paused="{Binding Paused}">
+                  <Border.Styles>
+                    <Style Selector="Border.paused">
+                      <Setter Property="BorderBrush" Value="{DynamicResource CuebotWarn}" />
+                    </Style>
+                  </Border.Styles>
+                  <TextBlock Name="SpeechQueueState" Text="{Binding QueueState}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" />
+                </Border>
+                <Button Name="SpeechPlay" Content="▶ Play" Command="{Binding PlayCommand}" Classes.accent="{Binding Paused}"
+                        ToolTip.Tip="Lets the queue read waiting texts again after Pause." />
+                <Button Name="SpeechPause" Content="❚❚ Pause" Command="{Binding PauseCommand}"
+                        ToolTip.Tip="Holds the waiting line so nothing new starts. The text being read right now finishes." />
                 <Button Content="Skip" Command="{Binding SkipCommand}" ToolTip.Tip="Stops the text being read right now and moves on to the next one." />
                 <Button Content="Speak next" Command="{Binding SpeakNextCommand}"
                         ToolTip.Tip="Moves on to the next text. It stops the one being read, and if the queue is paused it plays exactly one waiting text. Pause first, then press this to go through the queue one text at a time." />

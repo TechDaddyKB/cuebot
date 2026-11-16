@@ -731,6 +731,7 @@ public sealed class SpeechService : IAsyncDisposable
 
         var audio = await voice.Engine.SynthesizeAsync(
             new SynthesisRequest(text, voice.VoiceId) { Rate = voice.Rate, Pitch = voice.Pitch, Style = voice.Style }, ct).ConfigureAwait(false);
+        audio = ShiftPitch(audio, voice);
         var file = await SaveAsync(audio, voice, saveAlways || options.SaveToFile, ct).ConfigureAwait(false);
         RememberVoice(options, voice);
         var result = new SpeechResult(text, voice.AliasName, voice.Engine.Id, voice.VoiceId)
@@ -739,6 +740,26 @@ public sealed class SpeechService : IAsyncDisposable
             FilePath = file,
         };
         return new Rendered(audio, voice, result);
+    }
+
+    /// <summary>Applies the pitch for engines that leave it to Cuebot (<see cref="PitchSupport.Cuebot"/>).</summary>
+    private SynthesizedAudio ShiftPitch(SynthesizedAudio audio, ResolvedVoice voice)
+    {
+        if (voice.Pitch == 0 || voice.Engine.PitchSupport != PitchSupport.Cuebot) return audio;
+        if (audio.Format != AudioFormat.Wav)
+        {
+            _log.Debug(LogSource, $"{voice.Engine.DisplayName} returned {audio.Format}, so its pitch can't be changed");
+            return audio;
+        }
+        try
+        {
+            return SynthesizedAudio.Wav(PitchShifter.ShiftWav(audio.Data, voice.Pitch));
+        }
+        catch (Exception ex) when (ex is InvalidDataException or NotSupportedException)
+        {
+            _log.Warn(LogSource, $"Could not change the pitch of {voice.Engine.DisplayName}'s audio: {ex.Message}");
+            return audio;
+        }
     }
 
     private void RememberVoice(SpeakOptions options, ResolvedVoice voice)

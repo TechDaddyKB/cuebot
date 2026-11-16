@@ -14,6 +14,9 @@ internal sealed class TtsMonsterEngine(HttpClient http, Func<TtsMonsterSettings>
 
     public string Id => "ttsmonster";
     public string DisplayName => "TTS Monster";
+
+    /// <summary>No pitch, and the audio is usually MP3.</summary>
+    public PitchSupport PitchSupport => PitchSupport.None;
     public bool IsAvailable => UnavailableReason is null;
 
     public string? UnavailableReason =>

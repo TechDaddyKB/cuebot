@@ -58,8 +58,33 @@ public sealed partial class SpeechOverviewViewModel : ObservableObject
     public bool Paused
     {
         get => Speech.Paused;
-        set { Speech.Paused = value; OnPropertyChanged(); OnPropertyChanged(nameof(StatusText)); }
+        set
+        {
+            Speech.Paused = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(StatusText));
+            OnPropertyChanged(nameof(QueueState));
+            PlayCommand.NotifyCanExecuteChanged();
+            PauseCommand.NotifyCanExecuteChanged();
+        }
     }
+
+    /// <summary>The queue's state next to Play and Pause: "Playing" or "Paused" (and why it is holding).</summary>
+    public string QueueState =>
+        !Speech.Enabled ? "Speech is off"
+        : Speech.Paused ? "Paused"
+        : Speech.VoiceGateHolding ? "Held while you talk"
+        : "Playing";
+
+    /// <summary>Lets the queue read waiting texts again.</summary>
+    [RelayCommand(CanExecute = nameof(Paused))]
+    private void Play() => Paused = false;
+
+    private bool CanPause() => !Paused;
+
+    /// <summary>Holds the queue; the text being read finishes.</summary>
+    [RelayCommand(CanExecute = nameof(CanPause))]
+    private void Pause() => Paused = true;
 
     public string CurrentText => Speech.CurrentText ?? "Nothing is playing.";
 
@@ -141,6 +166,9 @@ public sealed partial class SpeechOverviewViewModel : ObservableObject
         OnPropertyChanged(nameof(IsSpeaking));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(Paused));
+        OnPropertyChanged(nameof(QueueState));
+        PlayCommand.NotifyCanExecuteChanged();
+        PauseCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(Enabled));
         OnPropertyChanged(nameof(EventsEnabled));
     }

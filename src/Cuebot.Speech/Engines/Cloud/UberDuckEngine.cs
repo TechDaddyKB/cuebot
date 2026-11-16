@@ -13,6 +13,9 @@ internal sealed class UberDuckEngine(HttpClient http, Func<UberDuckSettings> set
 
     public string Id => "uberduck";
     public string DisplayName => "UberDuck";
+
+    /// <summary>No pitch, and the audio is usually MP3.</summary>
+    public PitchSupport PitchSupport => PitchSupport.None;
     public bool IsAvailable => UnavailableReason is null;
 
     public string? UnavailableReason =>

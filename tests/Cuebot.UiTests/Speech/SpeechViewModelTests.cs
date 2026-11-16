@@ -49,6 +49,46 @@ public sealed class SpeechViewModelTests
     }
 
     [AvaloniaFact]
+    public async Task Pitch_slider_turns_off_for_voices_that_cannot_change_pitch()
+    {
+        await using var h = new SpeechHarness(s => s.Aliases.Add(new VoiceAlias { Name = "Host", EngineId = "azure", VoiceId = "en-US-JennyNeural" }));
+        var editor = Assert.IsType<VoiceAliasEditorViewModel>(h.ViewModel.Aliases.Selected);
+        Assert.True(editor.CanChangePitch);
+        Assert.False(editor.HasPitchNote);
+
+        h.Cloud.PitchSupport = PitchSupport.None;
+        editor.OnStylesChanged();
+        Assert.False(editor.CanChangePitch);
+        Assert.Equal("Microsoft Azure can't change pitch.", editor.PitchNote);
+
+        // A second voice that can change pitch switches the slider back on; the note says which voices ignore it.
+        editor.AddVoiceCommand.Execute(null);
+        editor.Voices[1].Engine = editor.Voices[1].EngineChoices.Single(c => c.Value == "fake");
+        Assert.True(editor.CanChangePitch);
+        Assert.Equal("Microsoft Azure can't change pitch, so those voices ignore it.", editor.PitchNote);
+    }
+
+    [AvaloniaFact]
+    public async Task Play_and_pause_are_separate_buttons_with_a_clear_state()
+    {
+        await using var h = new SpeechHarness();
+        var overview = h.ViewModel.Overview;
+        Assert.Equal("Playing", overview.QueueState);
+        Assert.False(overview.PlayCommand.CanExecute(null));
+        Assert.True(overview.PauseCommand.CanExecute(null));
+
+        overview.PauseCommand.Execute(null);
+        Assert.True(h.Speech.Paused);
+        Assert.Equal("Paused", overview.QueueState);
+        Assert.True(overview.PlayCommand.CanExecute(null));
+        Assert.False(overview.PauseCommand.CanExecute(null));
+
+        overview.PlayCommand.Execute(null);
+        Assert.False(h.Speech.Paused);
+        Assert.Equal("Playing", overview.QueueState);
+    }
+
+    [AvaloniaFact]
     public async Task Renaming_an_alias_updates_references_and_pickers()
     {
         await using var h = new SpeechHarness(s =>

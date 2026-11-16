@@ -13,6 +13,9 @@ public sealed class PiperEngine(PiperStore store, Func<PiperSettings> settings) 
     public string Id => "piper";
     public string DisplayName => "Piper (free, offline)";
 
+    /// <summary>Piper has no pitch; Cuebot shifts its WAV.</summary>
+    public PitchSupport PitchSupport => PitchSupport.Cuebot;
+
     public PiperStore Store => store;
 
     public bool IsAvailable => store.FindProgram(settings().Executable) is not null && store.InstalledVoices().Count > 0;

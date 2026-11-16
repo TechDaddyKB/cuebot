@@ -57,12 +57,6 @@ public class EspeakEngineTests
     }
 
     [Fact]
-    public void Windows_pitch_uses_escaped_ssml() =>
-        Assert.Equal("<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang=\"en-GB\">"
-                     + "<prosody pitch=\"+15%\">a &amp; b</prosody></speak>",
-            WindowsSpeechEngine.BuildSsml("a & b", 3, "en-GB"));
-
-    [Fact]
     public void Chat_context_reads_neutral_and_optional_twitch_args()
     {
         var chat = ChatContext.FromEvent(new Cuebot.Core.Events.BotEvent("chat.message", new Dictionary<string, object?>

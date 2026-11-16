@@ -108,8 +108,10 @@
                       <TextBlock Grid.Column="2" Classes="label" Text="{Binding Rate, StringFormat='Rate: {0:0}'}" />
                       <Slider Grid.Column="2" Grid.Row="1" Minimum="-10" Maximum="10" Value="{Binding Rate}" TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="How fast the voice talks. 0 is normal, below 0 is slower, above 0 is faster." />
                       <TextBlock Grid.Column="4" Classes="label" Text="{Binding Pitch, StringFormat='Pitch: {0:0}'}" />
-                      <Slider Grid.Column="4" Grid.Row="1" Minimum="-10" Maximum="10" Value="{Binding Pitch}" TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="How high or deep the voice sounds. 0 is normal, below 0 is deeper, above 0 is higher." />
+                      <Slider Grid.Column="4" Grid.Row="1" Minimum="-10" Maximum="10" Value="{Binding Pitch}" TickFrequency="1" IsSnapToTickEnabled="True"
+                              IsEnabled="{Binding CanChangePitch}" ToolTip.Tip="How high or deep the voice sounds. 0 is normal, below 0 is deeper, above 0 is higher." />
                     </Grid>
+                    <TextBlock Classes="hint" Text="{Binding PitchNote}" IsVisible="{Binding HasPitchNote}" TextWrapping="Wrap" />
                     <StackPanel Spacing="3" IsVisible="{Binding HasStyles}">
                       <TextBlock Classes="label" Text="Speaking style" />
                       <ComboBox ItemsSource="{Binding Styles}" SelectedItem="{Binding Style}" MaxWidth="320" HorizontalAlignment="Left" ToolTip.Tip="The mood the voice speaks in, like cheerful or sad. Only some voices offer this." />

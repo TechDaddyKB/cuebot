@@ -29,6 +29,9 @@ internal sealed class OpenAiEngine(HttpClient http, Func<OpenAiSpeechSettings> s
 
     public string Id => "openai";
     public string DisplayName => "OpenAI";
+
+    /// <summary>OpenAI has no pitch; Cuebot shifts the WAV it asks for.</summary>
+    public PitchSupport PitchSupport => PitchSupport.Cuebot;
     public bool IsAvailable => !string.IsNullOrWhiteSpace(settings().ApiKey);
     public string? UnavailableReason => IsAvailable ? null : "Enter an OpenAI API key in the speech settings.";
 

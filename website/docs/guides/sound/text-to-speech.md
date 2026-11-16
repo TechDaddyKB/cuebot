@@ -59,7 +59,7 @@ voices, like `en_GB-vctk-medium`, contain many speakers; each one shows up as it
     after downloading it and throws away anything that doesn't match. Each voice has its own licence, listed in the
     voice collection; most allow streaming.
 
-Piper's speed slider works, but its pitch slider does nothing.
+Piper has no pitch of its own, so Cuebot changes the pitch of Piper's voices itself. The speed stays the same.
 
 ### OpenAI: voices you can describe
 
@@ -91,6 +91,10 @@ not the voice itself. Later you can change the voice behind "Narrator", and ever
 
 Set **Default alias** at the top. It is used whenever an action does not name an alias.
 
+**Volume**, **Rate** and **Pitch** set how the alias sounds. For Windows voices, Piper and OpenAI, Cuebot changes the
+pitch itself, so it works with every voice, including the newer Windows ones such as "Microsoft Ana Online". UberDuck
+and TTS Monster can't change pitch: for those voices the slider is switched off and a note says so.
+
 ## 3. Make an action talk
 
 Add the **Speak** sub-action to any action:
@@ -112,7 +116,9 @@ events, and one for a single **Speak** step.
 ## The queue and VoiceGate
 
 Texts are spoken one after another, like a line at a shop. The **Overview** tab shows what is speaking now, what is
-waiting and what was spoken, with **Pause**, **Skip**, **Clear** and **Speak next**.
+waiting and what was spoken. Next to **Play** and **Pause**, a label says whether the queue is **Playing** or
+**Paused** (or **Held while you talk** when VoiceGate waits for you). **Pause** lets the text being read finish, then
+holds the rest; **Play** carries on. **Skip**, **Clear** and **Speak next** are there too.
 
 ![Audio > Speech > VoiceGate & queue](../../assets/screens/tab-speech-voicegate-queue.png)
 
