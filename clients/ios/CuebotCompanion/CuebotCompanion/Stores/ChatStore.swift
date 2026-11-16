@@ -111,7 +111,7 @@ final class ChatStore {
             let snapshot = try await client.chat()
             // Best effort: without moderation (503) chat still reads and sends, and every tool shows as not available.
             var capabilities = ChatCapabilities()
-            do { capabilities = try await client.chatCapabilities() } catch .unauthorized { throw CuebotError.unauthorized } catch {}
+            do { capabilities = try await client.chatCapabilities() } catch CuebotError.unauthorized { throw CuebotError.unauthorized } catch {}
             guard generation == mine else { return false }
             let messages = snapshot.messages.map(Row.message)
             let notices = snapshot.moderation.compactMap(noticeRow)
@@ -125,11 +125,11 @@ final class ChatStore {
             loaded = true
             error = nil
             return true
-        } catch .notFound {
+        } catch CuebotError.notFound {
             if generation == mine { tooOld = true; loaded = true }
         } catch {
             guard generation == mine, !Task.isCancelled else { return false }
-            self.error = ConnectionStore.describe(error)
+            self.error = (error as? CuebotError).map(ConnectionStore.describe) ?? error.localizedDescription
             loaded = true
         }
         return false
