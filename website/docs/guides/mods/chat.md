@@ -92,8 +92,7 @@ Twitch's queues use the same rights:
 
 Everyone who can see the chat sees whether Shield Mode is on.
 
-The roles also list rights for notes about viewers and linked accounts. Those features are not built yet; the rights
-are there so you can decide in advance.
+Notes and linked accounts have their own rights; see [Linked accounts in the portal](#linked-accounts-in-the-portal).
 
 **Bans by your mods are made with your account.** The platform's own log shows you, not the mod. On Twitch and Kick
 the reason starts with the mod's name, like `[mod: Sam] spam`, and Cuebot's mod log always names the mod.
@@ -115,6 +114,66 @@ Cuebot checks every click from a mod before it reaches the platform:
   Twitch is paused here too.
 
 A refused click is written to the mod log as **Not sent**, with the reason.
+
+## Linked accounts in the portal
+
+!!! warning "Pending review: off by default"
+    Linked accounts are **off** until you turn on **Identity links** in Cuebot (**Chat > Options > Moderation**). The
+    privacy position, the wording for viewers and how long links and notes are kept are still being checked by a
+    reviewer. Read [Linked accounts and linked bans](../chat/identity-links.md) before you turn it on. While it is off,
+    your mods see nothing about links or notes in the portal, and Cuebot refuses every link request from them.
+
+With identity links on, your mods get the same link tools in the portal as you have in Cuebot:
+
+- **The user card** has a **Linked accounts** section: the person's other accounts, how sure each link is
+  (**suggested, not confirmed**, **confirmed by Kris and Sam**, **verified**), and the evidence stored with it.
+  Same names on other platforms show as a hint only; they never link anything.
+- **Same person as...** lets a mod pick the other account from the recent chat (or a same-name hint), tick the
+  messages that show it (for example the viewer saying "I'm rowdyguy on Kick"), and add a note. It is a
+  **suggestion** until someone else confirms it: you, or a mod whose role may confirm links. Nobody can confirm their
+  own suggestion. If the other account already belongs to someone, the portal asks whether to merge the two people or
+  move just that account.
+- **Verify with !link** shows the mod a one-time code with a 10-minute countdown. The mod sends it to the viewer
+  privately; the viewer types `!link CODE` from their other account. That link is **verified**.
+- **Confirm**, **Wrong** and **Unlink** are next to each account. **Unlink** lists the bans and timeouts that were made
+  through the link and are still in force, and offers to lift them (ticked when the link was wrong).
+- **Notes** about a viewer follow their linked accounts. The portal reminds mods not to write down health, religion,
+  politics or similar personal details.
+
+**Ban** and **Timeout** on a linked account open a preview before anything is sent. It has one row per account: the
+link and how sure it is, what will happen there (the timeout each platform really applies, the YouTube quota a ban
+costs), and whether the row is ticked. Confirmed and verified links start ticked; suggestions start unticked, and a mod
+cannot ban through a suggestion at all. Platforms without a moderation API (Rumble) show **By hand** with a link to the
+website. A reason is required. A permanent ban on more than one platform asks a second time ("Ban 3 accounts on 3
+platforms?").
+
+The result shows each platform: done, failed (with **Retry**), or by hand (open the website, then **I did it**). A
+failure on one platform does not undo the others. **Undo incident** lifts every ban and timeout of that decision still
+in force; it is in the dialog and next to the incident in the **Mod log**, where the rows of one decision are grouped.
+Lifting needs the ban and unban right. Deleted messages cannot be restored, and bans done by hand are lifted by hand.
+
+When an account is newly linked to someone banned elsewhere, a **Banned elsewhere** strip above the chat asks
+"... is linked to a person banned on Twitch. Apply here too?". **Ban here too** needs a reason; **Dismiss** leaves it.
+
+You are told about every linked ban or timeout a mod makes, and can undo it. Undoing everything one mod did in the
+last hour stays with you, in Cuebot; mods do not have it.
+
+| Right | Standard Mod | Lead Mod | Tech Lead | What it allows |
+|---|---|---|---|---|
+| Notes: read | Yes | Yes | Yes | See notes on the user card; see linked accounts |
+| Notes: add | Yes | Yes | Yes | Write notes, and change or delete their own |
+| Notes: delete | No | Yes | Yes | Change or delete other mods' notes |
+| Propose links | Yes | Yes | Yes | **Same person as...**, **Verify with !link**; see linked accounts |
+| Confirm links | No | Yes | Yes | **Confirm**, **Wrong** and **Unlink** (a mod can always withdraw their own suggestion) |
+| Linked timeouts | Yes | Yes | Yes | Time out through linked accounts (also needs the timeout right) |
+| Linked bans | Yes | Yes | Yes | Ban through linked accounts, **Ban here too** (also needs the ban right) |
+
+A mod whose role lacks the linked right still gets the plain tools for the account they clicked. Rows of the mod log
+about links (who linked or unlinked whom) are shown only to roles that may see linked accounts. Mods may make 5 linked
+bans an hour.
+
+Cuebot reads the accounts, names and the messages attached as evidence from its own chat, never from the mod's
+browser, and checks every request again.
 
 ## Tell your mods (and viewers)
 

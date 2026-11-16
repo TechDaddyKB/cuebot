@@ -129,6 +129,7 @@ input[type="range"] { padding: 0; border: 0; background: none; accent-color: var
 .add-picker { display: flex; gap: .5rem; margin-top: .4rem; }
 .add-picker select { flex: 1; }
 .status-pending { color: var(--warn); }
+.status-ok { color: var(--ok); }
 .status-rejected, .status-expired { color: var(--danger); }
 .load-error { color: var(--warn); background: var(--panel); border: 1px dashed var(--line); border-radius: .5rem; padding: .6rem .9rem; }
 
@@ -212,6 +213,20 @@ a.button { display: inline-block; padding: .4rem .8rem; border: 1px solid var(--
 .chat-page.popout .chat-lines { height: auto; flex: 1; min-height: 0; }
 .chat-page.popout .user-card { top: 1rem; }
 @media (max-width: 760px) { .chat-lines { height: 65vh; } .user-card { top: auto; height: 75vh; } }
+
+/* Identity links and linked actions (chat-links.tsx). */
+.linked .linked-accounts li { display: grid; gap: .2rem; }
+.linked textarea, .same-person textarea, .notes textarea { width: 100%; min-height: 3.5rem; }
+.same-person .pick-list { max-height: 12rem; overflow-y: auto; }
+.verify-code { font-size: 1.4rem; letter-spacing: .2em; }
+.dialog { position: fixed; left: 50%; top: 4.5rem; transform: translateX(-50%); width: min(760px, calc(100vw - 2rem)); max-height: calc(100vh - 6rem);
+  overflow-y: auto; z-index: 20; box-shadow: 0 8px 32px rgba(0, 0, 0, .35); }
+.linked-preview { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.linked-preview th, .linked-preview td { text-align: left; padding: .3rem .4rem; border-bottom: 1px solid var(--line, rgba(127, 127, 127, .25)); vertical-align: top; }
+.linked-dialog .reason { width: 100%; margin: .5rem 0; }
+.mod-log li.incident { display: grid; gap: .3rem; border-left: 3px solid var(--warn); padding-left: .5rem; }
+.later-arrivals li { display: grid; gap: .3rem; }
+@media (max-width: 760px) { .dialog { top: 1rem; max-height: calc(100vh - 2rem); } .linked-preview { font-size: .8rem; } }
 .status-problem { color: var(--danger); }
 .chip.count { color: var(--accent-text); background: var(--warn); }
 .held-lane { margin-bottom: .75rem; max-height: 40vh; overflow-y: auto; }

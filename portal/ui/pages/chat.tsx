@@ -3,19 +3,23 @@
 // (it never waits for approval) and Cuebot's mod log records who did it. Cuebot re-checks every request.
 // Phase 3 adds the platforms' moderation queues (Twitch): a Held lane above the chat, a Mod tools tab (Shield Mode,
 // unban requests, blocked terms) and Monitor / Restrict / Not suspicious on the user card.
+// Phases 4 and 5 add identity links (chat-links.tsx): linked accounts and notes on the user card, the linked Ban and
+// Timeout dialog, later arrivals and Undo incident in the mod log, all hidden while the streamer has links turned off.
 
 import { useEffect, useRef, useState } from "preact/hooks";
 import { useSubscription, usePortal, type Answer } from "../api.js";
 import { LoadError } from "../widgets.js";
+import { LaterArrivalsStrip, LinkedDialog, LinkedSection, UndoIncidentButton, linkedPreview, type LinkedRequest } from "./chat-links.js";
 import {
-  EMPTY, EMPTY_QUEUES, MAX_TERM, MODE_ACTIONS, actorText, applyEvents, applyQueueEvents, decidedHeld, findTool, formatDuration,
+  EMPTY, EMPTY_LINKS, EMPTY_QUEUES, LINKS_OFF, applyLinkEvents, canUndoIncident, groupIncidents, MAX_TERM, MODE_ACTIONS, actorText, applyEvents, applyQueueEvents, decidedHeld, findTool, formatDuration,
   hasQueues, heldStatusText, logDetail, logSummary, markHeld, mergeQueues, pendingHeld, platformClass, presetLabel, safeUrl,
   shieldText, suspiciousText, termProblem, toolView, upsertRow, visibleLines, type ChatLine, type ChatState, type HeldItem,
-  type LogRow, type PlatformQueues, type PlatformTools, type QueueState, type Suspicious, type ToolView,
+  type LaterArrival, type LinkState, type LinkedPreview, type LinksCaps, type LogRow, type PlatformQueues, type PlatformTools,
+  type QueueState, type Suspicious, type ToolView,
 } from "./chat-model.js";
 
 interface History extends Answer { platforms?: string[]; messages?: ChatLine[] }
-interface Caps extends Answer { platforms?: PlatformTools[] }
+interface Caps extends Answer { platforms?: PlatformTools[]; links?: LinksCaps }
 interface LogPage extends Answer { rows?: LogRow[]; more?: boolean }
 interface UserCard extends Answer {
   platform: string; userId: string; name: string; roles: string[]; messages: ChatLine[]; log?: LogRow[]; inForce?: LogRow;
@@ -44,6 +48,9 @@ export function ChatPage({ popout = false }: { popout?: boolean }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [card, setCard] = useState<Target | null>(null);
   const [pushEnded, setPushEnded] = useState(false);
+  const [links, setLinks] = useState<LinksCaps>(LINKS_OFF);
+  const [linkState, setLinkState] = useState<LinkState>(EMPTY_LINKS);
+  const [dialog, setDialog] = useState<LinkedPreview | null>(null);
   const list = useRef<HTMLOListElement>(null);
   const stick = useRef(true);
 
@@ -56,8 +63,32 @@ export function ChatPage({ popout = false }: { popout?: boolean }) {
   };
   const loadCaps = async () => {
     const a = (await host.request("chat.capabilities").catch(() => ({ ok: false }))) as Caps;
-    if (a.ok) setCaps(a.platforms ?? []);
+    if (a.ok) {
+      setCaps(a.platforms ?? []);
+      setLinks(a.links ?? LINKS_OFF);
+    }
   };
+
+  const loadLater = async () => {
+    const a = (await host.request("chat.laterArrivals").catch(() => ({ ok: false }))) as Answer & { items?: LaterArrival[] };
+    if (a.ok) setLinkState((s) => ({ ...s, later: a.items ?? [] }));
+  };
+  useSubscription("links", {}, {
+    onEvents: (events) => setLinkState((s) => applyLinkEvents(s, events)),
+    onResync: () => void loadLater(),
+  });
+  useEffect(() => {
+    if (links.enabled && links.rights?.view) void loadLater();
+    else setLinkState(EMPTY_LINKS);
+  }, [links.enabled, links.rights?.view]);
+
+  // With links on, Ban and Timeout ask Cuebot for the preview first: linked accounts open the linked dialog.
+  const onLinked = links.enabled ? async (r: LinkedRequest) => {
+    const p = await linkedPreview(call, (t) => notify(t), r);
+    if (p === "failed") return true;
+    if (p) setDialog(p);
+    return p !== null;
+  } : undefined;
 
   const loadQueues = async () => {
     const a = (await host.request("chat.queues").catch(() => ({ ok: false }))) as Queues;
@@ -137,6 +168,10 @@ export function ChatPage({ popout = false }: { popout?: boolean }) {
         <ModeBar platforms={shownPlatforms} caps={caps} act={act} />
       )}
 
+      {tab === "chat" && (
+        <LaterArrivalsStrip items={linkState.later} links={links} onChanged={(later) => setLinkState((s) => ({ ...s, later }))} />
+      )}
+
       {tab === "chat" && hasQueues(queues) && can("ChatDeleteTimeout") && (
         <HeldLane waiting={waiting} decided={decidedHeld(queues, filter)} caps={caps} decide={decide}
           onCard={(h) => setCard({ platform: h.platform, userId: h.userId, user: h.user })} />
@@ -163,20 +198,25 @@ export function ChatPage({ popout = false }: { popout?: boolean }) {
                 </div>
                 {selected === key && (
                   <Actions target={{ platform: l.platform, userId: l.userId, user: l.user, messageId: l.id }} line={l} caps={caps} act={act}
-                    onCard={() => setCard({ platform: l.platform, userId: l.userId, user: l.user })} />
+                    onLinked={onLinked} onCard={() => setCard({ platform: l.platform, userId: l.userId, user: l.user })} />
                 )}
               </li>
             );
           })}
         </ol>
-      ) : <ModLog platform={filter} />}
+      ) : <ModLog platform={filter} links={links} />}
 
-      {card && <UserCardView target={card} caps={caps} act={act} onClose={() => setCard(null)} />}
+      {card && <UserCardView target={card} caps={caps} act={act} links={links} linkVersion={linkState.version} onLinked={onLinked}
+        onClose={() => setCard(null)} />}
+      {dialog && <LinkedDialog preview={dialog} links={links} onClose={() => setDialog(null)} />}
     </div>
   );
 }
 
 type Act = (action: string, platform: string, body: Record<string, unknown>) => Promise<boolean>;
+
+/** Opens the linked dialog when the account is linked; false means "not linked, use the plain tool". */
+type OnLinked = ((r: LinkedRequest) => Promise<boolean>) | undefined;
 
 /** One tool as a button, a link to the platform's page, or greyed with the reason. */
 function ToolButton({ view, onRun, primary, danger }: { view: ToolView; onRun: () => void; primary?: boolean; danger?: boolean }) {
@@ -193,7 +233,9 @@ function ToolButton({ view, onRun, primary, danger }: { view: ToolView; onRun: (
 }
 
 /** The tools for one message or person: delete, timeout (with what each platform applies), ban, unban, warn. */
-function Actions({ target, line, caps, act, onCard }: { target: Target; line?: ChatLine; caps: PlatformTools[]; act: Act; onCard?: () => void }) {
+function Actions({ target, line, caps, act, onCard, onLinked }: {
+  target: Target; line?: ChatLine; caps: PlatformTools[]; act: Act; onCard?: () => void; onLinked?: OnLinked;
+}) {
   const p = target.platform;
   const platformCaps = caps.find((c) => c.platform.toLowerCase() === p.toLowerCase());
   const presets = platformCaps?.timeouts ?? [];
@@ -218,12 +260,16 @@ function Actions({ target, line, caps, act, onCard }: { target: Target; line?: C
               <option key={x.requested} value={String(x.requested)}>{presetLabel(x)}</option>
             ))}
           </select>
-          <ToolButton view={view("Timeout")} onRun={() => void act("Timeout", p, { ...who, durationSeconds: preset, ...reasonBody })} />
+          <ToolButton view={view("Timeout")} onRun={() => void (async () => {
+            if (onLinked && await onLinked({ action: "Timeout", platform: p, ...who, durationSeconds: preset })) return;
+            void act("Timeout", p, { ...who, durationSeconds: preset, ...reasonBody });
+          })()} />
         </span>
-        <ToolButton view={view("Ban")} danger onRun={() => {
+        <ToolButton view={view("Ban")} danger onRun={() => void (async () => {
+          if (onLinked && await onLinked({ action: "Ban", platform: p, ...who })) return;
           if (confirm(`Ban ${target.user} on ${p}? It is made with the streamer's account and recorded in the mod log.`))
             void act("Ban", p, { ...who, ...reasonBody });
-        }} />
+        })()} />
         <ToolButton view={view("Unban")} onRun={() => void act("Unban", p, { userId: target.userId, user: target.user })} />
         <ToolButton view={view("Warn")} onRun={() => void act("Warn", p, { ...who, ...reasonBody })} />
         {onCard && <button type="button" class="link" onClick={onCard}>User card</button>}
@@ -272,27 +318,35 @@ function QuotaLine({ quota }: { quota: NonNullable<PlatformTools["quota"]> }) {
   return <small class="muted">YouTube quota left today: {quota.remaining.toLocaleString("en")} units ({quota.reserve.toLocaleString("en")} kept for reading chat).</small>;
 }
 
-function LogList({ rows }: { rows: LogRow[] }) {
+function LogList({ rows, links }: { rows: LogRow[]; links?: LinksCaps }) {
   if (rows.length === 0) return <p class="muted">Nothing in the mod log yet.</p>;
+  const undo = links?.enabled === true && links.rights?.ban === true;
+  const line = (r: LogRow) => {
+    const detail = logDetail(r);
+    return (
+      <li key={r.id} class={r.result === "Ok" ? "" : "problem"}>
+        <span class={`chip ${platformClass(r.platform)}`}>{r.platform}</span>
+        <span><strong>{actorText(r)}</strong> {logSummary(r)}</span>
+        <time class="muted">{new Date(r.at).toLocaleString()}</time>
+        {detail && <span class="muted log-detail">{detail}</span>}
+      </li>
+    );
+  };
   return (
     <ul class="rows mod-log">
-      {rows.map((r) => {
-        const detail = logDetail(r);
-        return (
-          <li key={r.id} class={r.result === "Ok" ? "" : "problem"}>
-            <span class={`chip ${platformClass(r.platform)}`}>{r.platform}</span>
-            <span><strong>{actorText(r)}</strong> {logSummary(r)}</span>
-            <time class="muted">{new Date(r.at).toLocaleString()}</time>
-            {detail && <span class="muted log-detail">{detail}</span>}
-          </li>
-        );
-      })}
+      {groupIncidents(rows).map((incident) => incident.rows.length === 1 && !(undo && canUndoIncident(incident)) ? line(incident.rows[0]!) : (
+        <li key={`incident-${incident.id}`} class="incident">
+          <span class="muted small">One decision on {new Set(incident.rows.map((r) => r.platform)).size} platform(s)</span>
+          {undo && canUndoIncident(incident) && <UndoIncidentButton incidentId={incident.id} />}
+          <ul class="rows">{incident.rows.map(line)}</ul>
+        </li>
+      ))}
     </ul>
   );
 }
 
 /** The mod log: every mod's actions, newest first, with live rows while shown. */
-function ModLog({ platform }: { platform: string }) {
+function ModLog({ platform, links }: { platform: string; links: LinksCaps }) {
   const { host } = usePortal();
   const [rows, setRows] = useState<LogRow[]>([]);
   const [more, setMore] = useState(false);
@@ -320,14 +374,16 @@ function ModLog({ platform }: { platform: string }) {
   return (
     <section class="card">
       <LoadError data={problem} />
-      <LogList rows={rows} />
+      <LogList rows={rows} links={links} />
       {more && <button type="button" onClick={() => void load(rows.length)}>Older</button>}
     </section>
   );
 }
 
 /** One person: the platform and the stable user id (names can be copied), their recent lines, log rows and the tools. */
-function UserCardView({ target, caps, act, onClose }: { target: Target; caps: PlatformTools[]; act: Act; onClose: () => void }) {
+function UserCardView({ target, caps, act, links, linkVersion, onLinked, onClose }: {
+  target: Target; caps: PlatformTools[]; act: Act; links: LinksCaps; linkVersion: number; onLinked?: OnLinked; onClose: () => void;
+}) {
   const { host } = usePortal();
   const [data, setData] = useState<UserCard | null>(null);
   const load = () => void host.request("chat.user", { platform: target.platform, userId: target.userId })
@@ -357,7 +413,10 @@ function UserCardView({ target, caps, act, onClose }: { target: Target; caps: Pl
           {" "}by {actorText(data.inForce)}.
         </p>
       )}
-      <Actions target={target} caps={caps} act={actAndReload} />
+      <Actions target={target} caps={caps} act={actAndReload} onLinked={onLinked} />
+      {links.enabled && links.rights?.view && (
+        <LinkedSection platform={target.platform} userId={target.userId} messages={data?.messages ?? []} version={linkVersion} />
+      )}
       {data?.suspiciousKnown && <SuspiciousTools target={target} flagged={data.suspicious} caps={caps} act={actAndReload} />}
       <h3>Recent messages</h3>
       {data?.messages?.length ? (
@@ -367,7 +426,7 @@ function UserCardView({ target, caps, act, onClose }: { target: Target; caps: Pl
           ))}
         </ul>
       ) : <p class="muted">None in Cuebot's recent chat.</p>}
-      {data?.log && (<><h3>Mod log</h3><LogList rows={data.log} /></>)}
+      {data?.log && (<><h3>Mod log</h3><LogList rows={data.log} links={links} /></>)}
     </aside>
   );
 }

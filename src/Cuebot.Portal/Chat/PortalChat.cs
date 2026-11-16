@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Cuebot.Core.Chat;
 using Cuebot.Core.Chat.Moderation;
 using Cuebot.Core.Logging;
+using Cuebot.Core.Users;
 using Cuebot.Portal.Changes;
 using Cuebot.Portal.Members;
 using Cuebot.Portal.Relay;
@@ -57,6 +58,40 @@ public sealed class PortalModerationPermissions(PortalDirectory directory) : IMo
         }
         return null;
     }
+
+    /// <summary>
+    /// Identity links and notes (phase 4): the member's role decides, like moderation. Seeing linked accounts needs
+    /// Propose links, Confirm links or Notes: read; confirming, rejecting and unlinking need Confirm links; notes follow
+    /// the three Notes rights. That a member never confirms their own suggestion is <see cref="IdentityLinks"/>' rule.
+    /// </summary>
+    public string? RefuseLink(ModActor actor, LinkOperation operation)
+    {
+        if (actor.Kind == ModActorKind.Streamer) return null;
+        if (actor.Kind != ModActorKind.Member) return "Only the streamer and mods can do this.";
+        if (!Guid.TryParse(actor.MemberId, out var id) || directory.Member(id) is not { Suspended: false } member)
+            return "Your access was removed or paused by the streamer.";
+        return RefuseLink(directory.RoleOf(member), operation);
+    }
+
+    /// <summary>Why a member with <paramref name="role"/> may not do <paramref name="operation"/>, or null.</summary>
+    public static string? RefuseLink(PortalRole? role, LinkOperation operation) => operation switch
+    {
+        LinkOperation.View => CanViewLinks(role) ? null : "Your role does not include seeing linked accounts.",
+        LinkOperation.Propose => PortalPolicy.Has(role, PortalPermission.ProposeLinks) ? null : "Your role does not include suggesting links.",
+        LinkOperation.Confirm => PortalPolicy.Has(role, PortalPermission.ConfirmLinks) ? null : "Your role does not include confirming links.",
+        LinkOperation.Reject => PortalPolicy.Has(role, PortalPermission.ConfirmLinks) ? null : "Your role does not include rejecting links.",
+        LinkOperation.Unlink => PortalPolicy.Has(role, PortalPermission.ConfirmLinks) ? null : "Your role does not include unlinking accounts.",
+        LinkOperation.ReadNotes => PortalPolicy.Has(role, PortalPermission.NotesRead) ? null : "Your role does not include reading notes.",
+        LinkOperation.AddNote => PortalPolicy.Has(role, PortalPermission.NotesAdd) ? null : "Your role does not include writing notes.",
+        LinkOperation.DeleteNote => PortalPolicy.Has(role, PortalPermission.NotesDelete) ? null
+            : "Your role does not include changing or deleting other people's notes.",
+        _ => "Your role does not include this.",
+    };
+
+    /// <summary>Linked accounts are shown to roles that may suggest or confirm links, or read notes.</summary>
+    public static bool CanViewLinks(PortalRole? role) =>
+        PortalPolicy.Has(role, PortalPermission.ProposeLinks) || PortalPolicy.Has(role, PortalPermission.ConfirmLinks)
+                                                                || PortalPolicy.Has(role, PortalPermission.NotesRead);
 }
 
 /// <summary>
@@ -70,8 +105,10 @@ public sealed class PortalModerationPermissions(PortalDirectory directory) : IMo
 /// messages, Shield Mode, and on request unban requests and blocked terms, each only for roles with the right) and the
 /// "modqueue" push topic (a message held or decided, Shield Mode on or off, a chatter flagged, an unban request or the
 /// blocked terms changed), filtered by the same rights.
+/// Phases 4 and 5 add identity links, notes and linked bans and timeouts (PortalChat.Links.cs), all behind the
+/// streamer's Identity links setting.
 /// </summary>
-public sealed class PortalChat : IDisposable
+public sealed partial class PortalChat : IDisposable
 {
     public const string ChatTopic = "chat";
     public const string LogTopic = "modlog";
@@ -126,10 +163,12 @@ public sealed class PortalChat : IDisposable
         }
         if (_moderation?.Log is { } modLog) modLog.Changed += OnLogRow;
         if (_moderation is not null) _moderation.QueuesChanged += OnQueuesChanged;
+        SubscribeLinks();
     }
 
     /// <summary>The ops this class answers, for PortalApi's dispatch.</summary>
-    public static bool Handles(string op) => op is "chat.history" or "chat.capabilities" or "chat.act" or "chat.log" or "chat.user" or "chat.queues";
+    public static bool Handles(string op) =>
+        op is "chat.history" or "chat.capabilities" or "chat.act" or "chat.log" or "chat.user" or "chat.queues" || IsLinkOp(op);
 
     /// <summary>
     /// Offers the "chat", "modlog" and "modqueue" topics on the portal link. Called once the relay client exists (it needs PortalApi,
@@ -141,6 +180,7 @@ public sealed class PortalChat : IDisposable
         push.Register(new PortalTopic(ChatTopic) { Permission = PortalPermission.ViewChat, CheckParams = CheckPlatformParam });
         push.Register(new PortalTopic(LogTopic) { Permission = PortalPermission.ViewModLog, CheckParams = CheckPlatformParam });
         push.Register(new PortalTopic(QueueTopic) { Permission = PortalPermission.ViewChat, CheckParams = CheckPlatformParam });
+        push.Register(new PortalTopic(LinksTopic) { Permission = PortalPermission.ViewChat, CheckParams = CheckPlatformParam });
     }
 
     public async Task<JsonObject> HandleAsync(PortalMember member, PortalRole? role, string op, JsonObject request, CancellationToken ct = default)
@@ -151,10 +191,11 @@ public sealed class PortalChat : IDisposable
             {
                 "chat.history" => !PortalPolicy.Has(role, PortalPermission.ViewChat) ? NotIncluded() : History(request),
                 "chat.capabilities" => !PortalPolicy.Has(role, PortalPermission.ViewChat) ? NotIncluded() : Capabilities(role, request),
-                "chat.log" => !PortalPolicy.Has(role, PortalPermission.ViewModLog) ? NotIncluded() : Log(request),
+                "chat.log" => !PortalPolicy.Has(role, PortalPermission.ViewModLog) ? NotIncluded() : Log(role, request),
                 "chat.user" => !PortalPolicy.Has(role, PortalPermission.ViewChat) ? NotIncluded() : User(role, request),
                 "chat.queues" => !PortalPolicy.Has(role, PortalPermission.ViewChat) ? NotIncluded() : await QueuesAsync(role, request, ct).ConfigureAwait(false),
                 "chat.act" => await ActAsync(member, role, request, ct).ConfigureAwait(false),
+                _ when IsLinkOp(op) => await HandleLinksAsync(member, role, op, request, ct).ConfigureAwait(false),
                 _ => Error($"Unknown request '{op}'."),
             };
         }
@@ -186,7 +227,11 @@ public sealed class PortalChat : IDisposable
         if (_moderation is null) return Error("This Cuebot cannot moderate chat.");
         var only = Str(request, "platform");
         var platforms = only.Length > 0 ? [only] : PlatformNames();
-        return Ok(new JsonObject { ["platforms"] = new JsonArray([.. platforms.Select(p => (JsonNode)PlatformTools(role, p))]) });
+        return Ok(new JsonObject
+        {
+            ["platforms"] = new JsonArray([.. platforms.Select(p => (JsonNode)PlatformTools(role, p))]),
+            ["links"] = LinksCapabilities(role),
+        });
     }
 
     private JsonObject PlatformTools(PortalRole? role, string platform)
@@ -227,7 +272,7 @@ public sealed class PortalChat : IDisposable
         return node;
     }
 
-    private JsonObject Log(JsonObject request)
+    private JsonObject Log(PortalRole? role, JsonObject request)
     {
         if (_moderation?.Log is not { } log) return Error("This Cuebot keeps no mod log.");
         var platform = Str(request, "platform");
@@ -238,6 +283,7 @@ public sealed class PortalChat : IDisposable
         var rows = userId.Length > 0
             ? log.ForTarget(platform, userId, offset + limit + 1)
             : log.Recent(offset + limit + 1, platform.Length > 0 ? platform : null);
+        rows = [.. rows.Where(r => MaySeeRow(role, r))];
         var page = rows.Skip(offset).Take(limit).ToList();
         return Ok(new JsonObject
         {
@@ -262,7 +308,7 @@ public sealed class PortalChat : IDisposable
         };
         if (PortalPolicy.Has(role, PortalPermission.ViewModLog) && _moderation?.Log is { } log)
         {
-            body["log"] = new JsonArray([.. log.ForTarget(platform, userId, 50).Select(r => (JsonNode)Row(r))]);
+            body["log"] = new JsonArray([.. log.ForTarget(platform, userId, 50).Where(r => MaySeeRow(role, r)).Select(r => (JsonNode)Row(r))]);
             if (log.FindInForce(platform, userId) is { } inForce) body["inForce"] = Row(inForce);
         }
         if (PortalPolicy.Has(role, PortalPermission.ChatDeleteTimeout) && _moderation?.QueuesFor(platform) is { } queues)
@@ -568,7 +614,16 @@ public sealed class PortalChat : IDisposable
     private void OnModeration(ChatModerationNotice notice) =>
         PublishChat(notice.Platform, new JsonObject { ["type"] = "moderation", ["notice"] = Notice(notice) });
 
-    private void OnLogRow(ModLogEntry entry) => Publish(LogTopic, entry.Platform, new JsonObject { ["type"] = "row", ["row"] = Row(entry) });
+    private void OnLogRow(ModLogEntry entry)
+    {
+        // Rows about identity links say who is linked to whom: only for roles that may see links, and only while links are on.
+        if (IsLinkRow(entry))
+        {
+            if (LinksOn) Publish(LogTopic, entry.Platform, new JsonObject { ["type"] = "row", ["row"] = Row(entry) }, PortalModerationPermissions.CanViewLinks);
+            return;
+        }
+        Publish(LogTopic, entry.Platform, new JsonObject { ["type"] = "row", ["row"] = Row(entry) });
+    }
 
     /// <summary>
     /// A queue changed: tells subscribed devices whose role may see that queue. Held messages and suspicious chatters
@@ -617,7 +672,7 @@ public sealed class PortalChat : IDisposable
                 default:
                     return;
             }
-            Publish(QueueTopic, change.Platform, payload, needs);
+            Publish(QueueTopic, change.Platform, payload, role => PortalPolicy.Has(role, needs));
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
@@ -627,16 +682,20 @@ public sealed class PortalChat : IDisposable
 
     private void PublishChat(string platform, JsonObject payload) => Publish(ChatTopic, platform, payload);
 
-    private void Publish(string topic, string platform, JsonObject payload, PortalPermission? needs = null)
+    /// <summary>
+    /// Sends a push event to the topic's subscribers whose platform filter matches (a null <paramref name="platform"/>
+    /// goes to all of them) and, when <paramref name="allow"/> is given, whose role passes it.
+    /// </summary>
+    private void Publish(string topic, string? platform, JsonObject payload, Func<PortalRole?, bool>? allow = null)
     {
         if (_push is not { } push || push.Subscribers(topic) == 0) return;
         // The topic's own permission is checked by the hub; a payload that needs more is checked per member, once.
         var allowed = new Dictionary<Guid, bool>();
         try
         {
-            push.Publish(topic, payload, sub => (sub.Params["platform"] is not JsonValue p || p.GetValue<string>() is not { Length: > 0 } only
+            push.Publish(topic, payload, sub => (platform is null || sub.Params["platform"] is not JsonValue p || p.GetValue<string>() is not { Length: > 0 } only
                                                  || Same(only, platform))
-                                                && (needs is not { } right || MayReceive(allowed, sub.MemberId, right)));
+                                                && (allow is null || MayReceive(allowed, sub.MemberId, allow)));
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
@@ -644,10 +703,10 @@ public sealed class PortalChat : IDisposable
         }
     }
 
-    private bool MayReceive(Dictionary<Guid, bool> cache, Guid memberId, PortalPermission right)
+    private bool MayReceive(Dictionary<Guid, bool> cache, Guid memberId, Func<PortalRole?, bool> allow)
     {
         if (!cache.TryGetValue(memberId, out var may))
-            cache[memberId] = may = _directory.Member(memberId) is { Suspended: false } member && PortalPolicy.Has(_directory.RoleOf(member), right);
+            cache[memberId] = may = _directory.Member(memberId) is { Suspended: false } member && allow(_directory.RoleOf(member));
         return may;
     }
 
@@ -725,6 +784,8 @@ public sealed class PortalChat : IDisposable
         if (e.DurationAppliedSeconds is { } applied) node["appliedSeconds"] = applied;
         if (e.UndoneAt is { } undone) node["undoneAt"] = undone;
         if (e.Undoes is { } undoes) node["undoes"] = undoes;
+        // Made through an identity link (the link itself is not sent; the incident groups the rows).
+        if (e.ViaLinkId is not null && !IsLinkRow(e)) node["linked"] = true;
         return node;
     }
 
@@ -831,9 +892,11 @@ public sealed class PortalChat : IDisposable
         }
         if (_moderation?.Log is { } modLog) modLog.Changed -= OnLogRow;
         if (_moderation is not null) _moderation.QueuesChanged -= OnQueuesChanged;
+        UnsubscribeLinks();
         if (_moderation?.Permissions is PortalModerationPermissions) _moderation.Permissions = null;
         _push?.Unregister(ChatTopic);
         _push?.Unregister(LogTopic);
         _push?.Unregister(QueueTopic);
+        _push?.Unregister(LinksTopic);
     }
 }

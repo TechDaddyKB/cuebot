@@ -70,6 +70,8 @@ export interface LogRow {
   requestedSeconds?: number;
   appliedSeconds?: number;
   undoneAt?: string;
+  /** Made through an identity link (one row of a linked incident). */
+  linked?: boolean;
 }
 
 export const MAX_LINES = 500;
@@ -199,6 +201,13 @@ export function logSummary(row: LogRow): string {
     case "unban-request-deny": return `denied ${who}'s unban request`;
     case "term-add": return row.reason ? `blocked the term "${row.reason}"` : "blocked a term";
     case "term-remove": return row.reason ? `unblocked the term "${row.reason}"` : "unblocked a term";
+    case "link": return `suggested that ${who} is one person with another account`;
+    case "link-move": return `moved ${who} to another person`;
+    case "link-merge": return `merged ${who} into another person`;
+    case "link-confirm": return `confirmed the link of ${who}`;
+    case "link-verify": return `verified the link of ${who} (!link)`;
+    case "link-reject": return `rejected a link suggestion for ${who}`;
+    case "unlink": return `unlinked ${who}`;
     default: return `${row.action} ${who}`;
   }
 }
@@ -209,6 +218,7 @@ export function logDetail(row: LogRow): string {
   // Chat modes, Shield Mode and terms keep what changed in the reason (logSummary shows it).
   const reasonInSummary = row.action === "mode" || row.action === "shield" || row.action.startsWith("term-");
   if (!reasonInSummary && row.reason) parts.push(`${row.action.startsWith("unban-request-") ? "Answer" : "Reason"}: ${row.reason}`);
+  if (row.linked) parts.push("Through a linked account");
   if (row.messageText) parts.push(`Message: ${row.messageText}`);
   if (row.result === "Failed") parts.push(`Failed: ${row.error}`);
   else if (row.result === "Skipped") parts.push(`Not sent: ${row.error}`);
@@ -416,4 +426,270 @@ export function termProblem(term: string): string | null {
 /** Whether any platform has moderation queues (only those appear in chat.queues). */
 export function hasQueues(state: QueueState): boolean {
   return state.platforms.length > 0;
+}
+
+// ---------------------------------------------------------------- identity links and linked actions (phases 4 and 5)
+
+export interface LinkRights {
+  view: boolean;
+  propose: boolean;
+  confirm: boolean;
+  notesRead: boolean;
+  notesAdd: boolean;
+  notesDelete: boolean;
+  ban: boolean;
+  timeout: boolean;
+  linkedBans: boolean;
+  linkedTimeouts: boolean;
+}
+
+/** chat.capabilities' "links": off (and then the page shows nothing about links), or on with the role's rights. */
+export interface LinksCaps { enabled: boolean; codeMinutes?: number; rights?: LinkRights }
+
+export const LINKS_OFF: LinksCaps = { enabled: false };
+
+export type LinkStatus = "Suggested" | "Confirmed" | "Verified" | "Rejected";
+
+export interface LinkedAccount {
+  linkId: string;
+  platform: string;
+  userId: string;
+  name: string;
+  nameAtLink: string;
+  isThis: boolean;
+  status: LinkStatus;
+  /** How sure the link to the account shown is (the weaker of the two). */
+  between: LinkStatus;
+  /** "verified 2026-10-02", "suggested by Sam, not confirmed", "confirmed by Kris and Sam". */
+  linkText: string;
+  addedBy: string;
+  addedAt: string;
+  statusAt: string;
+  /** This mod suggested it (so someone else confirms it). */
+  mine: boolean;
+  needsStreamer: boolean;
+  confirmedBy: string[];
+}
+
+export interface LinkEvidence { kind: string; quote: string; addedBy: string; at: string; messages: number }
+
+export interface ModNote { id: string; platform: string; userId: string; text: string; author: string; mine: boolean; createdAt: string; editedAt: string }
+
+export interface Candidate { platform: string; userId: string; name: string; messages?: { id: string; text: string; time: string }[] }
+
+export interface LaterArrival { id: string; platform: string; userId: string; name: string; bannedOn: string[]; at: string; text: string }
+
+/** chat.person: linked accounts, evidence, notes, hints and the chatters a mod can pick. */
+export interface PersonCard {
+  platform: string;
+  userId: string;
+  name: string;
+  rights: LinkRights;
+  codeMinutes: number;
+  person?: { note: string; accounts: LinkedAccount[]; evidence: LinkEvidence[] };
+  notes?: ModNote[];
+  hints: Candidate[];
+  candidates?: Candidate[];
+  laterArrivals: LaterArrival[];
+}
+
+/** "Verified", "Confirmed", "Suggested, not confirmed". */
+export function statusLabel(status: LinkStatus): string {
+  switch (status) {
+    case "Verified": return "Verified by the viewer";
+    case "Confirmed": return "Confirmed";
+    case "Suggested": return "Suggested, not confirmed";
+    default: return "Wrong";
+  }
+}
+
+/** What a mod may do with one linked account on the card. */
+export interface AccountButtons { confirm: boolean; wrong: boolean; unlink: boolean; confirmHint: string }
+
+export function accountButtons(a: LinkedAccount, rights: LinkRights): AccountButtons {
+  if (a.isThis) return { confirm: false, wrong: false, unlink: rights.confirm, confirmHint: "" };
+  const suggested = a.status === "Suggested";
+  const confirmHint = !suggested ? ""
+    : a.mine ? "You suggested this, so someone else confirms it."
+    : !rights.confirm ? "Your role does not include confirming links."
+    : a.needsStreamer ? "Only the streamer can confirm this one (more than four accounts, or two on one platform)." : "";
+  return {
+    confirm: suggested && !a.mine && rights.confirm && !a.needsStreamer,
+    wrong: suggested && (a.mine || rights.confirm),
+    unlink: !suggested ? rights.confirm : a.mine || rights.confirm,
+    confirmHint,
+  };
+}
+
+/** Recent chatters and same-name hints matching what the mod typed (name or user id), hints first. */
+export function pickable(hints: Candidate[], candidates: Candidate[], query: string): Candidate[] {
+  const q = query.trim().toLowerCase();
+  const seen = new Set<string>();
+  const out: Candidate[] = [];
+  for (const c of [...hints, ...candidates]) {
+    const key = `${c.platform.toLowerCase()}|${c.userId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (!q || c.name.toLowerCase().includes(q) || c.userId.toLowerCase() === q || c.platform.toLowerCase() === q) out.push(c);
+  }
+  return out;
+}
+
+export const MAX_LINK_NOTE = 500;
+export const MAX_NOTE = 2000;
+export const MAX_EVIDENCE = 20;
+
+/** Shown above every notes box (docs/UNIFIED_MOD_CHAT_PLAN.md, section 9.2). */
+export const NOTE_WARNING =
+  "Notes are about moderation only. Do not write down health, religion, politics, sexuality or similar personal details or beliefs.";
+
+/** "9:41" left of a !link code, or "expired". */
+export function countdown(expiresAt: string, now: number): string {
+  const left = Math.ceil((new Date(expiresAt).getTime() - now) / 1000);
+  if (!Number.isFinite(left) || left <= 0) return "expired";
+  return `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+}
+
+// ---------------------------------------------------------------- linked ban and timeout preview
+
+export interface PreviewRow {
+  rowId: string;
+  platform: string;
+  userId: string;
+  name: string;
+  isOrigin: boolean;
+  status?: LinkStatus | null;
+  linkText: string;
+  state: ToolState;
+  willHappen: string;
+  appliedSeconds?: number;
+  quotaCost: number;
+  quotaLeft?: number;
+  notes: string;
+  ticked: boolean;
+  canTick: boolean;
+  byHand: boolean;
+  websiteUrl?: string;
+  alreadyActioned: boolean;
+}
+
+export interface LinkedPreview {
+  previewId: string;
+  action: "Ban" | "Timeout";
+  platform: string;
+  name: string;
+  linked: boolean;
+  rows: PreviewRow[];
+  defaultTicked: string[];
+  maxReason: number;
+  requestedSeconds?: number;
+  linkedNote?: string;
+}
+
+export interface RowResult {
+  rowId: string;
+  platform: string;
+  name: string;
+  result: "Ok" | "Failed" | "Skipped" | "Manual";
+  message: string;
+  awaitingManual: boolean;
+  canRetry: boolean;
+  websiteUrl?: string;
+}
+
+/** The ticked rows that will run (only rows that may be ticked count). */
+export function selectedRows(preview: LinkedPreview, ticked: ReadonlySet<string>): PreviewRow[] {
+  return preview.rows.filter((r) => r.canTick && ticked.has(r.rowId));
+}
+
+/** Rows that come back "by hand" whatever is ticked: the account clicked, and verified or confirmed links. */
+export function byHandRows(preview: LinkedPreview): PreviewRow[] {
+  return preview.rows.filter((r) => r.byHand && (r.isOrigin || r.status === "Confirmed" || r.status === "Verified"));
+}
+
+/** A permanent ban on more than one platform asks a second time (as LinkedPreview.NeedsSecondConfirmation). */
+export function needsSecondConfirmation(preview: LinkedPreview, ticked: ReadonlySet<string>): boolean {
+  if (preview.action !== "Ban") return false;
+  return new Set(selectedRows(preview, ticked).map((r) => r.platform.toLowerCase())).size > 1;
+}
+
+/** "Ban 3 accounts on 3 platforms?" */
+export function secondConfirmationText(preview: LinkedPreview, ticked: ReadonlySet<string>): string {
+  const rows = selectedRows(preview, ticked);
+  const platforms = new Set(rows.map((r) => r.platform.toLowerCase())).size;
+  return `Ban ${rows.length} account${rows.length === 1 ? "" : "s"} on ${platforms} platform${platforms === 1 ? "" : "s"}?`;
+}
+
+/** YouTube quota the ticked rows cost. */
+export function quotaTotal(preview: LinkedPreview, ticked: ReadonlySet<string>): number {
+  return selectedRows(preview, ticked).reduce((sum, r) => sum + (r.quotaCost || 0), 0);
+}
+
+/** Why the linked action cannot be sent yet, or null (Cuebot checks again). */
+export function executeProblem(preview: LinkedPreview, ticked: ReadonlySet<string>, reason: string): string | null {
+  const r = reason.trim();
+  if (!r) return "A reason is required.";
+  if (r.length > preview.maxReason) return `Keep the reason under ${preview.maxReason} characters.`;
+  if (selectedRows(preview, ticked).length === 0 && byHandRows(preview).length === 0) return "Nothing is ticked.";
+  return null;
+}
+
+/** Ticks or unticks a row; rows that may not be ticked stay as they are. */
+export function toggleRow(preview: LinkedPreview, ticked: ReadonlySet<string>, rowId: string): Set<string> {
+  const next = new Set(ticked);
+  const row = preview.rows.find((r) => r.rowId === rowId);
+  if (!row || !row.canTick) return next;
+  if (next.has(rowId)) next.delete(rowId);
+  else next.add(rowId);
+  return next;
+}
+
+/** "Done", "Failed: Kick said no", "Not sent: ...", "By hand: open Rumble, then press I did it", "Done by hand". */
+export function resultText(r: RowResult): string {
+  switch (r.result) {
+    case "Ok": return "Done";
+    case "Failed": return `Failed: ${r.message}`;
+    case "Manual": return "Done by hand";
+    default: return r.awaitingManual ? `By hand: open ${r.platform}, then press "I did it".` : `Not sent: ${r.message}`;
+  }
+}
+
+// ---------------------------------------------------------------- incidents in the mod log
+
+export interface Incident { id: string; rows: LogRow[] }
+
+/** Groups neighbouring rows of one incident (a linked ban on three platforms is one decision). */
+export function groupIncidents(rows: LogRow[]): Incident[] {
+  const out: Incident[] = [];
+  for (const r of rows) {
+    const last = out[out.length - 1];
+    if (last && r.incidentId && last.id === r.incidentId) last.rows.push(r);
+    else out.push({ id: r.incidentId || r.id, rows: [r] });
+  }
+  return out;
+}
+
+/** "Undo incident" is offered on linked incidents with a ban or timeout that worked and was not lifted. */
+export function canUndoIncident(incident: Incident): boolean {
+  const linked = incident.rows.length > 1 || incident.rows.some((r) => r.linked);
+  return linked && incident.rows.some((r) =>
+    (r.action === "ban" || r.action === "timeout") && (r.result === "Ok" || r.result === "Manual") && !r.undoneAt);
+}
+
+// ---------------------------------------------------------------- "links" push topic
+
+export interface LinkState { version: number; later: LaterArrival[] }
+
+export const EMPTY_LINKS: LinkState = { version: 0, later: [] };
+
+/** "changed": a card on screen reads again; "later": the later-arrival prompts as they are now. */
+export function applyLinkEvents(state: LinkState, events: unknown[]): LinkState {
+  let s = state;
+  for (const raw of events) {
+    if (!raw || typeof raw !== "object") continue;
+    const e = raw as { type?: string; items?: LaterArrival[] };
+    if (e.type === "changed") s = { ...s, version: s.version + 1 };
+    else if (e.type === "later" && Array.isArray(e.items)) s = { ...s, later: e.items, version: s.version + 1 };
+  }
+  return s;
 }
