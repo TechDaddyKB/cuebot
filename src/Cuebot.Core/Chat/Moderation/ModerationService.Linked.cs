@@ -476,6 +476,11 @@ public sealed partial class ModerationService
     {
         var rows = IncidentRows(incidentId);
         if (rows.Count == 0) return new IncidentUndoResult("", [], "That incident is not in the mod log.") { Refused = "That incident is not in the mod log." };
+        if (actor.Kind != ModActorKind.Streamer && rows.Any(r => r.ActorKind == ModActorKind.Streamer))
+        {
+            const string streamerOnly = "Only the streamer can undo the streamer's own actions.";
+            return new IncidentUndoResult("", [], streamerOnly) { Refused = streamerOnly };
+        }
         var result = await UndoRowsAsync(rows, actor, $"Undo of incident {incidentId[..Math.Min(8, incidentId.Length)]}", ct).ConfigureAwait(false);
         if (actor.Kind != ModActorKind.Streamer && result.Rows.Count > 0)
             StreamerNotice?.Invoke(new ModerationStreamerNotice($"{actor.Name} undid an incident", result.Summary) { IncidentId = result.UndoIncidentId });
@@ -596,14 +601,16 @@ public sealed partial class ModerationService
         if (prompt is null) return new ModerationResult(ModResult.Skipped, "That was already answered.");
         if (!LinksEnabled) return new ModerationResult(ModResult.Skipped, "Identity links are turned off.");
         if (reason.Trim().Length == 0) return new ModerationResult(ModResult.Skipped, "A reason is required.");
-        DismissLaterArrival(promptId);
-        return await ExecuteCoreAsync(new ModerationCommand(prompt.Account.Platform, ModerationAction.Ban)
+        var result = await ExecuteCoreAsync(new ModerationCommand(prompt.Account.Platform, ModerationAction.Ban)
         {
             TargetUserId = prompt.Account.UserId,
             TargetName = prompt.Account.UserName,
             ViaLinkId = prompt.LinkId,
             Reason = reason.Trim(),
         }, actor, mirror: false, ct).ConfigureAwait(false);
+        // A refused or unsendable ban (permission, rate limit, no API) keeps the prompt for someone who can answer it.
+        if (result.Result is not ModResult.Skipped) DismissLaterArrival(promptId);
+        return result;
     }
 
     public bool DismissLaterArrival(string promptId)

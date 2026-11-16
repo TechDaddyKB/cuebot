@@ -249,6 +249,20 @@ public sealed class LinkedModerationTests : IDisposable
     }
 
     [Fact]
+    public async Task A_member_cannot_undo_the_streamers_own_incident()
+    {
+        await _h.LinkAsync(Tw(), Yt());
+        var preview = await Service.BuildPreviewAsync(Ban(Tw()), ModActor.Streamer);
+        var done = await Service.ExecuteLinkedAsync(new LinkedExecution(preview, preview.DefaultTicked, "evasion") { Confirmed = true }, ModActor.Streamer);
+
+        var undo = await Service.UndoIncidentAsync(done.IncidentId, Alex);
+
+        Assert.Equal("Only the streamer can undo the streamer's own actions.", undo.Refused);
+        Assert.DoesNotContain(_h.Twitch.Calls, c => c.StartsWith("Unban", StringComparison.Ordinal));
+        Assert.NotNull(_h.Log.FindInForce("Twitch", "tw1"));
+    }
+
+    [Fact]
     public async Task Deleted_messages_and_warnings_cannot_be_undone()
     {
         var incident = "incident-1";
@@ -328,6 +342,28 @@ public sealed class LinkedModerationTests : IDisposable
         Assert.Equal(["Ban k1 [mod: Sam] same person, banned elsewhere"], _h.Kick.Calls);
         Assert.NotNull(applied.Entry!.ViaLinkId);
         Assert.Empty(Service.LaterArrivals);
+    }
+
+    [Fact]
+    public async Task A_refused_answer_keeps_the_later_arrival_prompt()
+    {
+        await _h.LinkAsync(Tw(), Yt());
+        await Service.ExecuteAsync(Ban(Tw()) with { Reason = "raid" }, ModActor.Streamer);
+        await _h.LinkAsync(Tw(), Kk());
+        await Service.LastMirror;
+        var prompt = Assert.Single(Service.LaterArrivals);
+        Service.Permissions = new RefuseAll();
+
+        var applied = await Service.ApplyLaterArrivalAsync(prompt.Id, Sam, "same person");
+
+        Assert.Equal(ModResult.Skipped, applied.Result);
+        Assert.Empty(_h.Kick.Calls);
+        Assert.Single(Service.LaterArrivals);   // still there for someone who may answer it
+    }
+
+    private sealed class RefuseAll : IModerationPermissions
+    {
+        public string? Refuse(ModActor actor, ModerationCommand command) => "Not allowed for this role.";
     }
 
     [Fact]
