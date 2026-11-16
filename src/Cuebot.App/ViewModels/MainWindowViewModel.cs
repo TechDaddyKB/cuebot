@@ -97,7 +97,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Support = new Cuebot.App.ViewModels.Support.SupportViewModel(Cuebot.App.ViewModels.Support.SupportServices.From(host, shellHost));
         var log = host.Get<AppLog>();
         Dashboard = new DashboardViewModel(log, host.Get<ActionEngine>(), host.GetAll<IConnectionStatus>());
-        var actions = new ActionsViewModel(host.Get<ProfileService>(), host.Get<Registry>(), host.Get<ActionEngine>());
+        var actions = new ActionsViewModel(host.Get<ProfileService>(), host.Get<Registry>(), host.Get<ActionEngine>(), host.Settings);
         var queues = new QueuesViewModel(host.Get<ProfileService>(), host.Get<ActionEngine>());
         var history = new History.HistoryViewModel(host.Get<ActionEngine>(), host.Get<EventBus>(), host.Get<Registry>());
         history.Triggers.Seen += Dashboard.AddEvent;

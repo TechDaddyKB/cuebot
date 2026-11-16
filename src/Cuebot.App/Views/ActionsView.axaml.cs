@@ -5,6 +5,7 @@ using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using Cuebot.App.Controls;
+using Cuebot.App.Graph;
 using Cuebot.App.ViewModels.Actions;
 
 namespace Cuebot.App.Views;
@@ -37,6 +38,7 @@ public partial class ActionsView : UserControl
         AddHandler(PointerPressedEvent, OnPreviewPointerPressed, RoutingStrategies.Tunnel);
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
         SizeChanged += (_, e) => FoldTriggerPane(e.NewSize.Width < NarrowWidth);
+        Graph.MenuTargetChanged += UpdateGraphMenu;
     }
 
     /// <summary>Below this page width (about 1280 px of window) the trigger pane becomes a tab of the main pane.</summary>
@@ -83,6 +85,30 @@ public partial class ActionsView : UserControl
                 return;
             }
         }
+    }
+
+    /// <summary>
+    /// The flowchart menu fits what was right-clicked: a box gets copy/paste/duplicate/delete, a wire "Disconnect",
+    /// the empty background "Add step here…" and paste.
+    /// </summary>
+    private void UpdateGraphMenu()
+    {
+        var target = Graph.MenuTarget;
+        GraphAddStepHere.IsVisible = target == FlowGraphMenuTarget.Canvas;
+        GraphDisconnect.IsVisible = target == FlowGraphMenuTarget.Link;
+        GraphCopy.IsVisible = GraphDuplicate.IsVisible = GraphDelete.IsVisible = target == FlowGraphMenuTarget.Node;
+        GraphPaste.IsVisible = GraphCopyAction.IsVisible = target != FlowGraphMenuTarget.Link;
+    }
+
+    private void OnGraphAddStepHere(object? sender, RoutedEventArgs e) => Graph.AddStepHere();
+
+    private void OnGraphDisconnect(object? sender, RoutedEventArgs e)
+    {
+        if (Graph.DisconnectLink() is not { } group || ViewModel is not { } vm) return;
+        var count = group.Branches.Sum(b => b.Steps.Items.Count);
+        vm.EditStatus = count == 1
+            ? $"Disconnected 1 step: it is in the switched-off group '{group.GroupName}' and does not run."
+            : $"Disconnected {count} steps: they are in the switched-off group '{group.GroupName}' and do not run.";
     }
 
     /// <summary>Copy and Paste in the More menu close it, as menu items do.</summary>

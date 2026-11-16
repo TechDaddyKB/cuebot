@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Cuebot.App.Shell;
 using Cuebot.Core.Actions;
 using Cuebot.Core.Storage;
 using Cuebot.Scripting.Export;
@@ -24,16 +25,20 @@ public sealed partial class ActionsViewModel : PageViewModel
     private readonly ProfileService _profile;
     private readonly Registry _registry;
     private readonly ActionEngine _engine;
+    private readonly AppSettingsStore? _settings;
     private readonly List<ActionItemViewModel> _all;
     private readonly Dictionary<Guid, EditHistory> _histories = [];
     private EditorClip? _clip;
     private bool _restoring;
 
-    public ActionsViewModel(ProfileService profile, Registry registry, ActionEngine engine) : base("Actions")
+    /// <param name="settings">Where editor preferences (flowchart grid snapping) are remembered; null keeps them in memory.</param>
+    public ActionsViewModel(ProfileService profile, Registry registry, ActionEngine engine, AppSettingsStore? settings = null) : base("Actions")
     {
         _profile = profile;
         _registry = registry;
         _engine = engine;
+        _settings = settings;
+        _snapToGrid = settings?.Settings.General.FlowchartSnapToGrid ?? true;
         _all = profile.Profile.Actions.Select(Wrap).ToList();
         ApplyFilter();
         SelectedAction = Actions.FirstOrDefault();
@@ -81,6 +86,16 @@ public sealed partial class ActionsViewModel : PageViewModel
     [NotifyPropertyChangedFor(nameof(HasSelection))]
     private ActionItemViewModel? _selectedAction;
     [ObservableProperty] private bool _isGraphView;
+
+    /// <summary>Flowchart boxes snap to the dot grid when dragged or added (remembered in app.json).</summary>
+    [ObservableProperty] private bool _snapToGrid;
+
+    partial void OnSnapToGridChanged(bool value)
+    {
+        if (_settings is null) return;
+        _settings.Settings.General.FlowchartSnapToGrid = value;
+        _settings.TrySave();
+    }
     [ObservableProperty] private string _lastRunResult = "";
 
     /// <summary>Result of the last copy, paste, duplicate, undo or redo.</summary>

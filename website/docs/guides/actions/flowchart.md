@@ -18,8 +18,8 @@ when it is no, and what happens at the same time.
 The whole action is fitted to the screen when you open it. The flowchart likes room: make the Cuebot window wide, or
 full screen with ++f11++.
 
-Above the canvas is a one-line reminder: *+ on a port adds a step there · drag a node onto a port to rewire · drag
-the background to pan · wheel zooms*. And on the right, the **Auto-arrange** button.
+Above the canvas is a short reminder of the mouse controls. On the right are the **Snap to grid** tick box (see
+[Move a box on the screen](#move-a-box-on-the-screen)) and the **Auto-arrange** button.
 
 ## The words: nodes, ports and wires
 
@@ -27,7 +27,7 @@ the background to pan · wheel zooms*. And on the right, the **Auto-arrange** bu
 | --- | --- |
 | **Node** | One box. A trigger, the action itself, or one step. |
 | **Port** | A small round dot on the edge of a box, where a line starts or ends. |
-| **"+" port** | A dot with a **+** in it. It is an *exit* of a box: click it to add something there, or drop a box on it to move that box there. |
+| **"+" port** | A dot with a **+** in it. It is an *exit* of a box: click it to add something there, drag from it to a box to connect that box there, or drop a box on it to move that box there. |
 | **Plain port** | A dot without a +, on the top of a box. It is the box's *entrance*: lines arrive here. |
 | **Wire** | A line from one box's exit to the next box's entrance. It shows the order: Cuebot follows the wire. |
 
@@ -131,6 +131,15 @@ also shows its weight.
 
 The new step is selected. Its settings are on the **Sub-actions** tab (see [Edit a box](#select-and-edit-a-box)).
 
+### Add a step anywhere on the canvas
+
+Right-click an empty spot of the background and choose **Add step here…**. Pick the step in the search window as
+above. The new box appears where you right-clicked (on the nearest grid dot when **Snap to grid** is on).
+
+A step always has to be part of the running order, or it would never run. So the new step is added at the **end of
+the action**, and a wire joins it to the step that was last. To put it somewhere else, drag it onto a **+** port, or
+drag from a **+** port onto it (see [Connect boxes](#connect-boxes-by-dragging-from-a-port)).
+
 ### Move a box on the screen
 
 Drag a box to move it. Nothing changes in what the action does: this only tidies the picture.
@@ -139,6 +148,8 @@ Drag a box to move it. Nothing changes in what the action does: this only tidies
   an If drags its True and False steps with it.
 - Moving the **ACTION** box moves the whole chain of steps under it.
 - A tiny wiggle (a few pixels) is not a drag, so clicking a box never moves it by accident.
+- With **Snap to grid** ticked (the default), the box's top-left corner jumps to the nearest dot of the background,
+  so boxes line up easily. Untick it to place boxes freely. Cuebot remembers your choice.
 - ++ctrl+z++ undoes a move.
 
 ### Move a step to another place (rewire)
@@ -160,9 +171,38 @@ Some drops are not allowed, and the port stays grey:
   not drop targets.
 - If you let go anywhere else, the step simply stays where you put it on the screen.
 
-!!! note "No free wiring"
-    You can't draw a wire from one port to another by hand. The wires always follow the order of the steps. To change
-    the order, drop the step on the **+** port where it should go.
+### Connect boxes by dragging from a port
+
+You can also do it the other way round: press the mouse on a **+** port, drag, and let go over a step. A dashed line
+follows the mouse; the step under the pointer gets a **green** outline when it can be connected there. Let go, and
+that step (with everything inside it) moves to run at that port, exactly as if you had dropped the step on the port.
+
+- Just clicking the **+** (without dragging) still opens the search window to add a new step.
+- Let go anywhere that is not a green step and nothing changes.
+- The same rules apply as for dropping: a step can't be connected to its own ports or inside its own branches, and
+  triggers and the ACTION box can't be connected this way.
+
+!!! note "Wires follow the running order"
+    A wire means "this runs next". Connecting a step to a port moves that one step there: the steps that came after
+    it stay where they were and close the gap.
+
+### Disconnect two boxes
+
+Right-click a wire between two steps (or from the ACTION box or a branch port to a step) and choose **Disconnect**.
+The wire turns blue while the menu is open.
+
+A step that is not in the running order would never run, so Cuebot does not throw anything away. Instead:
+
+- The step after the wire, **and every step after it** in the same line, move into a new group called
+  **Disconnected steps**. That group is **switched off**, so none of them run. The group takes the place of the first
+  disconnected step on the screen; it and the wire into it are faded.
+- Everything before the wire keeps running as before. Both boxes stay on the canvas.
+
+To connect them again: drag a step out of the group onto a **+** port (or drag from a port onto it), or switch the
+group on (select it, then ++ctrl+o++). ++ctrl+z++ undoes the disconnect at once.
+
+Wires from triggers into the ACTION box, and the dashed wires that end **Run at the same time** lanes, can't be
+disconnected.
 
 ### Select and edit a box
 
@@ -192,7 +232,12 @@ in a row at the top, steps going down, branches to the right. ++ctrl+z++ brings 
 
 ## Right-click menu
 
-Right-click a box: it gets selected, and a menu opens.
+What the menu offers depends on what you right-click:
+
+- **The empty background**: **Add step here…** (see [above](#add-a-step-anywhere-on-the-canvas)), **Paste**, **Copy
+  whole action**, **Undo** and **Redo**.
+- **A wire**: **Disconnect** (see [above](#disconnect-two-boxes)), **Undo** and **Redo**.
+- **A box**: it gets selected first, then:
 
 | Menu item | What it does |
 | --- | --- |
@@ -227,7 +272,8 @@ dragged have no saved position: Cuebot places them automatically, under or besid
 A few things forget a position on purpose:
 
 - **Auto-arrange** forgets all of them.
-- A step you rewire (drop on a port) is placed automatically at its new spot.
+- A step you rewire (drop it on a port, or drag a port onto it) is placed automatically at its new spot.
+- Steps you disconnect are placed automatically inside their **Disconnected steps** group.
 - Pasted and duplicated steps and triggers are placed automatically at their new spot.
 - [Export to code](../developers/export-to-code.md) makes a new action without positions.
 
@@ -239,7 +285,7 @@ Use whichever you like: it is the same action, and you can switch at any moment.
 | --- | --- |
 | add steps quickly, one after another | see the whole action at once |
 | change a step's settings (only here) | follow decisions, branches and lanes |
-| switch steps on and off with the tick boxes | move a step into or out of a branch by dragging |
+| switch steps on and off with the tick boxes | move a step into or out of a branch by dragging, or connect and disconnect steps with the mouse |
 | move a step up or down with **↑** / **↓** | tidy a big action by dragging boxes |
 
 New to actions? Start with [Your first action](your-first-action.md). Every button of the list editor is on

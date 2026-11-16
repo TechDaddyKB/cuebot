@@ -8,19 +8,33 @@ using Cuebot.Core.Actions;
 
 namespace Cuebot.App.Graph;
 
+/// <summary>What a right-click hit, so the page can show the matching context menu items.</summary>
+public enum FlowGraphMenuTarget { Canvas, Node, Link }
+
 /// <summary>
-/// Node-graph editor for one action. Click a node to edit it, drag to move it, drop it on another node's
-/// output port to rewire it there, click a "+" port to add a step at that point. Drag the background to pan,
-/// mouse wheel to zoom, Delete to remove the selected node. Right-click selects the node under the pointer for the
-/// context menu; Ctrl+C/V/D/Z/Y bubble to the Actions page, which handles them for both editors.
+/// Node-graph editor for one action. Click a node to edit it, drag to move it (snapping to the dot grid when
+/// <see cref="SnapToGrid"/> is on), drop it on another node's output port to rewire it there. Click a "+" port to add a
+/// step at that point, or drag from it onto a step node to connect that step there (the same rewire). Drag the
+/// background to pan, mouse wheel to zoom, Delete to remove the selected node. Right-click a node to select it for the
+/// context menu, a wire to offer "Disconnect" (<see cref="DisconnectLink"/>), or the empty canvas to offer "Add step
+/// here" (<see cref="AddStepHere"/>); <see cref="MenuTarget"/> says which. Ctrl+C/V/D/Z/Y bubble to the Actions page,
+/// which handles them for both editors.
 /// </summary>
 public sealed class FlowGraphControl : Control
 {
     public static readonly StyledProperty<ActionItemViewModel?> ActionProperty =
         AvaloniaProperty.Register<FlowGraphControl, ActionItemViewModel?>(nameof(Action));
 
+    public static readonly StyledProperty<bool> SnapToGridProperty =
+        AvaloniaProperty.Register<FlowGraphControl, bool>(nameof(SnapToGrid), defaultValue: true);
+
+    /// <summary>Spacing of the background dots, in canvas units; snapped nodes put their top-left corner on a dot.</summary>
+    public const double GridSize = 24;
+
     private const double PortRadius = 7;
     private const double PortHitRadius = 13;
+    private const double LinkHitDistance = 6;
+    private const double DragThreshold = 4;
 
     /// <summary>Canvas colours for one theme variant; the control picks one from its actual theme (Light, Dark, System).</summary>
     private sealed record Palette(IBrush Background, IBrush GridDot, IBrush NodeFill, IBrush TitleBrush, IBrush SubtitleBrush,
@@ -56,6 +70,16 @@ public sealed class FlowGraphControl : Control
     private GraphPort? _hoverPort;
     private bool _fitPending = true;
 
+    // Dragging a wire out of an output port: the port, whether it moved far enough, the pointer and the node under it.
+    private GraphPort? _wirePort;
+    private bool _wiring;
+    private Point _wireEnd;
+    private GraphNode? _wireTarget;
+
+    // What the last right-click hit.
+    private Point _menuWorld;
+    private GraphEdge? _menuEdge;
+
     static FlowGraphControl()
     {
         FocusableProperty.OverrideDefaultValue<FlowGraphControl>(true);
@@ -74,6 +98,24 @@ public sealed class FlowGraphControl : Control
         get => GetValue(ActionProperty);
         set => SetValue(ActionProperty, value);
     }
+
+    /// <summary>Dragged and added nodes put their top-left corner on the nearest grid dot.</summary>
+    public bool SnapToGrid
+    {
+        get => GetValue(SnapToGridProperty);
+        set => SetValue(SnapToGridProperty, value);
+    }
+
+    /// <summary>What the last right-click hit: a node, a wire or the empty canvas.</summary>
+    public FlowGraphMenuTarget MenuTarget { get; private set; }
+
+    /// <summary>Raised on each right-click after <see cref="MenuTarget"/> is set, before the context menu opens.</summary>
+    public event Action? MenuTargetChanged;
+
+    /// <summary>The view transform (canvas units to control pixels); tests use it to aim the pointer.</summary>
+    internal Matrix View => _view;
+
+    internal FlowGraph Graph => _graph;
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
@@ -117,6 +159,7 @@ public sealed class FlowGraphControl : Control
             foreach (var frame in _graph.Frames) DrawFrame(context, frame);
             foreach (var edge in _graph.Edges) DrawEdge(context, edge);
             foreach (var node in _graph.Nodes) DrawNode(context, node);
+            if (_wiring && _wirePort is not null) DrawWire(context, _wirePort, _wireEnd);
         }
         if (Action is null)
         {
@@ -126,7 +169,7 @@ public sealed class FlowGraphControl : Control
 
     private void DrawGrid(DrawingContext context)
     {
-        var spacing = 24 * _view.M11;
+        var spacing = GridSize * _view.M11;
         if (spacing < 8) return;
         var offsetX = _view.M31 % spacing;
         var offsetY = _view.M32 % spacing;
@@ -142,21 +185,42 @@ public sealed class FlowGraphControl : Control
         context.DrawRectangle(fill, pen, frame.Bounds, 10, 10);
     }
 
+    /// <summary>The wire's cubic bezier: start, two control points, end.</summary>
+    private static (Point A, Point C1, Point C2, Point B) EdgeCurve(GraphEdge edge) =>
+        Curve(edge.From.Position, edge.To.Position, edge.From.Kind == GraphPortKind.Branch);
+
+    private static (Point A, Point C1, Point C2, Point B) Curve(Point a, Point b, bool fromSide)
+    {
+        var bend = Math.Max(30, Math.Abs(b.Y - a.Y) / 2);
+        var c1 = fromSide ? new Point(a.X + bend, a.Y) : new Point(a.X, a.Y + bend);
+        return (a, c1, new Point(b.X, b.Y - bend), b);
+    }
+
+    private static StreamGeometry Geometry((Point A, Point C1, Point C2, Point B) curve)
+    {
+        var geometry = new StreamGeometry();
+        using var g = geometry.Open();
+        g.BeginFigure(curve.A, false);
+        g.CubicBezierTo(curve.C1, curve.C2, curve.B);
+        g.EndFigure(false);
+        return geometry;
+    }
+
     private void DrawEdge(DrawingContext context, GraphEdge edge)
     {
-        var a = edge.From.Position;
-        var b = edge.To.Position;
-        var geometry = new StreamGeometry();
-        using (var g = geometry.Open())
-        {
-            g.BeginFigure(a, false);
-            var bend = Math.Max(30, Math.Abs(b.Y - a.Y) / 2);
-            var c1 = edge.From.Kind == GraphPortKind.Branch ? new Point(a.X + bend, a.Y) : new Point(a.X, a.Y + bend);
-            var c2 = new Point(b.X, b.Y - bend);
-            g.CubicBezierTo(c1, c2, b);
-            g.EndFigure(false);
-        }
-        context.DrawGeometry(null, edge.Join ? JoinPen(P.EdgePen) : P.EdgePen, geometry);
+        var pen = edge == _menuEdge ? P.SelectedPen : edge.Join ? JoinPen(P.EdgePen) : P.EdgePen;
+        // A wire into a switched-off step (such as a "Disconnected steps" group) fades with it: nothing runs there.
+        using (context.PushOpacity(edge.To.Node.Enabled ? 1 : 0.45))
+            context.DrawGeometry(null, pen, Geometry(EdgeCurve(edge)));
+    }
+
+    /// <summary>The wire being dragged out of an output port, and a green outline on the step it would connect.</summary>
+    private void DrawWire(DrawingContext context, GraphPort from, Point to)
+    {
+        if (_wireTarget is not null)
+            context.DrawRectangle(null, new Pen(P.DropFill, 2.5), _wireTarget.Bounds.Inflate(3), 10, 10);
+        var brush = _wireTarget is null ? P.SelectedPen.Brush : P.DropFill;
+        context.DrawGeometry(null, new Pen(brush, 2, new DashStyle([5, 3], 0)), Geometry(Curve(from.Position, to, from.Kind == GraphPortKind.Branch)));
     }
 
     private static Pen JoinPen(IPen edge) => new(edge.Brush, edge.Thickness, new DashStyle([3, 3], 0));
@@ -251,6 +315,63 @@ public sealed class FlowGraphControl : Control
 
     private static double Distance(Point a, Point b) => Math.Sqrt(Math.Pow(a.X - b.X, 2) + Math.Pow(a.Y - b.Y, 2));
 
+    /// <summary>
+    /// The wire under the pointer that can be cut: one that leads into a step. Wires from triggers into the action and
+    /// the dashed "wait for every lane" wires are not the run order of a list, so they are skipped.
+    /// </summary>
+    internal GraphEdge? EdgeAt(Point world)
+    {
+        var tolerance = LinkHitDistance / _view.M11 + 1;
+        GraphEdge? best = null;
+        var bestDistance = double.MaxValue;
+        foreach (var edge in _graph.Edges)
+        {
+            if (edge.Join || edge.To.Node.Item is not SubActionItemViewModel) continue;
+            var d = DistanceToCurve(EdgeCurve(edge), world);
+            if (d <= tolerance && d < bestDistance) (best, bestDistance) = (edge, d);
+        }
+        return best;
+    }
+
+    /// <summary>A point on the wire's curve at <paramref name="t"/> (0 = start, 1 = end).</summary>
+    internal static Point PointOnEdge(GraphEdge edge, double t) => Bezier(EdgeCurve(edge), t);
+
+    private static Point Bezier((Point A, Point C1, Point C2, Point B) c, double t)
+    {
+        var u = 1 - t;
+        return new Point(
+            u * u * u * c.A.X + 3 * u * u * t * c.C1.X + 3 * u * t * t * c.C2.X + t * t * t * c.B.X,
+            u * u * u * c.A.Y + 3 * u * u * t * c.C1.Y + 3 * u * t * t * c.C2.Y + t * t * t * c.B.Y);
+    }
+
+    private static double DistanceToCurve((Point A, Point C1, Point C2, Point B) curve, Point p)
+    {
+        const int segments = 32;
+        var min = double.MaxValue;
+        var previous = curve.A;
+        for (var i = 1; i <= segments; i++)
+        {
+            var point = Bezier(curve, (double)i / segments);
+            min = Math.Min(min, DistanceToSegment(p, previous, point));
+            previous = point;
+        }
+        return min;
+    }
+
+    private static double DistanceToSegment(Point p, Point a, Point b)
+    {
+        var ab = b - a;
+        var lengthSquared = ab.X * ab.X + ab.Y * ab.Y;
+        if (lengthSquared == 0) return Distance(p, a);
+        var t = Math.Clamp(((p.X - a.X) * ab.X + (p.Y - a.Y) * ab.Y) / lengthSquared, 0, 1);
+        return Distance(p, a + ab * t);
+    }
+
+    /// <summary>A canvas position on the grid (when snapping) or in whole units.</summary>
+    internal NodeLayout Place(Point world) => SnapToGrid
+        ? new NodeLayout(Math.Round(world.X / GridSize) * GridSize, Math.Round(world.Y / GridSize) * GridSize)
+        : new NodeLayout(Math.Round(world.X), Math.Round(world.Y));
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
@@ -263,15 +384,37 @@ public sealed class FlowGraphControl : Control
 
         if (point.Properties.IsRightButtonPressed)
         {
-            // Select what the context menu (copy, paste, duplicate, delete) will act on; the entry node means the action.
-            Action.Selected = NodeAt(world)?.Item as EditorItemViewModel;
+            _menuEdge = null;
+            if (NodeAt(world) is { } hit)
+            {
+                // Select what the context menu (copy, paste, duplicate, delete) will act on; the entry node means the action.
+                MenuTarget = FlowGraphMenuTarget.Node;
+                Action.Selected = hit.Item as EditorItemViewModel;
+            }
+            else if (EdgeAt(world) is { } edge)
+            {
+                MenuTarget = FlowGraphMenuTarget.Link;
+                _menuEdge = edge;
+            }
+            else
+            {
+                MenuTarget = FlowGraphMenuTarget.Canvas;
+                _menuWorld = world;
+                Action.Selected = null;
+            }
+            MenuTargetChanged?.Invoke();
             InvalidateVisual();
             return;
         }
+        _menuEdge = null;   // the wire highlighted for its menu
 
         if (point.Properties.IsLeftButtonPressed && OutputPortAt(world) is { } port)
         {
-            ActivatePort(port);
+            // A click adds a step here (on release); a drag pulls a wire out of the port to connect a step.
+            _wirePort = port;
+            _wiring = false;
+            _wireEnd = world;
+            e.Pointer.Capture(this);
             e.Handled = true;
             return;
         }
@@ -308,6 +451,16 @@ public sealed class FlowGraphControl : Control
         var screen = e.GetPosition(this);
         var world = ToWorld(screen);
 
+        if (_wirePort is not null)
+        {
+            if (!_wiring && Distance(screen, _lastPointer) < DragThreshold) return;
+            _wiring = true;
+            _wireEnd = world;
+            _wireTarget = NodeAt(world) is { } node && CanDrop(node, _wirePort) ? node : null;
+            InvalidateVisual();
+            return;
+        }
+
         if (_panning)
         {
             var delta = screen - _lastPointer;
@@ -320,10 +473,9 @@ public sealed class FlowGraphControl : Control
         var hover = OutputPortAt(world);
         if (_dragNode is not null && Action is not null)
         {
-            if (!_dragMoved && Distance(screen, _lastPointer) < 4) return;
+            if (!_dragMoved && Distance(screen, _lastPointer) < DragThreshold) return;
             _dragMoved = true;
-            var topLeft = world - _dragOffset;
-            SetLayout(_dragNode.Item, new NodeLayout(Math.Round(topLeft.X), Math.Round(topLeft.Y)));
+            SetLayout(_dragNode.Item, Place(world - _dragOffset));
             _graph = FlowGraphLayout.Build(Action);
             _dragNode = _graph.Nodes.First(n => n.Item == _dragNode.Item);
         }
@@ -339,6 +491,21 @@ public sealed class FlowGraphControl : Control
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        if (_wirePort is { } wirePort)
+        {
+            var wired = _wiring;
+            var target = _wireTarget;
+            CancelWire();
+            e.Pointer.Capture(null);
+            if (!wired) ActivatePort(wirePort);
+            else if (Action is not null && target?.Item is SubActionItemViewModel connected && wirePort.Target is not null)
+            {
+                // Connect = the same rewire as dropping the step on this port: it moves here and is auto-placed.
+                connected.Definition.Layout = null;
+                if (!Action.MoveStep(connected, wirePort.Target)) Rebuild();
+            }
+            return;
+        }
         e.Pointer.Capture(null);
         _panning = false;
         if (_dragNode is null || Action is null) return;
@@ -360,6 +527,44 @@ public sealed class FlowGraphControl : Control
             Action.MarkChanged(structural: false);
             Rebuild();
         }
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        if (_wirePort is not null) CancelWire();
+    }
+
+    private void CancelWire()
+    {
+        _wirePort = null;
+        _wiring = false;
+        _wireTarget = null;
+        InvalidateVisual();
+    }
+
+    /// <summary>
+    /// "Add step here…" from the canvas menu: opens the step picker; the new step goes at the end of the action's main
+    /// list (a step only runs as part of a list) and is drawn where the canvas was right-clicked.
+    /// </summary>
+    public void AddStepHere()
+    {
+        if (Action is null) return;
+        Action.RequestAddStep(new StepInsertTarget(Action.Steps, Action.Steps.Items.Count, Place(_menuWorld)));
+    }
+
+    /// <summary>
+    /// "Disconnect" from the wire menu: the step after the wire and the steps after it in that list stop running and
+    /// move into a switched-off "Disconnected steps" group, drawn where the step was (see
+    /// <see cref="ActionItemViewModel.Disconnect"/>).
+    /// </summary>
+    /// <returns>The new group, or null when no wire was right-clicked.</returns>
+    public SubActionItemViewModel? DisconnectLink()
+    {
+        if (Action is null || _menuEdge is not { To.Node: { Item: SubActionItemViewModel step } node }) return null;
+        _menuEdge = null;
+        var at = node.Bounds.TopLeft;
+        return Action.Disconnect(step, new NodeLayout(Math.Round(at.X), Math.Round(at.Y)));
     }
 
     private static bool CanDrop(GraphNode dragged, GraphPort port) =>

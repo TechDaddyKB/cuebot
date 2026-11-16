@@ -1,11 +1,13 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Cuebot.Core.Actions;
+using Cuebot.Core.BuiltIn;
 
 namespace Cuebot.App.ViewModels.Actions;
 
 /// <summary>Where a new or moved step goes: a step list and an index in it.</summary>
-public sealed record StepInsertTarget(StepListViewModel List, int Index);
+/// <param name="Layout">Where a new step goes on the flowchart canvas (null: placed automatically).</param>
+public sealed record StepInsertTarget(StepListViewModel List, int Index, NodeLayout? Layout = null);
 
 /// <summary>
 /// Editing model for one action, shared by the list editor and the node graph editor.
@@ -284,6 +286,7 @@ public sealed partial class ActionItemViewModel : ObservableObject
         var definition = new SubActionDefinition { Type = handler.TypeId };
         foreach (var p in handler.Parameters) definition.Parameters[p.Key] = p.DefaultValue;
         foreach (var branch in SubActionBranches.For(handler, definition)) definition.Branch(branch);
+        definition.Layout = target.Layout;
         var item = target.List.Insert(target.Index, definition);
         Selected = item;
         return item;
@@ -307,6 +310,42 @@ public sealed partial class ActionItemViewModel : ObservableObject
         if (step.OwnedLists().Contains(target.List)) return false;
         target.List.Adopt(step, target.Index);
         return true;
+    }
+
+    /// <summary>Name of the switched-off group that <see cref="Disconnect"/> puts cut-off steps in.</summary>
+    public const string DisconnectedGroupName = "Disconnected steps";
+
+    /// <summary>
+    /// Cuts the wire into <paramref name="step"/>: it and every step after it in the same list leave the run order and
+    /// go, in order, into a new switched-off Group ("Disconnected steps") at the end of that list. The steps are kept
+    /// and shown, but never run, until they are dragged back onto a port or the group is switched on. One undo step.
+    /// </summary>
+    /// <param name="at">Where the group goes on the canvas (null: placed automatically).</param>
+    /// <returns>The new group, or null when nothing could be cut (no Group sub-action registered).</returns>
+    public SubActionItemViewModel? Disconnect(SubActionItemViewModel step, NodeLayout? at = null)
+    {
+        var list = step.Parent;
+        var index = list.Items.IndexOf(step);
+        if (index < 0 || Registry.GetSubAction(GroupSubAction.Id) is not { } groupHandler) return null;
+        var cut = list.Items.Skip(index).ToArray();
+        SubActionItemViewModel group;
+        using (Batch())
+        {
+            var definition = new SubActionDefinition { Type = GroupSubAction.Id, Enabled = false, Layout = at };
+            foreach (var p in groupHandler.Parameters) definition.Parameters[p.Key] = p.DefaultValue;
+            definition.Parameters["name"] = DisconnectedGroupName;
+            foreach (var branch in SubActionBranches.For(groupHandler, definition)) definition.Branch(branch);
+            group = list.Insert(list.Items.Count, definition);
+            var inside = group.Branches.First(b => b.Name == GroupSubAction.Steps).Steps;
+            foreach (var s in cut)
+            {
+                // The group takes the first step's place on the canvas; the steps line up inside its frame.
+                s.Definition.Layout = null;
+                inside.Adopt(s, inside.Items.Count);
+            }
+        }
+        Selected = group;
+        return group;
     }
 
     public void DeleteSelected()

@@ -30,6 +30,9 @@ public sealed class GeneralSettings
 
     /// <summary>The section list next to the icon rail is closed (rail only).</summary>
     public bool CollapseSectionList { get; set; }
+
+    /// <summary>Boxes dragged or added on the action flowchart snap to its dot grid.</summary>
+    public bool FlowchartSnapToGrid { get; set; } = true;
 }
 
 /// <summary>How text templates format values (applied to the shared <c>TextEnvironment</c>).</summary>

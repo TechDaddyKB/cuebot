@@ -460,19 +460,23 @@
               <DockPanel Margin="0,0,0,12">
                 <DockPanel DockPanel.Dock="Top" Margin="4,0,4,6">
                   <Button DockPanel.Dock="Right" Content="Auto-arrange" Command="{Binding AutoArrangeCommand}" />
+                  <CheckBox DockPanel.Dock="Right" Margin="0,0,12,0" Content="Snap to grid" IsChecked="{Binding SnapToGrid}"
+                            ToolTip.Tip="Boxes you drag or add line up on the dots" />
                   <TextBlock Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12"
-                             Text="+ on a port adds a step there · drag a node onto a port to rewire · drag the background to pan · wheel zooms" />
+                             Text="+ adds a step · drag from + onto a step to connect it · right-click a line to disconnect it, or the background to add a step there · drag the background to pan · wheel zooms" />
                 </DockPanel>
                 <Border CornerRadius="6" ClipToBounds="True" Background="{DynamicResource CuebotGround}">
-                  <graph:FlowGraphControl x:Name="Graph" Action="{Binding SelectedAction}">
+                  <graph:FlowGraphControl x:Name="Graph" Action="{Binding SelectedAction}" SnapToGrid="{Binding SnapToGrid}">
                     <graph:FlowGraphControl.ContextMenu>
                       <ContextMenu>
-                        <MenuItem Header="Copy" InputGesture="Ctrl+C" Command="{Binding CopyItemCommand}" />
-                        <MenuItem Header="Paste" InputGesture="Ctrl+V" Command="{Binding PasteCommand}" />
-                        <MenuItem Header="Duplicate" InputGesture="Ctrl+D" Command="{Binding DuplicateItemCommand}" />
-                        <MenuItem Header="Delete" InputGesture="Delete" Command="{Binding DeleteItemCommand}" />
+                        <MenuItem x:Name="GraphAddStepHere" Header="Add step here…" Click="OnGraphAddStepHere" IsVisible="False" />
+                        <MenuItem x:Name="GraphDisconnect" Header="Disconnect" Click="OnGraphDisconnect" IsVisible="False" />
+                        <MenuItem x:Name="GraphCopy" Header="Copy" InputGesture="Ctrl+C" Command="{Binding CopyItemCommand}" />
+                        <MenuItem x:Name="GraphPaste" Header="Paste" InputGesture="Ctrl+V" Command="{Binding PasteCommand}" />
+                        <MenuItem x:Name="GraphDuplicate" Header="Duplicate" InputGesture="Ctrl+D" Command="{Binding DuplicateItemCommand}" />
+                        <MenuItem x:Name="GraphDelete" Header="Delete" InputGesture="Delete" Command="{Binding DeleteItemCommand}" />
                         <Separator />
-                        <MenuItem Header="Copy whole action" Command="{Binding CopyActionCommand}" />
+                        <MenuItem x:Name="GraphCopyAction" Header="Copy whole action" Command="{Binding CopyActionCommand}" />
                         <MenuItem Header="Undo" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}" />
                         <MenuItem Header="Redo" InputGesture="Ctrl+Y" Command="{Binding RedoCommand}" />
                       </ContextMenu>
