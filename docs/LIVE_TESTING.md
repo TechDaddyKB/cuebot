@@ -17,7 +17,7 @@ helps find it in the log.
 
 **App and connections**
 
-- [ ] The title bar shows **Cuebot 0.1.0-rc.19**.
+- [ ] The title bar shows **Cuebot 0.1.0-rc.20**.
 - [ ] Every platform and service you use shows as connected in the top bar. With more than four, they are small
       badges; hovering one shows its name and status. Nothing covers the search box, title or profile switcher.
 - [ ] Optional: run the automated tests for what you will use on stream (see [Running](#running)), for example
@@ -74,6 +74,20 @@ helps find it in the log.
 - [ ] Ask the Assistant for something Cuebot cannot do. It says so and offers a feature request. If you say yes, it
       shows the whole text with **Approve**/**Deny**: **Deny** files nothing; **Approve** files a public GitHub issue
       labelled `enhancement` and the Assistant gives you the link.
+- [ ] Ask something that takes a while (*"List my actions and explain each one"*): a bar above the message box says
+      what it is doing (**Thinking...**, **Using list actions...**) and for how long, and **Assistant** in the sidebar
+      shows **…** while you look at another page.
+- [ ] Set **Approvals** to **Allow everything in this chat** and ask for a delete: no Approve card, a line **Allowed
+      without asking: ...** instead. **New chat** sets it back to **Ask every time**. A feature request still asks.
+
+**Speech and the flowchart** (Audio > Speech; Actions > Flowchart)
+
+- [ ] **Pause** then **Play** on the speech queue: the label switches between **Paused** and **Playing**, and the
+      button for the current state is greyed out.
+- [ ] On Windows: a voice alias with a Windows voice (such as Microsoft Ana Online) at **Pitch** -5 and +5 sounds
+      deeper and higher at the same speed.
+- [ ] Flowchart: right-click empty space > **Add step here…**; drag from a **+** port onto a step; right-click a line >
+      **Disconnect** (the steps move into a turned-off "Disconnected steps" group), then Ctrl+Z.
 
 **Decks and the phone app** (Input > Decks; Cuebot Companion on a phone or tablet)
 
