@@ -239,4 +239,173 @@ public sealed class ServiceTests
         registration.Dispose();
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, await Post("/mcp", DeleteHello));
     }
+
+    // ---- Approvals ---------------------------------------------------------------------------------------------------
+
+    private static async Task<(AssistantService Service, HttpDeletingProvider Ai)> McpServiceAsync(Bot bot)
+    {
+        bot.Manager.Settings.Mcp.Enabled = true;
+        bot.Manager.Settings.Api.Port = 0;
+        await bot.Manager.StartAsync();
+        var ai = new HttpDeletingProvider();
+        return (Service(bot, ai), ai);
+    }
+
+    [Theory]
+    [InlineData(AssistantApprovals.ThisChat)]
+    [InlineData(AssistantApprovals.Always)]
+    public async Task An_allowed_mode_runs_an_AI_apps_destructive_call_without_a_card(AssistantApprovals mode)
+    {
+        await using var bot = new Bot();
+        var (service, ai) = await McpServiceAsync(bot);
+        await using var _ = service;
+        service.Approvals = mode;
+
+        var updates = await Updates.CollectAsync(service.SendAsync("delete Hello"), approve: false);   // a card would be denied
+
+        Assert.Empty(updates.OfType<AssistantConfirmation>());
+        var allowed = Assert.Single(updates.OfType<AssistantAllowed>());
+        Assert.Equal(("delete_action", "Delete the action 'Hello'"), (allowed.Tool, allowed.Summary));
+        Assert.Null(bot.Profile.Snapshot.FindAction("Hello"));
+        Assert.DoesNotContain("declined", ai.Answer);
+        Assert.Contains(bot.Log.Recent(), e => e.Source == "Assistant" && e.Message.StartsWith("Tool delete_action allowed without asking", StringComparison.Ordinal));
+        Assert.Single(updates.OfType<AssistantChanges>());   // the undo card still follows the turn
+    }
+
+    [Fact]
+    public async Task Ask_every_time_shows_the_card_until_the_tool_is_always_allowed()
+    {
+        await using var bot = new Bot();
+        var (service, _) = await McpServiceAsync(bot);
+        await using var _ = service;
+        Assert.Equal(AssistantApprovals.Ask, service.Approvals);
+
+        var first = await Updates.CollectAsync(service.SendAsync("delete Hello"), approve: false);
+        Assert.Single(first.OfType<AssistantConfirmation>());
+        Assert.NotNull(bot.Profile.Snapshot.FindAction("Hello"));
+
+        Assert.True(service.AlwaysAllow("delete_action"));
+        Assert.True(service.AlwaysAllow("delete_action"));   // remembered once
+        Assert.Equal(["delete_action"], service.AlwaysAllowedTools);
+        Assert.Equal(["delete_action"], service.Settings.AlwaysAllowedTools);
+        Assert.True(service.AllowsWithoutAsking("delete_action"));
+        Assert.False(service.AllowsWithoutAsking("delete_command"));
+
+        var second = await Updates.CollectAsync(service.SendAsync("delete Hello"), approve: false);
+        Assert.Empty(second.OfType<AssistantConfirmation>());
+        Assert.Single(second.OfType<AssistantAllowed>());
+        Assert.Null(bot.Profile.Snapshot.FindAction("Hello"));
+
+        service.Forget("delete_action");
+        Assert.Empty(service.AlwaysAllowedTools);
+        Assert.False(service.AllowsWithoutAsking("delete_action"));
+        service.AlwaysAllow("delete_action");
+        service.AlwaysAllow("delete_timer");
+        service.ForgetAll();
+        Assert.Empty(service.AlwaysAllowedTools);
+    }
+
+    /// <summary>An API-key AI whose tool call asks through its own stream, as <c>ToolCalls.RunAsync</c> does.</summary>
+    private sealed class AskingProvider(string tool, string summary) : IAssistantProvider
+    {
+        public string Id => "openai";
+        public string Name => "Asking AI";
+        public AssistantProviderKind Kind => AssistantProviderKind.ApiKey;
+        public List<bool> Answers { get; } = [];
+        public string Tool => tool;
+        public string Summary => summary;
+
+        public Task<AssistantProviderStatus> GetStatusAsync(CancellationToken ct = default) => Task.FromResult(AssistantProviderStatus.Available("ok"));
+
+        public IAssistantSession StartSession(AssistantContext context) => new Session(this);
+
+        private sealed class Session(AskingProvider owner) : IAssistantSession
+        {
+            public async IAsyncEnumerable<AssistantUpdate> SendAsync(string text, [EnumeratorCancellation] CancellationToken ct = default)
+            {
+                var card = new AssistantConfirmation(owner.Tool, owner.Summary);
+                yield return card;
+                owner.Answers.Add(await card.Answer);
+            }
+
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        }
+    }
+
+    [Fact]
+    public async Task An_API_key_AIs_card_is_answered_by_the_approvals_setting()
+    {
+        await using var bot = new Bot();
+        var ai = new AskingProvider("delete_timer", "Delete the timer 'Socials'");
+        await using var service = Service(bot, ai);
+
+        var asked = await Updates.CollectAsync(service.SendAsync("go"), approve: false);
+        Assert.Single(asked.OfType<AssistantConfirmation>());
+
+        service.Approvals = AssistantApprovals.ThisChat;
+        var allowed = await Updates.CollectAsync(service.SendAsync("go"), approve: false);
+        Assert.Empty(allowed.OfType<AssistantConfirmation>());
+        Assert.Equal("Delete the timer 'Socials'", Assert.Single(allowed.OfType<AssistantAllowed>()).Summary);
+        Assert.Equal([false, true], ai.Answers);
+    }
+
+    [Theory]
+    [InlineData(AssistantApprovals.ThisChat)]
+    [InlineData(AssistantApprovals.Always)]
+    public async Task Publishing_tools_always_ask_whatever_the_setting(AssistantApprovals mode)
+    {
+        await using var bot = new Bot();
+        var ai = new AskingProvider("request_feature", "File this feature request as a public GitHub issue");
+        await using var service = Service(bot, ai);
+        service.Approvals = mode;
+
+        Assert.True(service.AlwaysAsks("request_feature"));
+        Assert.False(service.AlwaysAsks("delete_action"));
+        Assert.False(service.AlwaysAllow("request_feature"));
+        Assert.Empty(service.AlwaysAllowedTools);
+        service.Settings.AlwaysAllowedTools.Add("request_feature");   // even a hand-edited assistant.json
+        Assert.False(service.AllowsWithoutAsking("request_feature"));
+
+        var updates = await Updates.CollectAsync(service.SendAsync("file it"), approve: false);
+        Assert.Single(updates.OfType<AssistantConfirmation>());
+        Assert.Empty(updates.OfType<AssistantAllowed>());
+        Assert.Equal([false], ai.Answers);
+    }
+
+    [Fact]
+    public async Task Allow_everything_in_this_chat_ends_with_New_chat_and_a_restart()
+    {
+        await using var bot = new Bot();
+        await using var service = Service(bot, new FakeProvider("openai", ready: true));
+
+        service.Approvals = AssistantApprovals.ThisChat;
+        await Updates.CollectAsync(service.SendAsync("hi"));
+        Assert.Equal(AssistantApprovals.ThisChat, service.Approvals);   // the first message does not end it
+        await service.NewChatAsync();
+        Assert.Equal(AssistantApprovals.Ask, service.Approvals);
+
+        service.Approvals = AssistantApprovals.Always;
+        await service.NewChatAsync();
+        Assert.Equal(AssistantApprovals.Always, service.Approvals);   // trusted stays
+
+        // A restart: assistant.json as saved with "this chat" loads as Ask; remembered tools stay.
+        var path = Path.Combine(Directory.CreateTempSubdirectory("cuebot-assistant-").FullName, "assistant.json");
+        try
+        {
+            using (var file = new Cuebot.Core.Storage.JsonFile<AssistantSettings>(path, bot.Log))
+            {
+                file.Value.Approvals = AssistantApprovals.ThisChat;
+                file.Value.AlwaysAllowedTools.Add("delete_action");
+                file.SaveNow();
+            }
+            using var reloaded = new Cuebot.Core.Storage.JsonFile<AssistantSettings>(path, bot.Log);
+            await using var restarted = new AssistantService(reloaded, [], bot.Manager, null, bot.Log);
+            Assert.Equal(AssistantApprovals.Ask, restarted.Approvals);
+            Assert.Equal(["delete_action"], restarted.AlwaysAllowedTools);
+        }
+        finally
+        {
+            Directory.Delete(Path.GetDirectoryName(path)!, true);
+        }
+    }
 }

@@ -249,6 +249,69 @@ public sealed class AssistantPageTests : IAsyncDisposable
         Assert.Empty(page.Service.History);
     }
 
+    [AvaloniaFact]
+    public void Always_allow_remembers_a_tool_and_the_settings_card_revokes_it()
+    {
+        var vm = new MainWindowViewModel(_host);
+        var window = new MainWindow { DataContext = vm, Width = 1360, Height = 860 };
+        window.Show();
+        var page = Assert.IsType<AssistantViewModel>(vm.Pages.Single(p => p.Title == "Assistant"));
+        vm.SelectedPage = page;
+        page.SelectedChoice = page.Choices.Single(c => c.Id == "scripted");
+        PumpUntil(() => page.ProviderReady);
+        bool Visible<T>(string name) where T : Control => window.GetVisualDescendants().OfType<T>().Any(c => c.Name == name && c.IsEffectivelyVisible);
+
+        // Approvals: a row in the settings card, Ask every time by default.
+        Assert.Equal(AssistantApprovals.Ask, page.SelectedApproval.Value);
+        PumpUntil(() => Visible<ComboBox>("AssistantApprovals"));
+        Assert.False(page.HasAllowedTools);
+        Assert.False(Visible<ItemsControl>("AssistantAllowedTools"));
+
+        // The card offers Always allow for this tool: it approves and remembers it.
+        page.Input = "Delete my Hello action";
+        page.SendCommand.Execute(null);
+        PumpUntil(() => page.Items.Any(i => i.AwaitingAnswer));
+        var card = page.Items.Single(i => i.AwaitingAnswer);
+        Assert.True(card.CanAlwaysAllow);
+        PumpUntil(() => Visible<Button>("AssistantAlwaysAllow"));
+        var always = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "AssistantAlwaysAllow" && b.IsEffectivelyVisible);
+        Assert.Equal("Always allow delete action", always.Content);
+        always.Command!.Execute(null);
+        PumpUntil(() => !page.IsBusy);
+        Assert.Equal("approved", _ai.LastResult);
+        Assert.Equal("Approved - allowed without asking from now on", card.State);
+        Assert.Equal(["delete_action"], page.Service.Settings.AlwaysAllowedTools);
+        Assert.Equal("delete action", Assert.Single(page.AllowedTools).Label);
+        PumpUntil(() => Visible<ItemsControl>("AssistantAllowedTools"));
+        Assert.True(Visible<Button>("AssistantForgetAll"));
+
+        // Next time: no card, a line says what ran, and the strip never waits for the streamer.
+        page.Input = "Delete it again";
+        page.SendCommand.Execute(null);
+        PumpUntil(() => !page.IsBusy);
+        Assert.Single(page.Items, i => i.IsConfirmation);
+        Assert.Contains(page.Items, i => i.IsNotice && i.Text == "Allowed without asking: Delete the action 'Hello'");
+        Screenshot(window, "assistant-allowed");
+
+        // Revoke: the ✕ forgets that tool, and the list hides when empty.
+        var forget = window.GetVisualDescendants().OfType<Button>().Single(b => b.Content as string == "✕" && b.IsEffectivelyVisible
+            && b.FindAncestorOfType<ItemsControl>()?.Name == "AssistantAllowedTools");
+        forget.Command!.Execute(forget.CommandParameter);
+        Pump();
+        Assert.Empty(page.Service.Settings.AlwaysAllowedTools);
+        Assert.False(page.HasAllowedTools);
+        PumpUntil(() => !Visible<ItemsControl>("AssistantAllowedTools"));
+
+        // Allow everything in this chat ends with New chat.
+        page.SelectedApproval = page.ApprovalChoices.Single(c => c.Value == AssistantApprovals.ThisChat);
+        Assert.Equal(AssistantApprovals.ThisChat, page.Service.Settings.Approvals);
+        page.NewChatCommand.Execute(null);
+        PumpUntil(() => page.IsEmpty);
+        Assert.Equal(AssistantApprovals.Ask, page.SelectedApproval.Value);
+        Assert.True(TestApp.BindingErrors.Errors.Count == 0, string.Join("\n", TestApp.BindingErrors.Errors));
+        window.Close();
+    }
+
     public async ValueTask DisposeAsync()
     {
         await _host.DisposeAsync();

@@ -8,7 +8,8 @@ namespace Cuebot.App.ViewModels.Assistant;
 
 /// <summary>
 /// Assistant page: chat with the AI the streamer picked (an AI CLI they are signed in to, or an API key) to set Cuebot up.
-/// The AI works through Cuebot's MCP tools; deletes, imports and chat sends wait for Approve.
+/// The AI works through Cuebot's MCP tools; deletes, imports and chat sends wait for Approve unless the streamer allowed
+/// them (Approvals, or "Always allow" for one tool). Anything public (a feature request) always asks.
 /// </summary>
 public sealed partial class AssistantViewModel : PageViewModel
 {
@@ -26,6 +27,7 @@ public sealed partial class AssistantViewModel : PageViewModel
             if (Enum.TryParse<AssistantItemKind>(entry.Kind, out var kind)) Items.Add(new AssistantItem(kind, entry.Text) { State = entry.State });
         if (Items.Count > 0)
             Items.Add(new AssistantItem(AssistantItemKind.Notice, "Earlier conversation: the AI does not remember it. New chat clears it.") { Saved = false });
+        RefreshAllowedTools();
         _ = RefreshStatusAsync();
     }
 
@@ -232,6 +234,59 @@ public sealed partial class AssistantViewModel : PageViewModel
 
     public bool HasModels => Models.Count > 0;
 
+    // ---- Approvals ----------------------------------------------------------------------------------------------
+
+    public IReadOnlyList<ApprovalChoice> ApprovalChoices { get; } =
+    [
+        new(AssistantApprovals.Ask, "Ask every time"),
+        new(AssistantApprovals.ThisChat, "Allow everything in this chat"),
+        new(AssistantApprovals.Always, "Always allow (trusted)"),
+    ];
+
+    /// <summary>When tools that change or remove things need Approve; stored in assistant.json.</summary>
+    public ApprovalChoice SelectedApproval
+    {
+        get => ApprovalChoices.First(c => c.Value == _service.Approvals);
+        set
+        {
+            if (value is null || value.Value == _service.Approvals) return;
+            _service.Approvals = value.Value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Tools remembered with "Always allow" on an Approve card; each can be forgotten.</summary>
+    public ObservableCollection<AllowedTool> AllowedTools { get; } = [];
+
+    public bool HasAllowedTools => AllowedTools.Count > 0;
+
+    private void RefreshAllowedTools()
+    {
+        AllowedTools.Clear();
+        foreach (var tool in _service.AlwaysAllowedTools) AllowedTools.Add(new AllowedTool(tool, ToolLabel(tool)));
+        OnPropertyChanged(nameof(HasAllowedTools));
+    }
+
+    [RelayCommand]
+    private void ForgetTool(AllowedTool tool)
+    {
+        _service.Forget(tool.Tool);
+        RefreshAllowedTools();
+    }
+
+    [RelayCommand]
+    private void ForgetAllTools()
+    {
+        _service.ForgetAll();
+        RefreshAllowedTools();
+    }
+
+    /// <summary>"Always allow" on a card: remembered, so later calls of that tool run without a card.</summary>
+    private void AlwaysAllow(string tool)
+    {
+        if (_service.AlwaysAllow(tool)) RefreshAllowedTools();
+    }
+
     // ---- Conversation -------------------------------------------------------------------------------------------
 
     public ObservableCollection<AssistantItem> Items { get; } = [];
@@ -376,9 +431,19 @@ public sealed partial class AssistantViewModel : PageViewModel
                         Activity = "Thinking...";
                         break;
                     case AssistantConfirmation c:
-                        Add(new AssistantItem(AssistantItemKind.Confirmation, c.Summary) { Confirmation = c });
+                        Add(new AssistantItem(AssistantItemKind.Confirmation, c.Summary)
+                        {
+                            Confirmation = c,
+                            AlwaysAllowLabel = _service.AlwaysAsks(c.Tool) ? null : $"Always allow {ToolLabel(c.Tool)}",
+                            OnAlwaysAllow = () => AlwaysAllow(c.Tool),
+                        });
                         Activity = "Waiting for you to Approve or Deny...";
                         _ = AfterAnswerAsync(c);
+                        answer = null;
+                        break;
+                    case AssistantAllowed allowed:
+                        // No card, so nothing waits for the streamer; the line says what ran.
+                        Add(new AssistantItem(AssistantItemKind.Notice, $"Allowed without asking: {allowed.Summary}"));
                         answer = null;
                         break;
                     case AssistantError e:
@@ -422,6 +487,7 @@ public sealed partial class AssistantViewModel : PageViewModel
     {
         _turn?.Cancel();
         await _service.NewChatAsync();
+        OnPropertyChanged(nameof(SelectedApproval));   // "Allow everything in this chat" ended
         Items.Clear();
         SaveHistory();
         OnPropertyChanged(nameof(IsEmpty));
@@ -439,6 +505,15 @@ public sealed partial class AssistantViewModel : PageViewModel
     private void SaveHistory() =>
         _service.SaveHistory(Items.Where(i => i.Saved).Select(i => new AssistantHistoryEntry { Kind = i.Kind.ToString(), Text = i.Text, State = i.State }));
 }
+
+/// <summary>An entry in the Approvals picker.</summary>
+public sealed record ApprovalChoice(AssistantApprovals Value, string Name)
+{
+    public override string ToString() => Name;
+}
+
+/// <summary>A tool remembered with "Always allow" (<see cref="Label"/> as the tool rows show it).</summary>
+public sealed record AllowedTool(string Tool, string Label);
 
 /// <summary>An entry in the provider picker; <see cref="Provider"/> is null for automatic.</summary>
 public sealed record ProviderChoice(string Id, string Name, IAssistantProvider? Provider)
@@ -462,6 +537,13 @@ public sealed partial class AssistantItem(AssistantItemKind kind, string text) :
     internal bool Saved { get; init; } = true;
 
     public AssistantConfirmation? Confirmation { get; init; }
+
+    /// <summary>Confirmation: the "Always allow" button's text; null for tools that always ask (they publish something).</summary>
+    public string? AlwaysAllowLabel { get; init; }
+
+    public bool CanAlwaysAllow => AlwaysAllowLabel is not null && AwaitingAnswer;
+
+    internal Action? OnAlwaysAllow { get; init; }
 
     /// <summary>Changes: puts back what that turn changed; null once used, or for a card from an earlier session.</summary>
     [ObservableProperty]
@@ -504,6 +586,7 @@ public sealed partial class AssistantItem(AssistantItemKind kind, string text) :
         Confirmation?.Deny();
         State = "Not answered - nothing was done";
         OnPropertyChanged(nameof(AwaitingAnswer));
+        OnPropertyChanged(nameof(CanAlwaysAllow));
     }
 
     [RelayCommand]
@@ -512,13 +595,23 @@ public sealed partial class AssistantItem(AssistantItemKind kind, string text) :
     [RelayCommand]
     private void Deny() => Answer(false);
 
-    private void Answer(bool approve)
+    /// <summary>Approves and remembers the tool, so it runs without a card from now on.</summary>
+    [RelayCommand]
+    private void AlwaysAllow()
+    {
+        if (AlwaysAllowLabel is null || Confirmation is not { Answer.IsCompleted: false }) return;
+        OnAlwaysAllow?.Invoke();
+        Answer(true, "Approved - allowed without asking from now on");
+    }
+
+    private void Answer(bool approve, string? state = null)
     {
         if (Confirmation is not { } c || c.Answer.IsCompleted) return;
         if (approve) c.Approve();
         else c.Deny();
-        State = approve ? "Approved" : "Declined";
+        State = state ?? (approve ? "Approved" : "Declined");
         OnPropertyChanged(nameof(AwaitingAnswer));
+        OnPropertyChanged(nameof(CanAlwaysAllow));
     }
 }
 

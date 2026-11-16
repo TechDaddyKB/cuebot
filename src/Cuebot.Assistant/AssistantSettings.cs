@@ -12,11 +12,34 @@ public sealed class AssistantSettings
 
     public Dictionary<string, AssistantProviderSettings> Providers { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// When the Assistant page's AI may run a tool that needs approval (delete, import, chat send...) without a card.
+    /// <see cref="AssistantApprovals.ThisChat"/> does not outlive the conversation: New chat and a restart set it back to
+    /// <see cref="AssistantApprovals.Ask"/>. Tools that publish something (request_feature) always ask.
+    /// </summary>
+    public AssistantApprovals Approvals { get; set; } = AssistantApprovals.Ask;
+
+    /// <summary>Tool names the streamer chose "Always allow" for on an Approve card; they run without a card from then on.</summary>
+    public List<string> AlwaysAllowedTools { get; set; } = [];
+
     public AssistantProviderSettings For(string providerId)
     {
         if (!Providers.TryGetValue(providerId, out var settings)) Providers[providerId] = settings = new AssistantProviderSettings();
         return settings;
     }
+}
+
+/// <summary>How the Assistant page asks before tools that change or remove things.</summary>
+public enum AssistantApprovals
+{
+    /// <summary>A card with Approve / Deny for every such tool call (except the remembered ones).</summary>
+    Ask,
+
+    /// <summary>Allow everything until New chat or a restart.</summary>
+    ThisChat,
+
+    /// <summary>Trusted: allow everything, every conversation.</summary>
+    Always,
 }
 
 public sealed class AssistantProviderSettings

@@ -102,5 +102,11 @@ public sealed record AssistantConfirmation(string Tool, string Summary) : Assist
     public void Deny() => _answer.TrySetResult(false);
 }
 
+/// <summary>
+/// A tool that needs approval ran without a card because the streamer allowed it (Approvals setting or "Always allow"
+/// for that tool); the page shows a line so they still see what happened.
+/// </summary>
+public sealed record AssistantAllowed(string Tool, string Summary) : AssistantUpdate;
+
 /// <summary>Something went wrong; the turn ends.</summary>
 public sealed record AssistantError(string Message) : AssistantUpdate;

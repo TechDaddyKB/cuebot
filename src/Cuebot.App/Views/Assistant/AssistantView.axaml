@@ -26,9 +26,9 @@
     <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,10">
       <TextBlock Classes="h1" Text="Assistant" />
       <TextBlock Classes="muted" TextWrapping="Wrap"
-                 Text="Ask an AI to help you set Cuebot up: build or change actions, commands and timers, explain features, or work out an integration. It works through Cuebot's own set of tools (called MCP tools). Before it deletes something, imports something or sends a chat message, it waits for you to press Approve. It never talks to your viewers." />
+                 Text="Ask an AI to help you set Cuebot up: build or change actions, commands and timers, explain features, or work out an integration. It works through Cuebot's own set of tools (called MCP tools). Before it deletes something, imports something or sends a chat message, it waits for you to press Approve, unless you allow it under Approvals. It never talks to your viewers." />
       <Border Classes="card">
-        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="8">
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="8">
           <TextBlock Classes="label" Text="AI" VerticalAlignment="Center" />
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
             <ComboBox Name="AssistantProvider" ItemsSource="{Binding Choices}" SelectedItem="{Binding SelectedChoice}" MinWidth="280"
@@ -82,6 +82,38 @@
                      ToolTip.Tip="A secret code from the AI company that lets Cuebot use your account with them. It is hidden while you type." />
             <TextBlock Classes="muted" Text="Stored in assistant.json in Cuebot's data folder." VerticalAlignment="Center" />
           </StackPanel>
+
+          <TextBlock Grid.Row="4" Classes="label" Text="Approvals" VerticalAlignment="Center" />
+          <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+            <ComboBox Name="AssistantApprovals" ItemsSource="{Binding ApprovalChoices}" SelectedItem="{Binding SelectedApproval}" MinWidth="280"
+                      ToolTip.Tip="Whether the assistant waits for your Approve before it deletes, imports, runs steps or writes in chat. Ask every time shows a card each time. Allow everything in this chat stops asking until you click New chat or restart Cuebot. Always allow never asks." />
+            <TextBlock Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="560"
+                       Text="It still always asks before anything is posted publicly, like a feature request." />
+          </StackPanel>
+
+          <TextBlock Grid.Row="5" Classes="label" Text="Allowed" VerticalAlignment="Center" IsVisible="{Binding HasAllowedTools}" />
+          <WrapPanel Grid.Row="5" Grid.Column="1" IsVisible="{Binding HasAllowedTools}">
+            <TextBlock Text="Allowed without asking:" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ItemsControl Name="AssistantAllowedTools" ItemsSource="{Binding AllowedTools}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:AllowedTool">
+                  <Border Classes="bubble" Padding="8,2" Margin="0,0,6,0" BorderBrush="{DynamicResource CuebotLine}" BorderThickness="1">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                      <Button Content="✕" Padding="5,0" MinHeight="0" Height="20" FontSize="11" VerticalContentAlignment="Center" VerticalAlignment="Center"
+                              ToolTip.Tip="Forget this one: the assistant asks again before it uses this tool."
+                              Command="{Binding $parent[ItemsControl].((vm:AssistantViewModel)DataContext).ForgetToolCommand}" CommandParameter="{Binding}" />
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button Name="AssistantForgetAll" Content="Forget all" Command="{Binding ForgetAllToolsCommand}" VerticalAlignment="Center"
+                    ToolTip.Tip="The assistant asks again before every one of these tools." />
+          </WrapPanel>
         </Grid>
       </Border>
     </StackPanel>
@@ -155,6 +187,8 @@
                       <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding AwaitingAnswer}">
                         <Button Content="Approve" Classes="accent" Command="{Binding ApproveCommand}" ToolTip.Tip="Lets the assistant do this now." />
                         <Button Content="Deny" Command="{Binding DenyCommand}" ToolTip.Tip="Says no. Nothing is changed." />
+                        <Button Name="AssistantAlwaysAllow" Content="{Binding AlwaysAllowLabel}" Command="{Binding AlwaysAllowCommand}" IsVisible="{Binding CanAlwaysAllow}"
+                                ToolTip.Tip="Lets the assistant do this now, and from now on use this tool without asking. You can undo that under Approvals at the top of the page." />
                       </StackPanel>
                       <TextBlock Classes="muted" Text="{Binding State}" IsVisible="{Binding !AwaitingAnswer}" />
                     </StackPanel>

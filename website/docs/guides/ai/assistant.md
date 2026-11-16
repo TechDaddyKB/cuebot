@@ -86,8 +86,30 @@ them as PNG first. Videos need ffmpeg, which comes with Cuebot's downloads.
 
 ### It asks before big changes
 
-Before the assistant deletes something, imports something, or writes in your chat, it shows **The assistant wants
-to:** and waits. Click **Approve** to let it, or **Deny** to stop it.
+Before the assistant deletes something, imports something, runs steps, or writes in your chat, it shows **The
+assistant wants to:** and waits. Click **Approve** to let it, or **Deny** to stop it.
+
+### Asking less often
+
+When the assistant does a big job, all those cards can get in the way. You can choose how often it asks:
+
+- **Approvals** at the top of the page:
+    - **Ask every time** (the normal setting): a card every time.
+    - **Allow everything in this chat**: no cards until you click **New chat** or restart Cuebot. Then it goes back
+      to **Ask every time** by itself.
+    - **Always allow (trusted)**: no cards at all, until you change it back.
+- **Always allow ...** on a card, such as **Always allow delete action**: approves this one, and from then on that
+  kind of step runs without a card. Good for things you say yes to every time.
+
+The steps you always allow are listed at the top of the page, next to **Allowed without asking**. Click **✕** next to
+one to make the assistant ask about it again, or **Forget all** to clear the list.
+
+When a step runs without a card, the conversation still shows a line like *Allowed without asking: Delete the action
+'Hello'*, and **Undo these changes** still works after the answer.
+
+It **always** asks before anything is posted publicly, like a feature request (see below), whatever you pick here.
+These settings are only for this Assistant page: other AI apps you connect to Cuebot's MCP server keep asking you as
+before, and so do your mods' conversations in the mod portal.
 
 Always check what it made. It can make mistakes, just like a person.
 
@@ -104,7 +126,7 @@ covered: check those yourself.
 If you ask for something Cuebot has no way to do, the assistant says so and offers to send Cuebot's developers a
 **feature request**. Say yes and it writes one up: a short title and what you wanted to do. Before anything is sent,
 Cuebot shows you the whole text under **The assistant wants to:**. Click **Approve** to send it, or **Deny** to drop it.
-It asks even when you turned off **Confirm destructive tools**.
+It asks even when you turned off **Confirm destructive tools** or chose to allow everything under **Approvals**.
 
 The request becomes a **public issue** on Cuebot's GitHub page, labelled `enhancement`, so read it before you approve
 it. The assistant is told to leave out names, channels and anything private, and Cuebot removes keys and tokens it

@@ -41,6 +41,8 @@ public sealed class AssistantService : IAsyncDisposable
         Providers = [.. providers.OrderBy(p => Array.IndexOf(ProviderOrder, p.Id) is var i and >= 0 ? i : int.MaxValue).ThenBy(p => p.Name)];
         Tools = new AssistantTools(servers.Mcp);
         _workingDirectory = Path.Combine(paths?.Root ?? Path.GetTempPath(), "assistant");
+        // "Allow everything in this chat" ends with the conversation, and an app restart ends that.
+        if (Settings.Approvals == AssistantApprovals.ThisChat) Settings.Approvals = AssistantApprovals.Ask;
     }
 
     public AssistantSettings Settings => _file?.Value ?? _memorySettings;
@@ -61,6 +63,90 @@ public sealed class AssistantService : IAsyncDisposable
     public string? ActiveProviderId => _sessionKey?.Provider;
 
     public void SaveSettings() => _file?.ScheduleSave();
+
+    // ---- Approvals: which tool calls run without an Approve card ----------------------------------------------------
+
+    private readonly Lock _approvals = new();
+
+    /// <summary>How tools that need approval are handled (see <see cref="AssistantSettings.Approvals"/>).</summary>
+    public AssistantApprovals Approvals
+    {
+        get => Settings.Approvals;
+        set
+        {
+            if (Settings.Approvals == value) return;
+            Settings.Approvals = value;
+            SaveSettings();
+            _log.Info(LogSource, $"Approvals: {value}");
+        }
+    }
+
+    /// <summary>
+    /// True for tools that publish something outside Cuebot (a public GitHub issue): they ask every time, whatever
+    /// <see cref="Approvals"/> or <see cref="AlwaysAllowedTools"/> say.
+    /// </summary>
+    public bool AlwaysAsks(string tool) => _servers.Mcp.Tools.Any(t => t.AlwaysConfirm && t.Name.Equals(tool, StringComparison.Ordinal));
+
+    /// <summary>Tools remembered with "Always allow", in the order they were added.</summary>
+    public IReadOnlyList<string> AlwaysAllowedTools
+    {
+        get
+        {
+            lock (_approvals) return [.. Settings.AlwaysAllowedTools];
+        }
+    }
+
+    /// <summary>Whether a call of <paramref name="tool"/> runs without asking right now.</summary>
+    public bool AllowsWithoutAsking(string tool)
+    {
+        if (AlwaysAsks(tool)) return false;
+        if (Settings.Approvals != AssistantApprovals.Ask) return true;
+        lock (_approvals) return Settings.AlwaysAllowedTools.Contains(tool, StringComparer.Ordinal);
+    }
+
+    /// <summary>Remembers <paramref name="tool"/> so it no longer asks. False for tools that always ask.</summary>
+    public bool AlwaysAllow(string tool)
+    {
+        if (AlwaysAsks(tool) || tool.Length == 0) return false;
+        lock (_approvals)
+        {
+            if (Settings.AlwaysAllowedTools.Contains(tool, StringComparer.Ordinal)) return true;
+            Settings.AlwaysAllowedTools.Add(tool);
+        }
+        SaveSettings();
+        _log.Info(LogSource, $"Tool {tool} is now allowed without asking");
+        return true;
+    }
+
+    /// <summary>Asks again before <paramref name="tool"/>.</summary>
+    public void Forget(string tool)
+    {
+        lock (_approvals)
+        {
+            if (Settings.AlwaysAllowedTools.RemoveAll(t => t.Equals(tool, StringComparison.Ordinal)) == 0) return;
+        }
+        SaveSettings();
+        _log.Info(LogSource, $"Tool {tool} asks again");
+    }
+
+    /// <summary>Asks again before every remembered tool.</summary>
+    public void ForgetAll()
+    {
+        lock (_approvals)
+        {
+            if (Settings.AlwaysAllowedTools.Count == 0) return;
+            Settings.AlwaysAllowedTools.Clear();
+        }
+        SaveSettings();
+        _log.Info(LogSource, "All tools ask again");
+    }
+
+    /// <summary>A call that runs without a card: logged (the tool name only) and shown as a line in the turn.</summary>
+    private AssistantAllowed Allowed(string tool, string summary)
+    {
+        _log.Info(LogSource, $"Tool {tool} allowed without asking ({(Settings.Approvals == AssistantApprovals.Ask ? "always allowed" : Settings.Approvals.ToString())})");
+        return new AssistantAllowed(tool, summary);
+    }
 
     /// <summary>The conversation as last saved (see <see cref="AssistantHistoryFile"/>).</summary>
     public IReadOnlyList<AssistantHistoryEntry> History => (_history?.Value ?? _memoryHistory).Entries;
@@ -163,7 +249,17 @@ public sealed class AssistantService : IAsyncDisposable
     {
         try
         {
-            await foreach (var update in updates.WithCancellation(ct).ConfigureAwait(false)) await turn.WriteAsync(update, CancellationToken.None).ConfigureAwait(false);
+            await foreach (var update in updates.WithCancellation(ct).ConfigureAwait(false))
+            {
+                // API-key and local models ask through their own stream: an allowed tool goes ahead without a card.
+                var shown = update;
+                if (update is AssistantConfirmation card && AllowsWithoutAsking(card.Tool))
+                {
+                    shown = Allowed(card.Tool, card.Summary);
+                    card.Approve();
+                }
+                await turn.WriteAsync(shown, CancellationToken.None).ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException)
         {
@@ -179,18 +275,26 @@ public sealed class AssistantService : IAsyncDisposable
     /// <summary>
     /// Cuebot's MCP server asks about a destructive tool an AI app called in this conversation: a card in the running
     /// turn, and the call waits for Approve or Deny. Outside a turn, or when the turn or the call ends, it is denied.
+    /// A tool the streamer allowed (<see cref="AllowsWithoutAsking"/>) goes ahead with a line in the turn instead.
     /// </summary>
     private async Task<bool> ConfirmAsync(string tool, string summary, CancellationToken ct)
     {
         if (_turnUpdates is not { } turn) return false;
+        if (AllowsWithoutAsking(tool)) return turn.TryWrite(Allowed(tool, summary));
         var confirmation = new AssistantConfirmation(tool, summary);
         if (!turn.TryWrite(confirmation)) return false;
         using var cancel = ct.Register(confirmation.Deny);
         return await confirmation.Answer.ConfigureAwait(false);
     }
 
-    /// <summary>Forgets the conversation; the next message starts a new one.</summary>
+    /// <summary>Forgets the conversation; the next message starts a new one. "Allow everything in this chat" ends too.</summary>
     public async Task NewChatAsync()
+    {
+        if (Settings.Approvals == AssistantApprovals.ThisChat) Approvals = AssistantApprovals.Ask;
+        await EndConversationAsync().ConfigureAwait(false);
+    }
+
+    private async Task EndConversationAsync()
     {
         var session = _session;
         _session = null;
@@ -204,7 +308,7 @@ public sealed class AssistantService : IAsyncDisposable
     {
         var model = Settings.For(provider.Id).Model.Trim();
         if (_session is not null && _sessionKey == (provider.Id, model)) return _session;
-        await NewChatAsync().ConfigureAwait(false);
+        await EndConversationAsync().ConfigureAwait(false);
         Directory.CreateDirectory(_workingDirectory);
         var mcp = provider.Kind == AssistantProviderKind.Cli ? Mcp : null;
         if (mcp is not null)
@@ -238,7 +342,7 @@ public sealed class AssistantService : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        await NewChatAsync().ConfigureAwait(false);
+        await EndConversationAsync().ConfigureAwait(false);
         _turn.Dispose();
     }
 }
