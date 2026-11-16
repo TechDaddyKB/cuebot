@@ -1,13 +1,17 @@
 // The combined chat (docs/UNIFIED_MOD_CHAT_PLAN.md, phase 2): every platform's chat in one list, the moderation tools
 // as each platform offers them, the mod log and a user card. Chat is rendered as text only. Moderation applies at once
 // (it never waits for approval) and Cuebot's mod log records who did it. Cuebot re-checks every request.
+// Phase 3 adds the platforms' moderation queues (Twitch): a Held lane above the chat, a Mod tools tab (Shield Mode,
+// unban requests, blocked terms) and Monitor / Restrict / Not suspicious on the user card.
 
 import { useEffect, useRef, useState } from "preact/hooks";
 import { useSubscription, usePortal, type Answer } from "../api.js";
 import { LoadError } from "../widgets.js";
 import {
-  EMPTY, MODE_ACTIONS, actorText, applyEvents, findTool, formatDuration, logDetail, logSummary, platformClass, presetLabel,
-  safeUrl, toolView, upsertRow, visibleLines, type ChatLine, type ChatState, type LogRow, type PlatformTools, type ToolView,
+  EMPTY, EMPTY_QUEUES, MAX_TERM, MODE_ACTIONS, actorText, applyEvents, applyQueueEvents, decidedHeld, findTool, formatDuration,
+  hasQueues, heldStatusText, logDetail, logSummary, markHeld, mergeQueues, pendingHeld, platformClass, presetLabel, safeUrl,
+  shieldText, suspiciousText, termProblem, toolView, upsertRow, visibleLines, type ChatLine, type ChatState, type HeldItem,
+  type LogRow, type PlatformQueues, type PlatformTools, type QueueState, type Suspicious, type ToolView,
 } from "./chat-model.js";
 
 interface History extends Answer { platforms?: string[]; messages?: ChatLine[] }
@@ -15,7 +19,9 @@ interface Caps extends Answer { platforms?: PlatformTools[] }
 interface LogPage extends Answer { rows?: LogRow[]; more?: boolean }
 interface UserCard extends Answer {
   platform: string; userId: string; name: string; roles: string[]; messages: ChatLine[]; log?: LogRow[]; inForce?: LogRow;
+  suspiciousKnown?: boolean; suspicious?: Suspicious;
 }
+interface Queues extends Answer { platforms?: PlatformQueues[] }
 interface Target { platform: string; userId: string; user: string; messageId?: string }
 
 const POLL_MS = 3000;
@@ -33,7 +39,8 @@ export function ChatPage({ popout = false }: { popout?: boolean }) {
   const [problem, setProblem] = useState<History | null>(null);
   const [caps, setCaps] = useState<PlatformTools[]>([]);
   const [filter, setFilter] = useState("");
-  const [tab, setTab] = useState<"chat" | "log">("chat");
+  const [tab, setTab] = useState<"chat" | "tools" | "log">("chat");
+  const [queues, setQueues] = useState<QueueState>(EMPTY_QUEUES);
   const [selected, setSelected] = useState<string | null>(null);
   const [card, setCard] = useState<Target | null>(null);
   const [pushEnded, setPushEnded] = useState(false);
@@ -51,6 +58,20 @@ export function ChatPage({ popout = false }: { popout?: boolean }) {
     const a = (await host.request("chat.capabilities").catch(() => ({ ok: false }))) as Caps;
     if (a.ok) setCaps(a.platforms ?? []);
   };
+
+  const loadQueues = async () => {
+    const a = (await host.request("chat.queues").catch(() => ({ ok: false }))) as Queues;
+    if (a.ok) setQueues((s) => mergeQueues(s, a.platforms ?? []));
+  };
+  const queuesPushing = useSubscription("modqueue", {}, {
+    onEvents: (events) => setQueues((s) => applyQueueEvents(s, events)),
+    onResync: () => void loadQueues(),
+  });
+  useEffect(() => {
+    void loadQueues();
+    const poll = setInterval(() => void loadQueues(), queuesPushing ? 120000 : 15000);   // Shield Mode set elsewhere, expired holds
+    return () => clearInterval(poll);
+  }, [queuesPushing]);
 
   const pushing = useSubscription("chat", {}, {
     onEvents: (events) => setChat((s) => applyEvents(s, events)),
@@ -82,6 +103,12 @@ export function ChatPage({ popout = false }: { popout?: boolean }) {
 
   const lines = visibleLines(chat.lines, filter);
   const shownPlatforms = filter ? [filter] : platforms;
+  const showTools = hasQueues(queues) && (can("ChatModes") || can("ChatBan") || can("BlockedTerms"));
+  const waiting = pendingHeld(queues, filter);
+  const decide = async (h: HeldItem, allow: boolean) => {
+    if (await act(allow ? "ApproveHeld" : "DenyHeld", h.platform, { itemId: h.id }))
+      setQueues((s) => markHeld(s, h.platform, h.id, allow ? "Approved" : "Denied"));
+  };
 
   return (
     <div class={popout ? "chat-page popout" : "chat-page"}>
@@ -93,10 +120,11 @@ export function ChatPage({ popout = false }: { popout?: boolean }) {
             <option value="">All platforms</option>
             {platforms.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
-          {can("ViewModLog") && (
+          {(can("ViewModLog") || showTools) && (
             <span class="tabs" role="tablist">
               <button type="button" role="tab" aria-selected={tab === "chat"} class={tab === "chat" ? "active" : ""} onClick={() => setTab("chat")}>Chat</button>
-              <button type="button" role="tab" aria-selected={tab === "log"} class={tab === "log" ? "active" : ""} onClick={() => setTab("log")}>Mod log</button>
+              {showTools && <button type="button" role="tab" aria-selected={tab === "tools"} class={tab === "tools" ? "active" : ""} onClick={() => setTab("tools")}>Mod tools</button>}
+              {can("ViewModLog") && <button type="button" role="tab" aria-selected={tab === "log"} class={tab === "log" ? "active" : ""} onClick={() => setTab("log")}>Mod log</button>}
             </span>
           )}
           {!popout && <button type="button" onClick={popOut} title="Chat only, full height, in its own window">Pop out</button>}
@@ -109,7 +137,14 @@ export function ChatPage({ popout = false }: { popout?: boolean }) {
         <ModeBar platforms={shownPlatforms} caps={caps} act={act} />
       )}
 
-      {tab === "chat" ? (
+      {tab === "chat" && hasQueues(queues) && can("ChatDeleteTimeout") && (
+        <HeldLane waiting={waiting} decided={decidedHeld(queues, filter)} caps={caps} decide={decide}
+          onCard={(h) => setCard({ platform: h.platform, userId: h.userId, user: h.user })} />
+      )}
+
+      {tab === "tools" ? (
+        <ModTools queues={queues} platform={filter} caps={caps} act={act} reload={() => void loadQueues()} />
+      ) : tab === "chat" ? (
         <ol class="chat-lines" ref={list} aria-live="polite"
           onScroll={(e) => { const el = e.currentTarget; stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40; }}>
           {lines.length === 0 && <li class="muted">No chat yet.</li>}
@@ -323,6 +358,7 @@ function UserCardView({ target, caps, act, onClose }: { target: Target; caps: Pl
         </p>
       )}
       <Actions target={target} caps={caps} act={actAndReload} />
+      {data?.suspiciousKnown && <SuspiciousTools target={target} flagged={data.suspicious} caps={caps} act={actAndReload} />}
       <h3>Recent messages</h3>
       {data?.messages?.length ? (
         <ul class="rows">
@@ -333,5 +369,198 @@ function UserCardView({ target, caps, act, onClose }: { target: Target; caps: Pl
       ) : <p class="muted">None in Cuebot's recent chat.</p>}
       {data?.log && (<><h3>Mod log</h3><LogList rows={data.log} /></>)}
     </aside>
+  );
+}
+
+/** Monitor, Restrict and Not suspicious for one chatter (Twitch), with their current status. */
+function SuspiciousTools({ target, flagged, caps, act }: { target: Target; flagged?: Suspicious; caps: PlatformTools[]; act: Act }) {
+  const p = target.platform;
+  const who = { userId: target.userId, user: target.user };
+  const view = (action: string) => toolView(p, findTool(caps, p, action));
+  return (
+    <div class="chat-actions suspicious">
+      <p class="muted small">{suspiciousText(flagged) || "Not marked suspicious."}</p>
+      <div class="row-buttons">
+        <ToolButton view={view("MonitorUser")} onRun={() => void act("MonitorUser", p, who)} />
+        <ToolButton view={view("RestrictUser")} onRun={() => void act("RestrictUser", p, who)} />
+        <ToolButton view={view("ClearSuspicious")} onRun={() => void act("ClearSuspicious", p, who)} />
+      </div>
+    </div>
+  );
+}
+
+/** Messages the platform held for review, waiting first, with Allow and Deny. */
+function HeldLane({ waiting, decided, caps, decide, onCard }: {
+  waiting: HeldItem[]; decided: HeldItem[]; caps: PlatformTools[]; decide: (h: HeldItem, allow: boolean) => Promise<void>;
+  onCard: (h: HeldItem) => void;
+}) {
+  return (
+    <section class="card held-lane" aria-label="Held messages">
+      <h2>Held for review <span class={waiting.length ? "chip count" : "chip"}>{waiting.length}</span></h2>
+      {waiting.length === 0 && <p class="muted small">Nothing is waiting. Messages AutoMod or a blocked term holds back appear here.</p>}
+      <ul class="rows">
+        {waiting.map((h) => (
+          <li key={`${h.platform}|${h.id}`} class="held">
+            <span class={`chip ${platformClass(h.platform)}`}>{h.platform}</span>
+            <button type="button" class="link chat-user" title={`${h.platform} user id ${h.userId}`} onClick={() => onCard(h)}>{h.user}</button>
+            <span class="chat-text">{h.text}</span>
+            {h.reason && <small class="muted">{h.reason}</small>}
+            <span class="row-buttons">
+              <ToolButton view={toolView(h.platform, findTool(caps, h.platform, "ApproveHeld"), "Allow")} primary onRun={() => void decide(h, true)} />
+              <ToolButton view={toolView(h.platform, findTool(caps, h.platform, "DenyHeld"), "Deny")} onRun={() => void decide(h, false)} />
+            </span>
+          </li>
+        ))}
+      </ul>
+      {decided.length > 0 && (
+        <details>
+          <summary class="muted small">Recently decided ({decided.length})</summary>
+          <ul class="rows">
+            {decided.map((h) => (
+              <li key={`${h.platform}|${h.id}`} class="muted">
+                <span class={`chip ${platformClass(h.platform)}`}>{h.platform}</span> {h.user}: <span class="chat-text">{h.text}</span>
+                {" "}<small>{heldStatusText(h)}</small>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </section>
+  );
+}
+
+/** Shield Mode, unban requests and blocked terms, per platform that has them, each for roles with the right. */
+function ModTools({ queues, platform, caps, act, reload }: {
+  queues: QueueState; platform: string; caps: PlatformTools[]; act: Act; reload: () => void;
+}) {
+  const { host, can } = usePortal();
+  const [lists, setLists] = useState<PlatformQueues[]>([]);
+  const [problem, setProblem] = useState<Queues | null>(null);
+  const wantUnban = can("ChatBan");
+  const wantTerms = can("BlockedTerms");
+  const loadLists = async () => {
+    if (!wantUnban && !wantTerms) return;
+    const a = (await host.request("chat.queues", { unbanRequests: wantUnban, blockedTerms: wantTerms })
+      .catch((e: unknown) => ({ ok: false, error: String(e) }))) as Queues;
+    setProblem(a.ok ? null : a);
+    if (a.ok) setLists(a.platforms ?? []);
+  };
+  useEffect(() => void loadLists(), [queues.unbanVersion, queues.termsVersion]);
+  const actAndReload: Act = async (...args) => {
+    const ok = await act(...args);
+    if (ok) {
+      reload();
+      void loadLists();
+    }
+    return ok;
+  };
+  const shown = queues.platforms.filter((q) => !platform || q.platform.toLowerCase() === platform.toLowerCase());
+  if (shown.length === 0) return <p class="muted">No platform here has these tools. Shield Mode, unban requests and blocked terms are Twitch's.</p>;
+  return (
+    <div class="mod-tools">
+      <LoadError data={problem} />
+      {shown.map((q) => {
+        const list = lists.find((l) => l.platform.toLowerCase() === q.platform.toLowerCase());
+        return (
+          <section key={q.platform} class="card">
+            <h2><span class={`chip ${platformClass(q.platform)}`}>{q.platform}</span></h2>
+            <ShieldRow queues={q} caps={caps} act={actAndReload} />
+            {wantUnban && <UnbanRequests platform={q.platform} list={list} caps={caps} act={actAndReload} />}
+            {wantTerms && <BlockedTerms platform={q.platform} list={list} caps={caps} act={actAndReload} />}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function ShieldRow({ queues, caps, act }: { queues: PlatformQueues; caps: PlatformTools[]; act: Act }) {
+  const p = queues.platform;
+  const view = toolView(p, findTool(caps, p, "ShieldMode"));
+  const on = queues.shield?.active === true;
+  return (
+    <div class="shield-row">
+      <h3>Shield Mode</h3>
+      <p class={on ? "status-pending" : "muted"}>{shieldText(queues.shield)}</p>
+      {view.kind === "run" ? (
+        <button type="button" class={on ? "" : "danger"} title={view.hint} onClick={() => {
+          if (on || confirm(`Turn on Shield Mode on ${p}? It applies the strict chat settings the streamer chose for raids and harassment.`))
+            void act("ShieldMode", p, { enabled: !on });
+        }}>{on ? "Turn Shield Mode off" : "Turn Shield Mode on"}</button>
+      ) : <ToolButton view={view} onRun={() => undefined} />}
+    </div>
+  );
+}
+
+function UnbanRequests({ platform, list, caps, act }: { platform: string; list?: PlatformQueues; caps: PlatformTools[]; act: Act }) {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const pending = (list?.unbanRequests ?? []).filter((r) => r.status === "Pending");
+  const view = (action: string, label: string) => toolView(platform, findTool(caps, platform, action), label);
+  const send = (action: string, id: string) => {
+    const text = (answers[id] ?? "").trim();
+    void act(action, platform, { itemId: id, ...(text ? { reason: text } : {}) }).then((ok) => {
+      if (ok) setAnswers((a) => ({ ...a, [id]: "" }));
+    });
+  };
+  return (
+    <div class="unban-requests">
+      <h3>Unban requests <span class="chip">{pending.length}</span></h3>
+      {list?.unbanRequestsError && <p class="status-problem">{list.unbanRequestsError}</p>}
+      {!list ? <p class="muted small">Loading...</p> : pending.length === 0 && <p class="muted small">No open requests.</p>}
+      <ul class="rows">
+        {pending.map((r) => (
+          <li key={r.id}>
+            <span><strong>{r.user}</strong> <code class="mono muted" title="User id">{r.userId}</code></span>
+            <time class="muted">{new Date(r.createdAt).toLocaleString()}</time>
+            <span class="chat-text">{r.text}</span>
+            <input type="text" class="reason" maxLength={500} placeholder="Answer to the viewer (optional)" aria-label="Answer to the viewer"
+              value={answers[r.id] ?? ""} onInput={(e) => setAnswers((a) => ({ ...a, [r.id]: (e.target as HTMLInputElement).value }))} />
+            <span class="row-buttons">
+              <ToolButton view={view("ApproveUnbanRequest", "Approve (unban)")} primary onRun={() => {
+                if (confirm(`Approve ${r.user}'s request? This lifts the ban on ${platform}.`)) send("ApproveUnbanRequest", r.id);
+              }} />
+              <ToolButton view={view("DenyUnbanRequest", "Deny")} onRun={() => send("DenyUnbanRequest", r.id)} />
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function BlockedTerms({ platform, list, caps, act }: { platform: string; list?: PlatformQueues; caps: PlatformTools[]; act: Act }) {
+  const [term, setTerm] = useState("");
+  const [hint, setHint] = useState<string | null>(null);
+  const terms = list?.blockedTerms ?? [];
+  const addView = toolView(platform, findTool(caps, platform, "AddBlockedTerm"), "Block");
+  const removeView = toolView(platform, findTool(caps, platform, "RemoveBlockedTerm"), "Remove");
+  const add = () => {
+    const problem = termProblem(term);
+    setHint(problem);
+    if (problem) return;
+    void act("AddBlockedTerm", platform, { term: term.trim() }).then((ok) => ok && setTerm(""));
+  };
+  return (
+    <div class="blocked-terms">
+      <h3>Blocked terms <span class="chip">{terms.length}</span></h3>
+      {list?.blockedTermsError && <p class="status-problem">{list.blockedTermsError}</p>}
+      <form class="row-buttons" onSubmit={(e) => { e.preventDefault(); add(); }}>
+        <input type="text" maxLength={MAX_TERM} placeholder="Word or phrase" aria-label="Term to block" value={term}
+          onInput={(e) => setTerm((e.target as HTMLInputElement).value)} />
+        <ToolButton view={addView} primary onRun={add} />
+      </form>
+      {hint && <small class="status-problem">{hint}</small>}
+      {!list ? <p class="muted small">Loading...</p> : terms.length === 0 && <p class="muted small">No blocked terms.</p>}
+      <ul class="rows">
+        {terms.map((t) => (
+          <li key={t.id}>
+            <span class="chat-text mono">{t.text}</span>
+            <ToolButton view={removeView} onRun={() => {
+              if (confirm(`Stop blocking "${t.text}" on ${platform}?`)) void act("RemoveBlockedTerm", platform, { itemId: t.id });
+            }} />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

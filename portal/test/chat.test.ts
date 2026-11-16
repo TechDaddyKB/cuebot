@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  EMPTY, MAX_LINES, actorText, applyEvents, findTool, formatDuration, logDetail, logSummary, presetLabel, safeUrl, toolView,
-  upsertRow, visibleLines, type ChatLine, type LogRow, type PlatformTools, type Tool,
+  EMPTY, EMPTY_QUEUES, MAX_LINES, actorText, applyEvents, applyQueueEvents, decidedHeld, findTool, formatDuration, hasQueues,
+  heldStatusText, logDetail, logSummary, markHeld, mergeQueues, pendingHeld, presetLabel, safeUrl, shieldText, suspiciousText,
+  termProblem, toolView, upsertRow, visibleLines, type ChatLine, type HeldItem, type LogRow, type PlatformTools, type QueueState,
+  type Tool,
 } from "../ui/pages/chat-model.js";
 
 const line = (id: string, platform = "Twitch", text = "hi"): ChatLine => ({
@@ -123,5 +125,110 @@ describe("mod log", () => {
     rows = upsertRow(rows, row("a", "2026-11-16T10:00:00Z", { undoneAt: "2026-11-16T12:00:00Z" }));
     expect(rows).toHaveLength(2);
     expect(rows[1]!.undoneAt).toBeDefined();
+  });
+});
+
+const held = (id: string, heldAt: string, more: Partial<HeldItem> = {}): HeldItem => ({
+  platform: "Twitch", id, userId: "u1", user: "Bob", login: "bob", text: "held", reason: "AutoMod", heldAt, status: "Pending",
+  decidedBy: "", ...more,
+});
+
+const queues = (items: HeldItem[]): QueueState => ({
+  ...EMPTY_QUEUES,
+  platforms: [{ platform: "Twitch", shield: { active: false, moderator: "" }, held: items, pendingHeld: items.filter((h) => h.status === "Pending").length }],
+});
+
+describe("held messages", () => {
+  it("lists waiting messages oldest first and decided ones newest first, per platform", () => {
+    const s = queues([held("b", "2026-11-16T20:02:00Z"), held("a", "2026-11-16T20:01:00Z"), held("c", "2026-11-16T20:00:00Z", { status: "Denied" }),
+      held("d", "2026-11-16T20:03:00Z", { status: "Approved" })]);
+    expect(pendingHeld(s, "").map((h) => h.id)).toEqual(["a", "b"]);
+    expect(pendingHeld(s, "twitch")).toHaveLength(2);
+    expect(pendingHeld(s, "Kick")).toEqual([]);
+    expect(decidedHeld(s, "").map((h) => h.id)).toEqual(["d", "c"]);
+  });
+
+  it("adds held messages from push and replaces them when decided, with the platform's count", () => {
+    let s = applyQueueEvents(EMPTY_QUEUES, [{ type: "held", platform: "Twitch", id: "h1", item: held("h1", "2026-11-16T20:00:00Z"), pendingHeld: 1 }]);
+    expect(hasQueues(s)).toBe(true);
+    expect(pendingHeld(s, "")).toHaveLength(1);
+    s = applyQueueEvents(s, [{ type: "held", platform: "Twitch", id: "h1", item: held("h1", "2026-11-16T20:00:00Z", { status: "Approved", decidedBy: "Mia" }), pendingHeld: 0 }]);
+    expect(pendingHeld(s, "")).toEqual([]);
+    expect(s.platforms[0]!.held).toHaveLength(1);
+    expect(s.platforms[0]!.pendingHeld).toBe(0);
+    expect(heldStatusText(s.platforms[0]!.held![0]!)).toBe("Allowed by Mia");
+  });
+
+  it("marks a decision at once and ignores events without a platform", () => {
+    const s = markHeld(queues([held("h1", "2026-11-16T20:00:00Z")]), "twitch", "h1", "Denied");
+    expect(pendingHeld(s, "")).toEqual([]);
+    expect(s.platforms[0]!.pendingHeld).toBe(0);
+    expect(applyQueueEvents(s, [{ type: "held" }, null, "x"])).toBe(s);
+  });
+
+  it("keeps held text as data", () => {
+    const s = applyQueueEvents(EMPTY_QUEUES, [{ type: "held", platform: "Twitch", item: held("x", "2026", { text: "<img src=x onerror=alert(1)>" }) }]);
+    expect(pendingHeld(s, "")[0]!.text).toBe("<img src=x onerror=alert(1)>");
+  });
+
+  it("explains how a held message ended", () => {
+    expect(heldStatusText(held("a", "", { status: "Denied" }))).toBe("Denied");
+    expect(heldStatusText(held("a", "", { status: "Expired" }))).toContain("nobody decided");
+  });
+});
+
+describe("shield mode and lists", () => {
+  it("follows Shield Mode from push", () => {
+    let s = applyQueueEvents(EMPTY_QUEUES, [{ type: "shield", platform: "Twitch", shield: { active: true, moderator: "Mia" } }]);
+    expect(shieldText(s.platforms[0]!.shield)).toBe("Shield Mode is on (turned on by Mia)");
+    s = applyQueueEvents(s, [{ type: "shield", platform: "twitch", shield: { active: false, moderator: "" } }]);
+    expect(s.platforms).toHaveLength(1);
+    expect(shieldText(s.platforms[0]!.shield)).toBe("Shield Mode is off");
+    expect(shieldText(null)).toContain("not known");
+  });
+
+  it("asks for unban requests and terms again when push says they changed", () => {
+    const s = applyQueueEvents(EMPTY_QUEUES, [{ type: "unbanRequests", platform: "Twitch" }, { type: "blockedTerms", platform: "Twitch" },
+      { type: "blockedTerms", platform: "Twitch" }]);
+    expect(s.unbanVersion).toBe(1);
+    expect(s.termsVersion).toBe(2);
+  });
+
+  it("keeps lists a refresh did not include, and drops them when the platform failed", () => {
+    const old = mergeQueues(EMPTY_QUEUES, [{ platform: "Twitch", shield: null, blockedTerms: [{ platform: "Twitch", id: "t1", text: "bad" }] }]);
+    const plain = mergeQueues(old, [{ platform: "Twitch", shield: { active: true, moderator: "" } }]);
+    expect(plain.platforms[0]!.blockedTerms).toHaveLength(1);
+    expect(plain.platforms[0]!.shield?.active).toBe(true);
+    const failed = mergeQueues(old, [{ platform: "Twitch", shield: null, blockedTermsError: "401" }]);
+    expect(failed.platforms[0]!.blockedTerms).toBeUndefined();
+  });
+
+  it("checks a blocked term before sending it", () => {
+    expect(termProblem("   ")).toContain("Type");
+    expect(termProblem("x".repeat(501))).toContain("500");
+    expect(termProblem(" spam ")).toBeNull();
+  });
+
+  it("describes suspicious chatters", () => {
+    expect(suspiciousText(undefined)).toBe("");
+    expect(suspiciousText({ level: "Restricted", user: "", why: "possible ban evader", moderator: "" }))
+      .toBe("Restricted: only moderators see their messages (possible ban evader)");
+    expect(suspiciousText({ level: "Monitored", user: "", why: "", moderator: "" })).toContain("flagged");
+  });
+});
+
+describe("queue tools in the mod log", () => {
+  it("words every queue action", () => {
+    expect(logSummary(row("1", "2026", { action: "held-approve" }))).toBe("allowed a held message of Bob");
+    expect(logSummary(row("1", "2026", { action: "suspicious-restrict" }))).toBe("restricted Bob");
+    expect(logSummary(row("1", "2026", { action: "unban-request-deny" }))).toBe("denied Bob's unban request");
+    expect(logSummary(row("1", "2026", { action: "term-add", reason: "spam", targetName: "" }))).toBe('blocked the term "spam"');
+    expect(logSummary(row("1", "2026", { action: "shield", reason: "Shield Mode on" }))).toBe("Shield Mode on");
+  });
+
+  it("shows the answer to an unban request, and no reason line for terms", () => {
+    expect(logDetail(row("1", "2026", { action: "unban-request-deny", reason: "Not this time." }))).toBe("Answer: Not this time.");
+    expect(logDetail(row("1", "2026", { action: "term-remove", reason: "spam" }))).toBe("");
+    expect(logDetail(row("1", "2026", { action: "shield", reason: "Shield Mode on" }))).toBe("");
   });
 });

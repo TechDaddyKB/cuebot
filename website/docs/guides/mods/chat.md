@@ -44,6 +44,27 @@ are in a fold-out bar above the chat, one row per platform, for roles that have 
 
 Mods cannot send chat messages as you or your bot from the portal.
 
+## Twitch's moderation queues
+
+Twitch holds some messages back and keeps lists that the other platforms do not have. The portal shows them for
+Twitch only:
+
+- **Held for review**, above the chat, lists the messages AutoMod or one of your blocked terms held back, with the
+  number waiting. **Allow** lets a message into chat; **Deny** keeps it out. Messages decided a moment ago (by any
+  mod, here or on Twitch) are under **Recently decided**. Twitch drops a held message nobody decides in time.
+- **Mod tools** (next to **Chat**) has, for each platform that offers them:
+    - **Shield Mode**: whether it is on and who turned it on, and a button to turn it on or off. Shield Mode uses
+      the strict settings you chose for it on Twitch.
+    - **Unban requests**: what each banned viewer wrote, a box for an answer they will see, and **Approve (unban)**
+      or **Deny**. Approving lifts the ban.
+    - **Blocked terms**: the words and phrases Twitch keeps out of your chat. Type one and click **Block**, or
+      **Remove** one.
+- **The user card** of a Twitch viewer says whether Twitch or a mod marked them suspicious, with **Monitor** (their
+  messages are flagged for mods), **Restrict** (only mods see their messages) and **Not suspicious**.
+
+Held messages, Shield Mode and new unban requests appear by themselves. Like every other tool, these are written to
+the mod log with the mod's name.
+
 ## Who may do what
 
 Moderation is not a "change": it never waits for your approval. It happens at once and goes into the mod log. What a
@@ -55,10 +76,24 @@ mod may do comes from their role (**Chat > Mod portal > Roles**):
 | Delete messages, time out, warn | Yes | Yes | Yes |
 | Ban and unban | Yes | Yes | Yes |
 | Chat modes, clear chat, Shield Mode | No | Yes | Yes |
+| Blocked terms (see and change) | No | Yes | Yes |
 | See the mod log (every mod's actions) | Yes | Yes | Yes |
 
-The roles also list rights for blocked terms, notes about viewers and linked accounts. Those features are not built
-yet; the rights are there so you can decide in advance.
+Twitch's queues use the same rights:
+
+| Tool | Needs the right |
+|---|---|
+| See held messages, **Allow** and **Deny** | Delete messages, time out, warn |
+| See whether a viewer is suspicious, **Monitor** | Delete messages, time out, warn |
+| **Restrict** and **Not suspicious** | Ban and unban |
+| See unban requests, **Approve** and **Deny** them | Ban and unban |
+| Turn Shield Mode on or off | Chat modes, clear chat, Shield Mode |
+| See and change blocked terms | Blocked terms |
+
+Everyone who can see the chat sees whether Shield Mode is on.
+
+The roles also list rights for notes about viewers and linked accounts. Those features are not built yet; the rights
+are there so you can decide in advance.
 
 **Bans by your mods are made with your account.** The platform's own log shows you, not the mod. On Twitch and Kick
 the reason starts with the mod's name, like `[mod: Sam] spam`, and Cuebot's mod log always names the mod.
@@ -84,7 +119,8 @@ A refused click is written to the mod log as **Not sent**, with the reason.
 ## Tell your mods (and viewers)
 
 **The mod log records what each mod does**: who deleted, timed out, warned or banned whom, when, the reason, and the
-text of deleted messages. Tell your mods before you invite them. The invite page says so too.
+text of deleted messages. It also keeps held messages a mod allowed or denied, the text of unban requests and the
+answer sent, and the terms blocked or removed. Tell your mods before you invite them. The invite page says so too.
 
 The log stays on your computer, in Cuebot's data folder (it is part of your backups). Nothing about your chat is kept
 on the portal relay. Old details are blanked after a while: deleted message text after 60 days, timeouts after 180

@@ -218,6 +218,7 @@ public sealed class PortalChatTests : IDisposable
     [InlineData("chat.user")]
     [InlineData("chat.log")]
     [InlineData("chat.act")]
+    [InlineData("chat.queues")]
     public async Task Every_op_is_refused_without_the_right(string op)
     {
         var nobody = Custom(PortalPermission.UploadSounds);
@@ -393,7 +394,7 @@ public sealed class PortalChatTests : IDisposable
         Assert.Contains("tool", (string)(await Call(sam, "chat.act", new { action = "Dance", platform = "Twitch" }))["error"]!);
         Assert.Contains("14 days", (string)(await Call(sam, "chat.act", new { action = "Timeout", platform = "Twitch", userId = "u1", durationSeconds = 9_999_999 }))["error"]!);
         Assert.Contains("500", (string)(await Call(sam, "chat.act", new { action = "Ban", platform = "Twitch", userId = "u1", reason = new string('x', 501) }))["error"]!);
-        Assert.Contains("not in the mod portal", (string)(await Call(sam, "chat.act", new { action = "ApproveHeld", platform = "Twitch", messageId = "m1" }))["error"]!);
+        Assert.Contains("held message first", (string)(await Call(sam, "chat.act", new { action = "ApproveHeld", platform = "Twitch", messageId = "m1" }))["error"]!);
         Assert.Empty(_twitch.Requests);
     }
 

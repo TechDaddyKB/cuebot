@@ -18,14 +18,20 @@ namespace Cuebot.Portal.Chat;
 /// </summary>
 public sealed class PortalModerationPermissions(PortalDirectory directory) : IModerationPermissions
 {
-    /// <summary>The permission a tool needs.</summary>
+    /// <summary>
+    /// The permission a tool needs. The queue tools follow the plan's table: Shield Mode goes with chat modes, blocked
+    /// terms have their own right; allowing or denying a held message and monitoring a chatter go with delete and
+    /// timeout (the same weight as removing one message); restricting a chatter, clearing their status and answering
+    /// unban requests go with ban and unban.
+    /// </summary>
     public static PortalPermission For(ModerationAction action) => action switch
     {
         ModerationAction.Delete or ModerationAction.Timeout or ModerationAction.Warn
-            or ModerationAction.ApproveHeld or ModerationAction.DenyHeld => PortalPermission.ChatDeleteTimeout,
-        ModerationAction.Ban or ModerationAction.Unban or ModerationAction.MonitorUser or ModerationAction.RestrictUser
-            or ModerationAction.ClearSuspicious or ModerationAction.ApproveUnbanRequest or ModerationAction.DenyUnbanRequest => PortalPermission.ChatBan,
+            or ModerationAction.ApproveHeld or ModerationAction.DenyHeld or ModerationAction.MonitorUser => PortalPermission.ChatDeleteTimeout,
+        ModerationAction.Ban or ModerationAction.Unban or ModerationAction.RestrictUser or ModerationAction.ClearSuspicious
+            or ModerationAction.ApproveUnbanRequest or ModerationAction.DenyUnbanRequest => PortalPermission.ChatBan,
         ModerationAction.AddBlockedTerm or ModerationAction.RemoveBlockedTerm => PortalPermission.BlockedTerms,
+        ModerationAction.ShieldMode => PortalPermission.ChatModes,
         _ => PortalPermission.ChatModes,
     };
 
@@ -60,11 +66,16 @@ public sealed class PortalModerationPermissions(PortalDirectory directory) : IMo
 /// not a change: it applies at once, nothing waits for approval, and the mod log records who did it. Members' rate
 /// limits and protected targets are <see cref="ModerationService"/>'s; its refusals come back as the answer's error.
 /// Mods cannot send chat messages from here (the streamer's and bot's accounts are the streamer's).
+/// Phase 3 adds the platforms' moderation queues (<see cref="IModerationQueues"/>, Twitch): the "chat.queues" op (held
+/// messages, Shield Mode, and on request unban requests and blocked terms, each only for roles with the right) and the
+/// "modqueue" push topic (a message held or decided, Shield Mode on or off, a chatter flagged, an unban request or the
+/// blocked terms changed), filtered by the same rights.
 /// </summary>
 public sealed class PortalChat : IDisposable
 {
     public const string ChatTopic = "chat";
     public const string LogTopic = "modlog";
+    public const string QueueTopic = "modqueue";
     public const int MaxHistory = 500;
     public const int MaxLogRows = 200;
 
@@ -72,6 +83,14 @@ public sealed class PortalChat : IDisposable
     public const int MaxLogDepth = 2000;
 
     public const int MaxReasonLength = 500;
+
+    /// <summary>Longest blocked term (Twitch's limit).</summary>
+    public const int MaxTermLength = 500;
+
+    /// <summary>Most held messages (pending first, then recently decided) and unban requests or terms sent in one answer.</summary>
+    public const int MaxHeld = 100;
+
+    public const int MaxQueueItems = 1000;
 
     /// <summary>Longest message text sent to a device; longer ones are cut (every platform's limit is below it).</summary>
     public const int MaxTextLength = 2000;
@@ -86,13 +105,6 @@ public sealed class PortalChat : IDisposable
 
     private static readonly PortalPermission[] ActPermissions =
         [PortalPermission.ChatDeleteTimeout, PortalPermission.ChatBan, PortalPermission.ChatModes, PortalPermission.BlockedTerms];
-
-    /// <summary>Queue tools that act on a queue item (a held message, an unban request, a blocked term): not in the portal yet.</summary>
-    private static readonly ModerationAction[] QueueItemTools =
-    [
-        ModerationAction.ApproveHeld, ModerationAction.DenyHeld, ModerationAction.ApproveUnbanRequest, ModerationAction.DenyUnbanRequest,
-        ModerationAction.AddBlockedTerm, ModerationAction.RemoveBlockedTerm,
-    ];
 
     private readonly PortalDirectory _directory;
     private readonly ChatHub? _hub;
@@ -113,13 +125,14 @@ public sealed class PortalChat : IDisposable
             _hub.ModerationSeen += OnModeration;
         }
         if (_moderation?.Log is { } modLog) modLog.Changed += OnLogRow;
+        if (_moderation is not null) _moderation.QueuesChanged += OnQueuesChanged;
     }
 
     /// <summary>The ops this class answers, for PortalApi's dispatch.</summary>
-    public static bool Handles(string op) => op is "chat.history" or "chat.capabilities" or "chat.act" or "chat.log" or "chat.user";
+    public static bool Handles(string op) => op is "chat.history" or "chat.capabilities" or "chat.act" or "chat.log" or "chat.user" or "chat.queues";
 
     /// <summary>
-    /// Offers the "chat" and "modlog" topics on the portal link. Called once the relay client exists (it needs PortalApi,
+    /// Offers the "chat", "modlog" and "modqueue" topics on the portal link. Called once the relay client exists (it needs PortalApi,
     /// which needs this, so the push hub comes later).
     /// </summary>
     public void Attach(IPortalPush push)
@@ -127,6 +140,7 @@ public sealed class PortalChat : IDisposable
         _push = push;
         push.Register(new PortalTopic(ChatTopic) { Permission = PortalPermission.ViewChat, CheckParams = CheckPlatformParam });
         push.Register(new PortalTopic(LogTopic) { Permission = PortalPermission.ViewModLog, CheckParams = CheckPlatformParam });
+        push.Register(new PortalTopic(QueueTopic) { Permission = PortalPermission.ViewChat, CheckParams = CheckPlatformParam });
     }
 
     public async Task<JsonObject> HandleAsync(PortalMember member, PortalRole? role, string op, JsonObject request, CancellationToken ct = default)
@@ -139,6 +153,7 @@ public sealed class PortalChat : IDisposable
                 "chat.capabilities" => !PortalPolicy.Has(role, PortalPermission.ViewChat) ? NotIncluded() : Capabilities(role, request),
                 "chat.log" => !PortalPolicy.Has(role, PortalPermission.ViewModLog) ? NotIncluded() : Log(request),
                 "chat.user" => !PortalPolicy.Has(role, PortalPermission.ViewChat) ? NotIncluded() : User(role, request),
+                "chat.queues" => !PortalPolicy.Has(role, PortalPermission.ViewChat) ? NotIncluded() : await QueuesAsync(role, request, ct).ConfigureAwait(false),
                 "chat.act" => await ActAsync(member, role, request, ct).ConfigureAwait(false),
                 _ => Error($"Unknown request '{op}'."),
             };
@@ -250,7 +265,119 @@ public sealed class PortalChat : IDisposable
             body["log"] = new JsonArray([.. log.ForTarget(platform, userId, 50).Select(r => (JsonNode)Row(r))]);
             if (log.FindInForce(platform, userId) is { } inForce) body["inForce"] = Row(inForce);
         }
+        if (PortalPolicy.Has(role, PortalPermission.ChatDeleteTimeout) && _moderation?.QueuesFor(platform) is { } queues)
+        {
+            body["suspiciousKnown"] = true;
+            if (SafeSuspicious(queues, userId) is { Level: not SuspiciousLevel.None } flagged) body["suspicious"] = Suspicious(flagged);
+        }
         return Ok(body);
+    }
+
+    /// <summary>
+    /// The moderation queues of each platform that has them: Shield Mode for everyone who sees the chat, held messages
+    /// for roles that may allow or deny them, and (only when asked, since each is a platform call) unban requests and
+    /// blocked terms for roles with those rights.
+    /// </summary>
+    private async Task<JsonObject> QueuesAsync(PortalRole? role, JsonObject request, CancellationToken ct)
+    {
+        if (_moderation is null) return Error("This Cuebot cannot moderate chat.");
+        var held = PortalPolicy.Has(role, PortalPermission.ChatDeleteTimeout);
+        var unban = PortalPolicy.Has(role, PortalPermission.ChatBan);
+        var terms = PortalPolicy.Has(role, PortalPermission.BlockedTerms);
+        var wantUnban = Bool(request, "unbanRequests");
+        var wantTerms = Bool(request, "blockedTerms");
+        if ((wantUnban && !unban) || (wantTerms && !terms)) return NotIncluded();
+        var only = Str(request, "platform");
+        var platforms = new JsonArray();
+        foreach (var queues in _moderation.Queues.Where(q => Matches(q.Platform, only)))
+        {
+            if (Bool(request, "refresh"))
+            {
+                try
+                {
+                    await queues.RefreshAsync(ct).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _log?.Warn(LogSource, $"{queues.Platform} could not refresh its moderation state: {ex.Message}");
+                }
+            }
+            var node = new JsonObject { ["platform"] = queues.Platform, ["shield"] = Shield(queues.ShieldMode) };
+            if (held)
+            {
+                var all = SafeHeld(queues);
+                node["held"] = new JsonArray([.. HeldForPage(all).Select(h => (JsonNode)Held(h))]);
+                node["pendingHeld"] = all.Count(h => h.IsPending);
+            }
+            if (wantUnban)
+            {
+                try
+                {
+                    var list = await queues.GetUnbanRequestsAsync(ct).ConfigureAwait(false);
+                    node["unbanRequests"] = new JsonArray([.. list.Take(MaxQueueItems).Select(r => (JsonNode)Unban(r))]);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    node["unbanRequestsError"] = $"{queues.Platform} did not give the unban requests: {ex.Message}";
+                }
+            }
+            if (wantTerms)
+            {
+                try
+                {
+                    var list = await queues.GetBlockedTermsAsync(ct).ConfigureAwait(false);
+                    node["blockedTerms"] = new JsonArray([.. list.Take(MaxQueueItems).Select(t => (JsonNode)Term(t))]);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    node["blockedTermsError"] = $"{queues.Platform} did not give the blocked terms: {ex.Message}";
+                }
+            }
+            platforms.Add(node);
+        }
+        return Ok(new JsonObject
+        {
+            ["platforms"] = platforms,
+            ["rights"] = new JsonObject
+            {
+                ["held"] = held,
+                ["shield"] = PortalPolicy.Has(role, PortalPermission.ChatModes),
+                ["unbanRequests"] = unban,
+                ["blockedTerms"] = terms,
+            },
+        });
+    }
+
+    /// <summary>Pending held messages oldest first, then the most recently decided ones, at most <see cref="MaxHeld"/>.</summary>
+    private static IEnumerable<HeldChatMessage> HeldForPage(IReadOnlyList<HeldChatMessage> all) =>
+        all.Where(h => h.IsPending).OrderBy(h => h.HeldAt)
+            .Concat(all.Where(h => !h.IsPending).OrderByDescending(h => h.HeldAt))
+            .Take(MaxHeld);
+
+    private IReadOnlyList<HeldChatMessage> SafeHeld(IModerationQueues queues)
+    {
+        try
+        {
+            return queues.HeldMessages.ToArray();
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            _log?.Warn(LogSource, $"{queues.Platform} could not list held messages: {ex.Message}");
+            return [];
+        }
+    }
+
+    private SuspiciousUserInfo? SafeSuspicious(IModerationQueues queues, string userId)
+    {
+        try
+        {
+            return queues.SuspiciousUser(userId);
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            _log?.Warn(LogSource, $"{queues.Platform} could not say whether a chatter is suspicious: {ex.Message}");
+            return null;
+        }
     }
 
     // ---------------------------------------------------------------- acting
@@ -263,10 +390,11 @@ public sealed class PortalChat : IDisposable
         if (_moderation is null) return Error("This Cuebot cannot moderate chat.");
         if (!Enum.TryParse<ModerationAction>(Str(request, "action"), ignoreCase: true, out var action) || !Enum.IsDefined(action))
             return Error("Pick a moderation tool.");
-        if (QueueItemTools.Contains(action)) return Error("That tool is not in the mod portal yet. The streamer can use it in Cuebot.");
         var platform = Str(request, "platform");
         if (platform.Length == 0) return Error("Say which platform.");
-        var (command, problem) = CommandFor(platform, action, request);
+        var (command, problem) = IsItemTool(action)
+            ? await ItemCommandAsync(platform, action, role, request, ct).ConfigureAwait(false)
+            : CommandFor(platform, action, request);
         if (command is null) return Error(problem ?? "That request was not understood.");
 
         var actor = ModActor.Member(member.Id.ToString(), member.Name, Str(request, PortalSignInHandler.DeviceKey) is { Length: > 0 } d ? d : null);
@@ -347,6 +475,82 @@ public sealed class PortalChat : IDisposable
 
     private static (ModerationCommand?, string?) Problem(string text) => (null, text);
 
+    private static bool IsItemTool(ModerationAction action) =>
+        action is ModerationAction.ApproveHeld or ModerationAction.DenyHeld or ModerationAction.ApproveUnbanRequest
+            or ModerationAction.DenyUnbanRequest or ModerationAction.AddBlockedTerm or ModerationAction.RemoveBlockedTerm;
+
+    /// <summary>
+    /// The command for a queue item (a held message, an unban request, a blocked term). The item, its text and its
+    /// author come from Cuebot's queues or the platform's own list, never from the device. A member whose role does not
+    /// include the tool gets a bare command, so <see cref="ModerationService"/> refuses and logs it without Cuebot first
+    /// asking the platform for its lists.
+    /// </summary>
+    private async Task<(ModerationCommand? Command, string? Problem)> ItemCommandAsync(string platform, ModerationAction action,
+        PortalRole? role, JsonObject request, CancellationToken ct)
+    {
+        var reason = Str(request, "reason").Trim();
+        if (reason.Length > MaxReasonLength) return Problem($"Keep the reason under {MaxReasonLength} characters.");
+        var answer = reason.Length > 0 ? reason : null;
+        if (action == ModerationAction.AddBlockedTerm)
+        {
+            var term = Str(request, "term").Trim();
+            if (term.Length == 0) return Problem("Type the word or phrase to block.");
+            if (term.Length > MaxTermLength) return Problem($"Keep the term under {MaxTermLength} characters.");
+            return (ModerationCommand.BlockTerm(platform, term), null);
+        }
+
+        var itemId = Str(request, "itemId").Trim();
+        if (itemId.Length == 0 || itemId.Length > 200)
+            return Problem(action switch
+            {
+                ModerationAction.ApproveHeld or ModerationAction.DenyHeld => "Pick the held message first.",
+                ModerationAction.RemoveBlockedTerm => "Pick the term first.",
+                _ => "Pick the unban request first.",
+            });
+        var queues = _moderation!.QueuesFor(platform);
+        if (queues is null || !PortalPolicy.Has(role, PortalModerationPermissions.For(action)))
+            return (new ModerationCommand(platform, action) { ItemId = itemId }, null);
+
+        try
+        {
+            switch (action)
+            {
+                case ModerationAction.ApproveHeld or ModerationAction.DenyHeld:
+                {
+                    var held = SafeHeld(queues).FirstOrDefault(h => h.Id == itemId);
+                    if (held is null) return Problem("That held message is no longer waiting.");
+                    if (!held.IsPending) return Problem($"That message was already {StatusWord(held.Status)}.");
+                    return (ModerationCommand.ForHeld(held, action == ModerationAction.ApproveHeld) with { Reason = answer }, null);
+                }
+                case ModerationAction.ApproveUnbanRequest or ModerationAction.DenyUnbanRequest:
+                {
+                    var list = await queues.GetUnbanRequestsAsync(ct).ConfigureAwait(false);
+                    var found = list.FirstOrDefault(r => r.Id == itemId);
+                    if (found is null || found.Status != UnbanRequestStatus.Pending) return Problem("That unban request is no longer open.");
+                    return (ModerationCommand.ForUnbanRequest(found, action == ModerationAction.ApproveUnbanRequest, answer), null);
+                }
+                default:
+                {
+                    var list = await queues.GetBlockedTermsAsync(ct).ConfigureAwait(false);
+                    var found = list.FirstOrDefault(t => t.Id == itemId);
+                    if (found is null) return Problem("That term is no longer blocked.");
+                    return (ModerationCommand.UnblockTerm(found), null);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return Problem($"{platform} did not answer: {ex.Message}");
+        }
+    }
+
+    private static string StatusWord(HeldMessageStatus status) => status switch
+    {
+        HeldMessageStatus.Approved => "allowed",
+        HeldMessageStatus.Denied => "denied",
+        _ => "dropped by the platform",
+    };
+
     /// <summary>Every role the chat showed for this account in the recent history (a mod who chatted once stays a mod).</summary>
     private ChatRoles RolesOf(string platform, string userId)
     {
@@ -366,20 +570,85 @@ public sealed class PortalChat : IDisposable
 
     private void OnLogRow(ModLogEntry entry) => Publish(LogTopic, entry.Platform, new JsonObject { ["type"] = "row", ["row"] = Row(entry) });
 
-    private void PublishChat(string platform, JsonObject payload) => Publish(ChatTopic, platform, payload);
-
-    private void Publish(string topic, string platform, JsonObject payload)
+    /// <summary>
+    /// A queue changed: tells subscribed devices whose role may see that queue. Held messages and suspicious chatters
+    /// go to roles with delete and timeout, unban requests to ban and unban, blocked terms to blocked terms; Shield Mode
+    /// to everyone who sees the chat.
+    /// </summary>
+    private void OnQueuesChanged(ModerationQueueChange change)
     {
-        if (_push is not { } push || push.Subscribers(topic) == 0) return;
+        if (_push is not { } push || push.Subscribers(QueueTopic) == 0) return;
         try
         {
-            push.Publish(topic, payload, sub => sub.Params["platform"] is not JsonValue p || p.GetValue<string>() is not { Length: > 0 } only
-                                                || Same(only, platform));
+            var queues = _moderation?.QueuesFor(change.Platform);
+            var payload = new JsonObject { ["platform"] = change.Platform };
+            PortalPermission needs;
+            switch (change.Kind)
+            {
+                case ModerationQueueKind.HeldMessages:
+                    needs = PortalPermission.ChatDeleteTimeout;
+                    IReadOnlyList<HeldChatMessage> all = queues is null ? [] : SafeHeld(queues);
+                    payload["type"] = "held";
+                    payload["id"] = change.ItemId;
+                    if (change.ItemId.Length > 0 && all.FirstOrDefault(h => h.Id == change.ItemId) is { } held) payload["item"] = Held(held);
+                    payload["pendingHeld"] = all.Count(h => h.IsPending);
+                    break;
+                case ModerationQueueKind.ShieldMode:
+                    needs = PortalPermission.ViewChat;
+                    payload["type"] = "shield";
+                    payload["shield"] = Shield(queues?.ShieldMode);
+                    break;
+                case ModerationQueueKind.SuspiciousUsers:
+                    needs = PortalPermission.ChatDeleteTimeout;
+                    payload["type"] = "suspicious";
+                    payload["userId"] = Limit(change.ItemId, 100);
+                    payload["suspicious"] = queues is not null && change.ItemId.Length > 0
+                                            && SafeSuspicious(queues, change.ItemId) is { Level: not SuspiciousLevel.None } s ? Suspicious(s) : null;
+                    break;
+                case ModerationQueueKind.UnbanRequests:
+                    needs = PortalPermission.ChatBan;
+                    payload["type"] = "unbanRequests";
+                    payload["id"] = change.ItemId;
+                    break;
+                case ModerationQueueKind.BlockedTerms:
+                    needs = PortalPermission.BlockedTerms;
+                    payload["type"] = "blockedTerms";
+                    break;
+                default:
+                    return;
+            }
+            Publish(QueueTopic, change.Platform, payload, needs);
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            _log?.Warn(LogSource, $"Could not send a moderation queue update to mods: {ex.Message}");
+        }
+    }
+
+    private void PublishChat(string platform, JsonObject payload) => Publish(ChatTopic, platform, payload);
+
+    private void Publish(string topic, string platform, JsonObject payload, PortalPermission? needs = null)
+    {
+        if (_push is not { } push || push.Subscribers(topic) == 0) return;
+        // The topic's own permission is checked by the hub; a payload that needs more is checked per member, once.
+        var allowed = new Dictionary<Guid, bool>();
+        try
+        {
+            push.Publish(topic, payload, sub => (sub.Params["platform"] is not JsonValue p || p.GetValue<string>() is not { Length: > 0 } only
+                                                 || Same(only, platform))
+                                                && (needs is not { } right || MayReceive(allowed, sub.MemberId, right)));
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
             _log?.Warn(LogSource, $"Could not send a {topic} update to mods: {ex.Message}");
         }
+    }
+
+    private bool MayReceive(Dictionary<Guid, bool> cache, Guid memberId, PortalPermission right)
+    {
+        if (!cache.TryGetValue(memberId, out var may))
+            cache[memberId] = may = _directory.Member(memberId) is { Suspended: false } member && PortalPolicy.Has(_directory.RoleOf(member), right);
+        return may;
     }
 
     private static string? CheckPlatformParam(JsonObject parameters)
@@ -459,6 +728,59 @@ public sealed class PortalChat : IDisposable
         return node;
     }
 
+    /// <summary>A held message for the portal. Text only, like chat lines.</summary>
+    private static JsonObject Held(HeldChatMessage h) => new()
+    {
+        ["platform"] = h.Platform,
+        ["id"] = h.Id,
+        ["userId"] = Limit(h.UserId, 100),
+        ["user"] = Limit(h.UserName, 100),
+        ["login"] = Limit(h.UserLogin, 100),
+        ["text"] = Limit(h.Text, MaxTextLength),
+        ["reason"] = Limit(h.Reason, 200),
+        ["heldAt"] = h.HeldAt,
+        ["status"] = h.Status.ToString(),
+        ["decidedBy"] = Limit(h.DecidedBy, 100),
+    };
+
+    /// <summary>Shield Mode, or null while Cuebot does not know it yet.</summary>
+    private static JsonObject? Shield(ShieldModeState? s)
+    {
+        if (s is null) return null;
+        var node = new JsonObject { ["active"] = s.IsActive, ["moderator"] = Limit(s.ModeratorName, 100) };
+        if (s.Since is { } since) node["since"] = since;
+        return node;
+    }
+
+    private static JsonObject Suspicious(SuspiciousUserInfo s) => new()
+    {
+        ["level"] = s.Level.ToString(),
+        ["user"] = Limit(s.UserName, 100),
+        ["why"] = Limit(s.Why, 300),
+        ["moderator"] = Limit(s.ModeratorName, 100),
+    };
+
+    private static JsonObject Unban(UnbanRequestInfo r) => new()
+    {
+        ["platform"] = r.Platform,
+        ["id"] = r.Id,
+        ["userId"] = Limit(r.UserId, 100),
+        ["user"] = Limit(r.UserName, 100),
+        ["login"] = Limit(r.UserLogin, 100),
+        ["text"] = Limit(r.Text, MaxTextLength),
+        ["createdAt"] = r.CreatedAt,
+        ["status"] = r.Status.ToString(),
+        ["resolvedBy"] = Limit(r.ResolvedBy, 100),
+        ["resolutionText"] = Limit(r.ResolutionText, MaxReasonLength),
+    };
+
+    private static JsonObject Term(BlockedTermInfo t) => new()
+    {
+        ["platform"] = t.Platform,
+        ["id"] = t.Id,
+        ["text"] = Limit(t.Text, MaxTermLength),
+    };
+
     private static JsonArray RoleNames(ChatRoles roles) => new([.. Enum.GetValues<ChatRoles>()
         .Where(r => r != ChatRoles.None && roles.HasFlag(r)).Select(r => (JsonNode)r.ToString())]);
 
@@ -479,6 +801,8 @@ public sealed class PortalChat : IDisposable
 
     private static string Str(JsonObject o, string name) =>
         o[name] is JsonValue v && v.GetValueKind() == JsonValueKind.String ? v.GetValue<string>() : "";
+
+    private static bool Bool(JsonObject o, string name) => o[name] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
 
     private static int? Int(JsonObject o, string name) => o[name] switch
     {
@@ -506,8 +830,10 @@ public sealed class PortalChat : IDisposable
             _hub.ModerationSeen -= OnModeration;
         }
         if (_moderation?.Log is { } modLog) modLog.Changed -= OnLogRow;
+        if (_moderation is not null) _moderation.QueuesChanged -= OnQueuesChanged;
         if (_moderation?.Permissions is PortalModerationPermissions) _moderation.Permissions = null;
         _push?.Unregister(ChatTopic);
         _push?.Unregister(LogTopic);
+        _push?.Unregister(QueueTopic);
     }
 }

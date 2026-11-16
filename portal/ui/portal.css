@@ -212,3 +212,16 @@ a.button { display: inline-block; padding: .4rem .8rem; border: 1px solid var(--
 .chat-page.popout .chat-lines { height: auto; flex: 1; min-height: 0; }
 .chat-page.popout .user-card { top: 1rem; }
 @media (max-width: 760px) { .chat-lines { height: 65vh; } .user-card { top: auto; height: 75vh; } }
+.status-problem { color: var(--danger); }
+.chip.count { color: var(--accent-text); background: var(--warn); }
+.held-lane { margin-bottom: .75rem; max-height: 40vh; overflow-y: auto; }
+.held-lane h2, .mod-tools h2 { font-size: 1rem; margin: 0 0 .4rem; }
+.held-lane .rows li, .unban-requests .rows li, .blocked-terms .rows li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .5rem; }
+.held-lane .row-buttons, .unban-requests .row-buttons { margin-left: auto; }
+.held-lane summary { cursor: pointer; }
+.mod-tools { display: grid; gap: .75rem; }
+.mod-tools h3 { font-size: .95rem; margin: .8rem 0 .4rem; }
+.unban-requests .reason { flex: 1 1 100%; }
+.blocked-terms form { margin-left: 0; }
+.blocked-terms form input { flex: 1 1 12rem; }
+.blocked-terms .rows li button { margin-left: auto; }
