@@ -16,3 +16,4 @@ polls and save funny quotes. They live under **Chat** in the left rail, and they
 - [Credits](credits.md): a thank-you list that scrolls at the end of your stream.
 - [Top spenders](top-spenders.md): see and show who supported you the most.
 - [Users and groups](users-and-groups.md): the viewers Cuebot knows, and groups that get special rights.
+- [Moderating your chat](moderation.md): delete, time out, ban, warn and chat modes on every platform, and the mod log.

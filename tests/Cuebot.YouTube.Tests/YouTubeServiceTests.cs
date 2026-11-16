@@ -270,6 +270,90 @@ public sealed class YouTubeServiceTests : IAsyncLifetime
         Assert.DoesNotContain(_http.Requests, r => r.Query("forHandle").Length > 0);
     }
 
+    private const string SecondBroadcast = """
+        {"id":"b2","snippet":{"title":"Second camera","description":"d","liveChatId":"chat2","channelId":"UCownerownerownerowner01",
+          "actualStartTime":"2026-03-10T16:00:00Z"},"status":{"lifeCycleStatus":"live","privacyStatus":"public"}}
+        """;
+
+    [Fact]
+    public async Task With_two_broadcasts_bans_go_to_the_chat_the_message_came_from_and_unban_uses_the_stored_id()
+    {
+        _active = LiveBroadcast + "," + SecondBroadcast;
+        _chatPages.Enqueue(Page("p1", 0, Text("old", "history")));
+        await _service.ConnectAsync();
+        await Wait.UntilAsync(() => _service.MonitoredBroadcasts.Count == 2, "both broadcasts monitored");
+        Assert.Equal("b1", _service.LatestBroadcast!.Id);
+        var moderator = new YouTubeChatModerator(_service);
+
+        var timeout = await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Timeout)
+        {
+            UserId = Alice, ChannelId = "chat2", Duration = TimeSpan.FromSeconds(90),
+        });
+        var ban = await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Ban)
+        {
+            UserId = Alice, ChannelId = "chat2",
+        });
+        var bans = _http.To("/liveChat/bans").Where(r => r.Method == HttpMethod.Post).ToArray();
+        Assert.All(bans, b => Assert.Equal("chat2", b.Json.GetProperty("snippet").GetProperty("liveChatId").GetString()));
+        Assert.Equal((TimeSpan.FromSeconds(90), "BAN-ID"), (timeout.AppliedDuration, ban.PlatformRef));
+
+        // An ended chat is refused instead of banning in another broadcast.
+        var gone = await Assert.ThrowsAsync<InvalidOperationException>(() => moderator.ExecuteAsync(
+            new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Ban) { UserId = Alice, ChannelId = "chat-old" }));
+        Assert.Contains("no longer monitored", gone.Message);
+
+        // After a restart the in-memory ban ids are gone; the id from the mod log still lifts the ban.
+        var unban = await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Unban)
+        {
+            UserId = Bob, PlatformRef = "LOGGED-BAN",
+        });
+        Assert.True(unban.Ok);
+        Assert.Contains(_http.To("/liveChat/bans"), r => r.Method == HttpMethod.Delete && r.Query("id") == "LOGGED-BAN");
+        var unknown = await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Unban)
+        {
+            UserId = Bob,
+        });
+        Assert.False(unknown.Ok);
+        Assert.Contains("YouTube Studio", unknown.Error);
+    }
+
+    [Fact]
+    public async Task Capabilities_show_quota_costs_website_tools_and_soft_warnings()
+    {
+        var moderator = new YouTubeChatModerator(_service);
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ModerationToolState.NotAvailable, moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Ban).State);
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ModerationToolState.OnWebsite, moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.SlowMode).State);
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ModerationToolState.NotAvailable, moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Clear).State);
+
+        await ConnectLiveAsync();
+        var ban = moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Ban);
+        Assert.Equal((Cuebot.Core.Chat.Moderation.ModerationToolState.Works, Api.QuotaCosts.LiveChatBansInsert), (ban.State, ban.QuotaCost));
+        Assert.Equal("https://studio.youtube.com/video/b1/livestreaming", moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Pin).WebsiteUrl);
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ModerationToolState.Closest, moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Warn).State);
+
+        Assert.True((await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Warn)
+        {
+            UserName = "Alice", Reason = "no links please", ChannelId = "chat1",
+        })).Ok);
+        var post = _http.To("/liveChat/messages").Last(r => r.Method == HttpMethod.Post);
+        Assert.Equal("@Alice Warning from the mods: no links please",
+            post.Json.GetProperty("snippet").GetProperty("textMessageDetails").GetProperty("messageText").GetString());
+    }
+
+    [Fact]
+    public void Messages_carry_their_live_chat_and_messages_without_an_id_cannot_be_deleted()
+    {
+        var adapter = new YouTubeChatAdapter();
+        var message = adapter.ToChatMessage(new BotEvent(YouTubeEventTypes.ChatMessage, new Dictionary<string, object?>
+        {
+            ["messageId"] = "m1", ["user"] = "Alice", ["userId"] = Alice, ["message"] = "hi", ["liveChatId"] = "chat2",
+        }))!;
+        Assert.Equal(("chat2", true), (message.ChannelId, message.CanDelete));
+        var noId = adapter.ToChatMessage(new BotEvent(YouTubeEventTypes.ChatMessage, new Dictionary<string, object?> { ["user"] = "Alice", ["message"] = "hi" }))!;
+        Assert.False(noId.CanDelete);
+        Assert.NotEmpty(noId.Id);
+    }
+
     [Fact]
     public async Task Unknown_names_are_looked_up_by_handle()
     {

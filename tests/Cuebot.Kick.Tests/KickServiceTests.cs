@@ -439,6 +439,64 @@ public sealed class KickServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Moderator_v2_rounds_timeouts_up_to_whole_minutes_and_sends_other_tools_to_the_website()
+    {
+        var moderator = new KickChatModerator(_service);
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ModerationToolState.NotAvailable, moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Ban).State);
+        await ConnectAsync();
+        Assert.Contains("allow moderation", moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Ban).Note);
+        _settings.Value.Broadcaster.Scopes = [Auth.KickScopes.ModerationBan, Auth.KickScopes.ModerationChat, Auth.KickScopes.ChatWrite];
+        _settings.Value.ChannelSlug = "streamer";
+
+        var timeout = moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Timeout);
+        Assert.Equal((Cuebot.Core.Chat.Moderation.ModerationToolState.Closest, 100), (timeout.State, timeout.MaxReasonLength));
+        Assert.Equal(TimeSpan.FromMinutes(10), timeout.Apply(TimeSpan.FromSeconds(570)));
+        Assert.Equal(TimeSpan.FromDays(7), timeout.Apply(TimeSpan.FromDays(9)));
+        var slow = moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.SlowMode);
+        Assert.Equal((Cuebot.Core.Chat.Moderation.ModerationToolState.OnWebsite, "https://kick.com/streamer"), (slow.State, slow.WebsiteUrl));
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ModerationToolState.OnWebsite, moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Clear).State);
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ModerationToolState.Works, moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Unban).State);
+
+        var outcome = await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Timeout)
+        {
+            UserId = "12345", Duration = TimeSpan.FromSeconds(570), Reason = "calm down",
+        });
+        Assert.Equal(TimeSpan.FromMinutes(10), outcome.AppliedDuration);
+        var body = Body(_http.Requests.Last(r => r.Path == "/public/v1/moderation/bans"));
+        Assert.Equal((10, "calm down"), (body.GetProperty("duration").GetInt32(), body.GetProperty("reason").GetString()));
+
+        Assert.True((await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Unban)
+        {
+            UserId = "12345",
+        })).Ok);
+        Assert.Equal(HttpMethod.Delete, _http.Requests.Last(r => r.Path == "/public/v1/moderation/bans").Method);
+
+        await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Warn)
+        {
+            UserName = "someone", Reason = "no spoilers",
+        });
+        Assert.Equal("@someone Warning from the mods: no spoilers",
+            Body(_http.Requests.Last(r => r.Path == "/public/v1/chat")).GetProperty("content").GetString());
+
+        var website = await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Clear));
+        Assert.False(website.Ok);
+        Assert.Contains("/clear", website.Error);
+    }
+
+    [Fact]
+    public void Messages_without_a_kick_id_cannot_be_deleted_and_own_accounts_are_protected()
+    {
+        var adapter = new KickChatAdapter();
+        var message = adapter.ToChatMessage(new BotEvent(KickEventTypes.ChatMessage, new Dictionary<string, object?> { ["user"] = "a", ["message"] = "hi" }))!;
+        Assert.False(message.CanDelete);
+        SignedIn();
+        var accounts = new KickProtectedAccounts(_service);
+        Assert.Equal("This is your own Kick account.",
+            accounts.WhyProtected("Kick", _settings.Value.Broadcaster.UserId.ToString(System.Globalization.CultureInfo.InvariantCulture), ""));
+        Assert.Null(accounts.WhyProtected("Kick", "777777", ""));
+    }
+
+    [Fact]
     public async Task Moderation_resolves_users_from_chat_ids_and_kick_lookups()
     {
         var conn = await ConnectAsync();

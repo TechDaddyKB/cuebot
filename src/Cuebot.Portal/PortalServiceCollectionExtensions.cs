@@ -81,7 +81,11 @@ public static class PortalServiceCollectionExtensions
         services.AddSingleton(sp => new PortalApi(sp.GetRequiredService<PortalDirectory>(), sp.GetRequiredService<PortalChanges>(),
             sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<ActionEngine>(),
             sp.GetRequiredService<Registry>(), sp.GetRequiredService<PortalControls>(), sp.GetRequiredService<PortalUploads>(),
-            sp.GetRequiredService<PortalOverlays>(), sp.GetRequiredService<PortalAssistant>(), sp.GetRequiredService<PortalRewards>()));
+            sp.GetRequiredService<PortalOverlays>(), sp.GetRequiredService<PortalAssistant>(), sp.GetRequiredService<PortalRewards>(),
+            sp.GetRequiredService<PortalModeratorCheck>()));
+        services.AddSingleton(sp => new PortalModeratorCheck(sp.GetRequiredService<PortalDirectory>(),
+            sp.GetServices<Cuebot.Core.Chat.Moderation.IChannelRoles>(), sp.GetService<AppLog>()));
+        services.AddSingleton<Cuebot.Core.Chat.Moderation.IProtectedAccounts>(sp => new PortalProtectedAccounts(sp.GetRequiredService<PortalDirectory>()));
         services.AddSingleton<IPortalIdentityExchange>(sp => new PortalIdentityExchange(sp.GetRequiredService<HttpClient>()));
         services.AddSingleton(sp =>
         {

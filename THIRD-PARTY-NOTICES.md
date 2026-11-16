@@ -25,6 +25,9 @@ Each keeps its own license; full license texts are available from the linked pro
 | [Grpc.Net.Client](https://github.com/grpc/grpc-dotnet) | YouTube live chat stream (gRPC) | Apache-2.0 |
 | [Google.Protobuf](https://github.com/protocolbuffers/protobuf) | YouTube live chat stream messages | BSD-3-Clause |
 | YouTube `stream_list.proto` (from Google's [Streaming Live Chat](https://developers.google.com/youtube/v3/live/streaming-live-chat) guide, compiled into the YouTube module) | YouTube live chat stream definition | Apache-2.0 |
+| [Microsoft.Data.Sqlite](https://github.com/dotnet/efcore) | The mod log database (`modlog.db`) | MIT |
+| [SQLitePCLRaw](https://github.com/ericsink/SQLitePCL.raw) (bundle_e_sqlite3, via Microsoft.Data.Sqlite) | SQLite bindings | Apache-2.0 |
+| [SQLite](https://sqlite.org) (native e_sqlite3 library inside SQLitePCLRaw) | The mod log database | Public domain |
 | [BouncyCastle.Cryptography](https://github.com/bcgit/bc-csharp) | Ed25519 verification of Throne webhooks | MIT |
 | [SDL3](https://github.com/libsdl-org/SDL) (native SDL3.dll / libSDL3.so) | Game-controller input | zlib; the HIDAPI code built into it: BSD-style or the original HIDAPI licence, at your choice |
 | [ppy.SDL3-CS](https://github.com/ppy/SDL3-CS) (only the prebuilt SDL3 native libraries from this package are shipped) | Packaging of the SDL3 builds | MIT |

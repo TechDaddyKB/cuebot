@@ -132,11 +132,13 @@ public sealed class AppHost : IAsyncDisposable
         log.Info("Cuebot", $"Stored sign-ins and keys are encrypted (key kept by the {Cuebot.Core.Storage.SecretStore.For(Get<AppPaths>().Root).ProtectorName})");
         var pruned = Cuebot.Core.Storage.DataRetention.PruneDataFolder(Get<AppPaths>(), DateTime.Now);
         if (pruned > 0) log.Info("Cuebot", $"Deleted {pruned} report(s) and cached image(s) older than {Cuebot.Core.Storage.DataRetention.KeepDays} days");
+        PruneModLog(log);
 
         WireKickEvents();   // before Kick and the portal relay start, so the first connection already registers
 
         await Task.WhenAll(
             StartSafely(log, "Twitch", () => Get<TwitchService>().StartAsync()),
+            StartSafely(log, "Portal", () => Get<Cuebot.Portal.Members.PortalModeratorCheck>().StartAsync()),
             StartSafely(log, "OBS", () => Get<ObsService>().StartAsync()),
             StartSafely(log, "Rumble", () => Get<RumbleService>().StartAsync()),
             StartSafely(log, "YouTube", () => Get<Cuebot.YouTube.YouTubeService>().StartAsync()),
@@ -216,6 +218,21 @@ public sealed class AppHost : IAsyncDisposable
         portal.KickRouteWanted = () => kick.WantsSharedEvents;
         portal.KickRouteStatusChanged += kick.SetSharedEventsStatus;
         kick.SharedEventsChanged += () => _ = portal.RefreshKickRouteAsync();
+    }
+
+    /// <summary>Applies the mod log's retention once at start; a broken or newer database is logged, never fatal.</summary>
+    private void PruneModLog(AppLog log)
+    {
+        try
+        {
+            var moderation = GetAll<Cuebot.Core.Chat.Moderation.ModerationService>().FirstOrDefault();
+            var changed = moderation?.ApplyRetention(DateTimeOffset.UtcNow) ?? 0;
+            if (changed > 0) log.Info("Moderation", $"Blanked personal details in {changed} old mod log row(s)");
+        }
+        catch (Exception ex)
+        {
+            log.Error("Moderation", "Could not open or prune the mod log", ex);
+        }
     }
 
     private static async Task StartSafely(AppLog log, string name, Func<Task> start)

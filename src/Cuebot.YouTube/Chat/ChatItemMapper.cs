@@ -231,6 +231,8 @@ internal static class ChatItemMapper
             ["messageId"] = deletedId,
             ["userId"] = target?.UserId ?? "",
             ["user"] = target?.UserName ?? "",
+            ["moderator"] = args["moderator"],
+            ["liveChatId"] = ctx.LiveChatId,
         };
         return new ChatItemResult([
             new BotEvent(YouTubeEventTypes.MessageDeleted, args),
@@ -260,6 +262,8 @@ internal static class ChatItemMapper
             ["userId"] = banned.Str("channelId"),
             ["user"] = banned.Str("displayName"),
             ["userName"] = banned.Str("displayName"),
+            ["moderator"] = args["moderator"],
+            ["liveChatId"] = ctx.LiveChatId,
         };
         if (temporary) neutral["duration"] = duration;
         return new ChatItemResult([

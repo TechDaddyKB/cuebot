@@ -55,6 +55,9 @@ public sealed class RumbleServiceTests : IAsyncLifetime
         "chat.test" when r.Path.EndsWith("/stream", StringComparison.Ordinal) =>
             _chatConnections.TryDequeue(out var stream) ? stream.Response() : new HttpResponseMessage(HttpStatusCode.NoContent),
         "chat.test" when r.Path.EndsWith("/message", StringComparison.Ordinal) => FakeHttpHandler.Json("""{"data":{"id":"99"}}"""),
+        "chat.test" when r.Method == HttpMethod.Delete => new HttpResponseMessage(HttpStatusCode.OK),
+        "site.test" when r.Uri.Query == "?name=moderation.mute" => FakeHttpHandler.Json(
+            r.Body.Contains("user_to_mute=Refused", StringComparison.Ordinal) ? """{"data":{"success":false}}""" : """{"data":{"success":true}}"""),
         _ => new HttpResponseMessage(HttpStatusCode.NotFound),
     };
 
@@ -127,6 +130,66 @@ public sealed class RumbleServiceTests : IAsyncLifetime
         await SettleAsync();
         Assert.Single(Events(RumbleEventTypes.StreamOnline));
         Assert.Single(Events(RumbleEventTypes.StreamOffline));
+    }
+
+    [Fact]
+    public async Task Moderation_is_read_only_by_default_and_uses_the_unofficial_addresses_only_when_turned_on()
+    {
+        var moderator = new RumbleChatModerator(_service);
+        var chat = ChatConnection();
+        _apiJson = TestData.Read("live-stream-api-live.json");
+        await _service.ConnectAsync();
+        chat.SendData(TestData.Read("chat-init.json").ReplaceLineEndings(""));
+        await Wait.UntilAsync(() => _service.IsChatAttached, "chat attached");
+
+        // Deleted messages (by a mod on Rumble's website) are published, also in the neutral form the combined chat reads.
+        chat.SendData("""{"type":"delete_messages","data":{"message_ids":[4, "7"]}}""");
+        await Wait.UntilAsync(() => Events("chat.messageDeleted").Count == 2, "deletions");
+        Assert.Equal(["4", "7"], Events(RumbleEventTypes.MessageDeleted).Select(e => e.Args["messageId"]));
+        Assert.All(Events("chat.messageDeleted"), e => Assert.Equal("Rumble", e.Args["platform"]));
+
+        // Off (the default): every tool opens Rumble's pages, nothing is sent.
+        var ban = moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Ban);
+        Assert.Equal((Cuebot.Core.Chat.Moderation.ModerationToolState.OnWebsite, $"https://rumble.com/chat/popup/{ChatId}"), (ban.State, ban.WebsiteUrl));
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ChatModerationActions.None, moderator.Available);
+        var refused = await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Delete) { MessageId = "4" });
+        Assert.False(refused.Ok);
+        Assert.Equal("https://site.test/account/moderation/muting", moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Unban).WebsiteUrl);
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ModerationToolState.NotAvailable, moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Warn).State);
+
+        // On, and signed in to chat: delete and mute (5 minutes, this stream, permanent).
+        _settings.Value.UnofficialModeration = true;
+        Assert.Contains("Sign in to Rumble chat", moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Delete).Note);
+        _settings.Value.SessionCookie = "tok";
+        Assert.Equal(Cuebot.Core.Chat.Moderation.ModerationToolState.Works, moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Delete).State);
+        var timeout = moderator.Capability(Cuebot.Core.Chat.Moderation.ModerationAction.Timeout);
+        Assert.Equal((Cuebot.Core.Chat.Moderation.ModerationToolState.Closest, TimeSpan.FromMinutes(5)), (timeout.State, timeout.Apply(TimeSpan.FromSeconds(30))));
+
+        Assert.True((await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Delete) { MessageId = "4" })).Ok);
+        var delete = Assert.Single(_http.Requests, r => r.Method == HttpMethod.Delete);
+        Assert.Equal(($"/chat/api/chat/{ChatId}/message/4", "u_s=tok"), (delete.Path, delete.Cookie));
+
+        var muted = await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Timeout)
+        {
+            UserName = "Zed", Duration = TimeSpan.FromMinutes(1),
+        });
+        Assert.Equal(TimeSpan.FromMinutes(5), muted.AppliedDuration);
+        await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Timeout)
+        {
+            UserName = "Zed", Duration = TimeSpan.FromHours(1),
+        });
+        await moderator.ExecuteAsync(new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Ban) { UserName = "@Zed" });
+        var mutes = _http.Requests.Where(r => r.Uri.Query == "?name=moderation.mute").Select(r => r.Body).ToArray();
+        Assert.Equal(
+        [
+            $"user_to_mute=Zed&entity_type=user&video={ChatId}&type=video&duration=300",
+            $"user_to_mute=Zed&entity_type=user&video={ChatId}&type=video",
+            $"user_to_mute=Zed&entity_type=user&video={ChatId}&type=total",
+        ], mutes);
+        Assert.All(_http.Requests.Where(r => r.Uri.Query == "?name=moderation.mute"), r => Assert.Equal("u_s=tok", r.Cookie));
+
+        await Assert.ThrowsAsync<RumbleApiException>(() => moderator.ExecuteAsync(
+            new Cuebot.Core.Chat.Moderation.ModerationRequest(Cuebot.Core.Chat.Moderation.ModerationAction.Ban) { UserName = "Refused" }));
     }
 
     [Fact]

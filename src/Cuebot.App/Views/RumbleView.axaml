@@ -54,6 +54,18 @@
             <Button Content="Sign out" Command="{Binding SignOutCommand}" IsVisible="{Binding IsSignedIn}" ToolTip.Tip="Forgets the Rumble login. Cuebot can still read chat but can no longer post." />
           </StackPanel>
         </Border>
+
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h2" Text="Moderation (experimental)" />
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Rumble has no official way for programs to moderate chat. Normally the Delete, Timeout and Ban buttons on the Chat page open your Rumble chat so you do it there." />
+            <CheckBox x:Name="UnofficialModerationBox" Content="Rumble moderation through unofficial endpoints" IsChecked="{Binding UnofficialModeration}"
+                      ToolTip.Tip="Ticked: Cuebot deletes messages and mutes viewers on Rumble itself, using your chat sign-in. Unticked: the buttons open Rumble's own pages." />
+            <TextBlock TextWrapping="Wrap" Foreground="#E5534B"
+                       Text="Warning: Rumble's terms do not allow automated use of its website without Rumble's written permission. Rumble could act against your account, and these addresses can change without notice. Use it at your own risk. A timeout becomes a 5-minute mute (or a mute until the stream ends for anything longer), a ban a permanent mute. Unmute viewers on Rumble's website." />
+          </StackPanel>
+        </Border>
       </c:CardColumns>
     </StackPanel>
   </ScrollViewer>

@@ -18,11 +18,15 @@ internal sealed record ChatStreamMessage(
 
 /// <summary>
 /// A decoded chat stream event. "init" (sent on every connect, with recent history) and "messages" carry
-/// messages; other types (deletions, pins, ...) carry none and are only reported by type.
+/// messages; "delete_messages" and "delete_non_rant_messages" carry the ids of deleted messages
+/// (<see cref="DeletedIds"/>); other types (pins, ...) carry none and are only reported by type.
 /// </summary>
 internal sealed record ChatStreamBatch(string Type, IReadOnlyList<ChatStreamMessage> Messages)
 {
     public const string Init = "init";
+
+    /// <summary>Messages a moderator deleted (ids as text; Rumble may send them as numbers).</summary>
+    public IReadOnlyList<string> DeletedIds { get; init; } = [];
 }
 
 /// <summary>
@@ -48,13 +52,28 @@ internal sealed class ChatStreamDecoder
             var data = root.Child("data") ?? default;
             Remember(_users, data.Items("users"));
             Remember(_channels, data.Items("channels"));
-            return new ChatStreamBatch(type, data.Items("messages").Select(ToMessage).Where(m => m.Text.Length > 0).ToArray());
+            return new ChatStreamBatch(type, data.Items("messages").Select(ToMessage).Where(m => m.Text.Length > 0).ToArray())
+            {
+                DeletedIds = type is "delete_messages" or "delete_non_rant_messages" ? DeletedIdsOf(data) : [],
+            };
         }
         catch (JsonException)
         {
             return null;
         }
     }
+
+    private static string[] DeletedIdsOf(JsonElement data) =>
+        data.ValueKind == JsonValueKind.Object && data.TryGetProperty("message_ids", out var ids) && ids.ValueKind == JsonValueKind.Array
+            ? ids.EnumerateArray()
+                .Select(id => id.ValueKind switch
+                {
+                    JsonValueKind.String => id.GetString() ?? "",
+                    JsonValueKind.Number => id.GetRawText(),
+                    _ => "",
+                })
+                .Where(id => id.Length > 0).ToArray()
+            : [];
 
     private static void Remember(Dictionary<string, Author> authors, IEnumerable<JsonElement> items)
     {

@@ -371,6 +371,46 @@ public sealed class YouTubeService : IConnectable, IAsyncDisposable, Cuebot.Core
     public Task TimeoutUserAsync(string user, int seconds, string? broadcastId = null, CancellationToken ct = default) =>
         BanAsync(user, Math.Max(1, seconds), broadcastId, ct);
 
+    /// <summary>
+    /// Bans (<paramref name="seconds"/> null) or times out a user in the chat <paramref name="liveChatId"/> (the chat their
+    /// message came from; the latest broadcast's when null). Returns YouTube's ban id, which the mod log keeps: it is the
+    /// only way to lift the ban later.
+    /// </summary>
+    public async Task<string> BanInChatAsync(string user, int? seconds, string? liveChatId, CancellationToken ct = default)
+    {
+        var chat = RequireChat(liveChatId).LiveChatId;
+        var (channelId, _) = await ResolveUserAsync(user, ct).ConfigureAwait(false);
+        var banId = await _api.BanAsync(_broadcaster, chat, channelId, seconds is { } s ? Math.Max(1, s) : null, ct).ConfigureAwait(false);
+        if (banId.Length > 0) lock (_banIds) _banIds[channelId] = banId;
+        return banId;
+    }
+
+    /// <summary>
+    /// Lifts a ban or timeout by YouTube's ban id (from the mod log), or, without one, one Cuebot placed during this
+    /// session.
+    /// </summary>
+    public async Task UnbanAsync(string user, string? banId, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(banId))
+        {
+            await UnbanUserAsync(user, ct).ConfigureAwait(false);
+            return;
+        }
+        RequireConnected();
+        await _api.UnbanAsync(_broadcaster, banId.Trim(), ct).ConfigureAwait(false);
+        lock (_banIds)
+            foreach (var key in _banIds.Where(b => b.Value == banId).Select(b => b.Key).ToArray()) _banIds.Remove(key);
+    }
+
+    /// <summary>The broadcast whose chat is <paramref name="liveChatId"/>, or null when it is not monitored (any more).</summary>
+    public YouTubeBroadcast? BroadcastForChat(string? liveChatId) =>
+        string.IsNullOrWhiteSpace(liveChatId) ? null : MonitoredBroadcasts.FirstOrDefault(b => b.LiveChatId == liveChatId.Trim());
+
+    /// <summary>
+    /// Units moderation must leave unspent today (for reading chat and the rest), from <see cref="YouTubeSettings.ModerationQuotaReserve"/>.
+    /// </summary>
+    public int ModerationQuotaReserve => Math.Max(0, Settings.ModerationQuotaReserve);
+
     /// <summary>Lifts a ban or timeout that Cuebot placed during this session (YouTube needs the ban's id to lift it).</summary>
     public async Task UnbanUserAsync(string user, CancellationToken ct = default)
     {
@@ -495,6 +535,15 @@ public sealed class YouTubeService : IConnectable, IAsyncDisposable, Cuebot.Core
         var (channelId, _) = await ResolveUserAsync(user, ct).ConfigureAwait(false);
         var banId = await _api.BanAsync(_broadcaster, chat, channelId, seconds, ct).ConfigureAwait(false);
         if (banId.Length > 0) lock (_banIds) _banIds[channelId] = banId;
+    }
+
+    /// <summary>The broadcast with this live chat, or the latest one when no chat is given.</summary>
+    private YouTubeBroadcast RequireChat(string? liveChatId)
+    {
+        if (string.IsNullOrWhiteSpace(liveChatId)) return RequireBroadcast(null);
+        if (_connection is null) throw new InvalidOperationException("YouTube is not connected.");
+        return BroadcastForChat(liveChatId)
+            ?? throw new InvalidOperationException("The chat this message came from has ended or is no longer monitored.");
     }
 
     private YouTubeBroadcast RequireBroadcast(string? broadcastId)

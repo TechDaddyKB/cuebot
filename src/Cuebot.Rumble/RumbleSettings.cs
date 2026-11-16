@@ -22,4 +22,12 @@ public sealed class RumbleSettings
 
     /// <summary>Username the session belongs to; empty when not signed in.</summary>
     public string SignedInUser { get; set; } = "";
+
+    /// <summary>
+    /// Off by default. When on, Cuebot deletes messages and mutes viewers on Rumble through the same unofficial web
+    /// addresses Rumble's own chat uses, with the chat sign-in above. Rumble's terms forbid automated use without
+    /// Rumble's written permission, and the addresses can change without notice: the streamer's account carries the
+    /// risk. Off, the moderation buttons open Rumble's own pages instead.
+    /// </summary>
+    public bool UnofficialModeration { get; set; }
 }

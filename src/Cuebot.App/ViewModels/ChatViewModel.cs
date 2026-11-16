@@ -86,8 +86,18 @@ public sealed partial class ChatLineViewModel : ObservableObject
     public IBrush HighlightBrush => PlatformColors.Highlight(Highlight.Kind);
     public string? HighlightReason => Highlight.IsHighlighted ? Highlight.Reason : null;
 
-    /// <summary>Set after a successful delete from the actions menu.</summary>
+    /// <summary>Set after a successful delete, from Cuebot or reported by the platform (a mod on the website).</summary>
     [ObservableProperty] private bool _isDeleted;
+
+    /// <summary>"banned", "timed out for 10 min": set when the platform reports the author was actioned.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasActionNote))]
+    private string? _actionNote;
+
+    public bool HasActionNote => !string.IsNullOrEmpty(ActionNote);
+
+    /// <summary>False when the platform gave the message no id of its own, so it cannot be deleted.</summary>
+    public bool CanDelete => Message.CanDelete && !IsDeleted;
 
     /// <summary>Top-level emote segments (overlays hang off them).</summary>
     public IEnumerable<EmoteSegment> Emotes => Segments.OfType<EmoteSegment>();
@@ -150,12 +160,16 @@ public sealed partial class ChatViewModel : PageViewModel
     private readonly ChatPageServices _services;
     private readonly ChatPageSettings _settings;
     private readonly List<ChatMessage> _all = [];
+    private readonly ModerationService? _moderation;
 
     public ChatViewModel(ChatHub hub, ChatPageServices? services = null) : base("Chat")
     {
         _hub = hub;
         _services = services ?? new ChatPageServices();
         _settings = _services.Settings?.Value ?? new ChatPageSettings();
+        // One way into moderation (permission, safety, log); a page given only the platform lookup gets one without a log.
+        _moderation = _services.ModerationActions
+                      ?? (_services.Moderation is { } lookup ? new ModerationService(lookup) : null);
         PlatformFilters = [ChatHub.AllPlatforms, .. hub.Platforms];
         PlatformChips.Add(ChatHub.AllPlatforms);
         SendTargets = [ChatHub.AllPlatforms, .. hub.Platforms];
@@ -171,6 +185,13 @@ public sealed partial class ChatViewModel : PageViewModel
         // published, before the emote service has indexed that event's emote arguments.
         hub.MessageReceived += m => Avalonia.Threading.Dispatcher.UIThread.Post(() => AddLine(m));
         hub.FeedItemAdded += f => OnUi(() => AddFeed(f));
+        hub.ModerationSeen += n => OnUi(() => ApplyNotice(n));
+        if (_moderation?.Log is { } log)
+        {
+            foreach (var entry in log.Recent(MaxLogLines).Reverse()) AddLogLine(entry);
+            log.Changed += e => OnUi(() => AddLogLine(e));
+        }
+        RefreshSendAs();
         if (_services.Emotes is { } emotes)
         {
             emotes.EnsureStarted();
@@ -227,6 +248,7 @@ public sealed partial class ChatViewModel : PageViewModel
         if (value != ChatHub.AllPlatforms) AddPlatformChip(value);
         Messages.Clear();
         foreach (var m in _all.Where(Visible)) Messages.Add(CreateLine(m));
+        RebuildTools();
     }
 
     partial void OnSelectedLineChanged(ChatLineViewModel? value)
@@ -235,11 +257,25 @@ public sealed partial class ChatViewModel : PageViewModel
         ConfirmingBan = false;
         RefreshUserLines();
         OnPropertyChanged(nameof(HasSelectedLine));
+        RefreshModeration();
+    }
+
+    /// <summary>
+    /// Re-reads what each platform offers (connections and sign-ins change) and rebuilds the tool buttons. Called when the
+    /// selection or the filter changes; tests call it after changing a fake platform.
+    /// </summary>
+    public void RefreshModeration()
+    {
         OnPropertyChanged(nameof(CanDeleteSelected));
         OnPropertyChanged(nameof(CanTimeoutSelected));
         OnPropertyChanged(nameof(CanBanSelected));
         OnPropertyChanged(nameof(ModerationHint));
+        OnPropertyChanged(nameof(TimeoutNote));
+        OnPropertyChanged(nameof(HasTimeoutNote));
         DeleteSelectedCommand.NotifyCanExecuteChanged();
+        RebuildTools();
+        RefreshUserLog();
+        RefreshSendAs();
     }
 
     // ---------------------------------------------------------------- user details (right pane)
@@ -249,19 +285,197 @@ public sealed partial class ChatViewModel : PageViewModel
     /// <summary>The selected chatter's recent messages on that platform, newest first.</summary>
     public ObservableCollection<ChatLineViewModel> UserLines { get; } = [];
 
-    private ChatModerationActions SelectedModeration =>
-        SelectedLine is { } line ? _services.Moderation?.AvailableFor(line.Platform) ?? ChatModerationActions.None : ChatModerationActions.None;
+    /// <summary>What a tool does on the platform of <paramref name="line"/> (not available without moderation).</summary>
+    private ModerationCapability CapabilityFor(string platform, ModerationAction action) =>
+        _moderation?.Capability(platform, action) ?? ModerationCapability.NotAvailable(action, "Moderation is not available here.");
 
-    public bool CanDeleteSelected => SelectedModeration.HasFlag(ChatModerationActions.DeleteMessage)
-                                     && SelectedLine is { IsDeleted: false, Message.Id.Length: > 0 };
-    public bool CanTimeoutSelected => SelectedModeration.HasFlag(ChatModerationActions.Timeout) && SelectedLine is { } line && CanPunish(line);
-    public bool CanBanSelected => SelectedModeration.HasFlag(ChatModerationActions.Ban) && SelectedLine is { } line && CanPunish(line);
+    private bool Runs(ChatLineViewModel? line, ModerationAction action) => line is not null && CapabilityFor(line.Platform, action).CanRun;
+
+    public bool CanDeleteSelected => Runs(SelectedLine, ModerationAction.Delete) && SelectedLine is { CanDelete: true, Message.Id.Length: > 0 };
+    public bool CanTimeoutSelected => Runs(SelectedLine, ModerationAction.Timeout) && SelectedLine is { } line && CanPunish(line);
+    public bool CanBanSelected => Runs(SelectedLine, ModerationAction.Ban) && SelectedLine is { } line && CanPunish(line);
 
     /// <summary>Why the pane offers no Timeout/Ban for the selected line, or "" when it does (or nothing is selected).</summary>
     public string ModerationHint =>
         SelectedLine is not { } line || CanTimeoutSelected || CanBanSelected ? ""
         : !CanPunish(line) ? "This is the broadcaster's own message: they can't be timed out or banned in their own chat."
-        : "This platform offers no moderation from Cuebot right now.";
+        : CapabilityFor(line.Platform, ModerationAction.Ban) is { State: ModerationToolState.OnWebsite } web
+            ? $"{line.Platform}: {web.Note} The buttons below open the page."
+            : "This platform offers no moderation from Cuebot right now.";
+
+    /// <summary>
+    /// The duration a timeout really gets on the selected platform when it differs ("Kick: 1 min, rounded up from 30 s"),
+    /// shown under the timeout buttons; empty when the platform applies what is asked.
+    /// </summary>
+    public string TimeoutNote
+    {
+        get
+        {
+            if (SelectedLine is not { } line || !CanTimeoutSelected || _moderation is null) return "";
+            var notes = TimeoutChoices.Select(t => _moderation.PreviewDuration(line.Platform, t).Note).Where(n => n.Length > 0).ToArray();
+            return string.Join(". ", notes);
+        }
+    }
+
+    public bool HasTimeoutNote => TimeoutNote.Length > 0;
+
+    /// <summary>The timeout buttons' lengths.</summary>
+    internal static readonly TimeSpan[] TimeoutChoices = [TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(10)];
+
+    /// <summary>Reason for timeouts, bans and warnings (optional; members' reasons get their name in front on Twitch and Kick).</summary>
+    [ObservableProperty] private string _modReason = "";
+
+    // ---------------------------------------------------------------- moderation tools
+
+    /// <summary>Tools about the selected person: unban and warn, for their platform.</summary>
+    public ObservableCollection<ModToolViewModel> UserTools { get; } = [];
+
+    /// <summary>Tools for the whole chat (clear, slow, followers-only, subscribers-only, emote-only) of <see cref="ToolPlatform"/>.</summary>
+    public ObservableCollection<ModToolViewModel> ChannelTools { get; } = [];
+
+    public bool HasChannelTools => ChannelTools.Count > 0;
+
+    /// <summary>The selected message's platform, else the filtered platform; null shows no chat tools.</summary>
+    public string? ToolPlatform => SelectedLine?.Platform ?? (Filter != ChatHub.AllPlatforms ? Filter : null);
+
+    /// <summary>"YouTube quota: 7,400 left today, 2,000 kept for reading chat" for a platform that charges one.</summary>
+    public string QuotaText =>
+        ToolPlatform is { } p && _moderation?.QuotaFor(p) is { } q
+            ? string.Format(System.Globalization.CultureInfo.CurrentCulture, "{0} quota: {1:N0} units left today, {2:N0} kept for reading chat.",
+                q.Platform, q.Remaining, q.Reserve)
+            : "";
+
+    public bool HasQuotaText => QuotaText.Length > 0;
+
+    private static readonly ModerationAction[] UserToolActions = [ModerationAction.Unban, ModerationAction.Warn];
+
+    private static readonly ModerationAction[] ChannelToolActions =
+    [
+        ModerationAction.Clear, ModerationAction.SlowMode, ModerationAction.FollowersOnly, ModerationAction.SubscribersOnly, ModerationAction.EmoteOnly,
+    ];
+
+    private readonly Dictionary<(string, ModerationAction), bool> _modes = [];
+
+    private void RebuildTools()
+    {
+        UserTools.Clear();
+        ChannelTools.Clear();
+        if (_moderation is not null && SelectedLine is { } line && CanPunish(line))
+            foreach (var action in UserToolActions)
+                UserTools.Add(new ModToolViewModel(line.Platform, CapabilityFor(line.Platform, action), RunUserToolAsync));
+        if (_moderation is not null && ToolPlatform is { } platform)
+            foreach (var action in ChannelToolActions)
+            {
+                var toggle = action != ModerationAction.Clear;
+                ChannelTools.Add(new ModToolViewModel(platform, CapabilityFor(platform, action), RunChannelToolAsync, toggle)
+                {
+                    IsOn = toggle && _modes.GetValueOrDefault((platform, action)),
+                });
+            }
+        OnPropertyChanged(nameof(HasChannelTools));
+        OnPropertyChanged(nameof(ToolPlatform));
+        OnPropertyChanged(nameof(QuotaText));
+        OnPropertyChanged(nameof(HasQuotaText));
+    }
+
+    private async Task RunUserToolAsync(ModToolViewModel tool)
+    {
+        if (SelectedLine is not { } line) return;
+        await RunAsync(Command(line, tool.Action));
+    }
+
+    private async Task RunChannelToolAsync(ModToolViewModel tool)
+    {
+        var turnOn = !tool.IsOn;
+        var result = await RunAsync(new ModerationCommand(tool.Platform, tool.Action)
+        {
+            Enabled = turnOn,
+            ChannelId = SelectedLine?.Platform == tool.Platform ? SelectedLine.Message.ChannelId : null,
+            Reason = ModReason.Trim().Length > 0 ? ModReason.Trim() : null,
+        });
+        if (result?.Ok == true && tool.IsToggle)
+        {
+            _modes[(tool.Platform, tool.Action)] = turnOn;
+            tool.IsOn = turnOn;
+        }
+    }
+
+    /// <summary>A command about <paramref name="line"/> and its author, with the reason box.</summary>
+    private ModerationCommand Command(ChatLineViewModel line, ModerationAction action) =>
+        ModerationCommand.For(line.Message, action) with
+        {
+            TargetLogin = line.Login,
+            Reason = action is ModerationAction.Delete || ModReason.Trim().Length == 0 ? null : ModReason.Trim(),
+        };
+
+    /// <summary>Runs a command as the streamer; opens the website for website tools. Null when moderation is unavailable.</summary>
+    private async Task<ModerationResult?> RunAsync(ModerationCommand command)
+    {
+        if (_moderation is null)
+        {
+            Status = $"{command.Platform} has no moderation support";
+            return null;
+        }
+        var result = await _moderation.ExecuteAsync(command, ModActor.Streamer);
+        if (result.WebsiteUrl is { } url && result.Result == Cuebot.Core.Chat.Moderation.ModResult.Skipped)
+        {
+            (_services.OpenUrl ?? Cuebot.App.Shell.UrlLauncher.Open)(url);
+            Status = result.Message;
+            return result;
+        }
+        Status = result.Message;
+        return result;
+    }
+
+    // ---------------------------------------------------------------- mod log
+
+    private const int MaxLogLines = 200;
+
+    /// <summary>The mod log, newest first (empty without one).</summary>
+    public ObservableCollection<ModLogLineViewModel> ModLogLines { get; } = [];
+
+    /// <summary>The selected person's rows in the mod log, newest first.</summary>
+    public ObservableCollection<ModLogLineViewModel> UserLogLines { get; } = [];
+
+    public bool HasModLog => _moderation?.Log is not null;
+    public bool HasModLogLines => ModLogLines.Count > 0;
+    public bool HasUserLog => UserLogLines.Count > 0;
+
+    private void AddLogLine(ModLogEntry entry)
+    {
+        var existing = ModLogLines.FirstOrDefault(l => l.Entry.Id == entry.Id);
+        if (existing is not null) ModLogLines[ModLogLines.IndexOf(existing)] = new ModLogLineViewModel(entry);
+        else ModLogLines.Insert(0, new ModLogLineViewModel(entry));
+        while (ModLogLines.Count > MaxLogLines) ModLogLines.RemoveAt(ModLogLines.Count - 1);
+        OnPropertyChanged(nameof(HasModLogLines));
+        if (SelectedLine is { } line && entry.Platform == line.Platform && entry.TargetUserId == line.Message.UserId) RefreshUserLog();
+    }
+
+    private void RefreshUserLog()
+    {
+        UserLogLines.Clear();
+        if (_moderation?.Log is { } log && SelectedLine is { Message.UserId.Length: > 0 } line)
+            foreach (var entry in log.ForTarget(line.Platform, line.Message.UserId, 30)) UserLogLines.Add(new ModLogLineViewModel(entry));
+        OnPropertyChanged(nameof(HasUserLog));
+    }
+
+    /// <summary>Marks lines the platform reports deleted, and the author's lines when they were banned or timed out.</summary>
+    private void ApplyNotice(ChatModerationNotice notice)
+    {
+        foreach (var line in Messages.Where(l => string.Equals(l.Platform, notice.Platform, StringComparison.OrdinalIgnoreCase)))
+        {
+            if (notice.Kind == ChatModerationKind.MessageDeleted)
+            {
+                if (notice.MessageId.Length > 0 && line.Message.Id == notice.MessageId) line.IsDeleted = true;
+            }
+            else if (notice.UserId.Length > 0 && line.Message.UserId == notice.UserId)
+            {
+                line.ActionNote = notice.Kind == ChatModerationKind.UserBanned ? "banned"
+                    : notice.DurationSeconds is { } s ? "timed out for " + ModerationService.FormatDuration(TimeSpan.FromSeconds(s)) : "timed out";
+            }
+        }
+        RefreshModeration();
+    }
 
     /// <summary>Timeout and Ban make no sense for the channel's own account (the platforms refuse them).</summary>
     private static bool CanPunish(ChatLineViewModel line) => !line.Message.Roles.HasFlag(ChatRoles.Broadcaster);
@@ -283,6 +497,7 @@ public sealed partial class ChatViewModel : PageViewModel
     [RelayCommand]
     private Task TimeoutSelected(string minutes) =>
         SelectedLine is { } line ? TimeoutAsync(line, TimeSpan.FromMinutes(double.Parse(minutes, System.Globalization.CultureInfo.InvariantCulture))) : Task.CompletedTask;
+
 
     [RelayCommand]
     private async Task BanSelected()
@@ -341,7 +556,40 @@ public sealed partial class ChatViewModel : PageViewModel
 
     partial void OnDraftChanged(string value) => UpdateSuggestions();
 
-    partial void OnSendTargetChanged(string value) => UpdateSuggestions();
+    partial void OnSendTargetChanged(string value)
+    {
+        UpdateSuggestions();
+        RefreshSendAs();
+    }
+
+    // ---------------------------------------------------------------- send as
+
+    public const string SendAsDefault = "Default";
+    public const string SendAsBroadcaster = "Broadcaster";
+    public const string SendAsBot = "Bot";
+
+    /// <summary>Default (each platform's own setting), Broadcaster, and Bot where a bot account is signed in.</summary>
+    public ObservableCollection<string> SendAsOptions { get; } = [SendAsDefault, SendAsBroadcaster];
+
+    [ObservableProperty] private string _sendAs = SendAsDefault;
+
+    private void RefreshSendAs()
+    {
+        var bot = _hub.CanSendAsBot(SendTarget);
+        if (bot && !SendAsOptions.Contains(SendAsBot)) SendAsOptions.Add(SendAsBot);
+        if (!bot && SendAsOptions.Contains(SendAsBot))
+        {
+            if (SendAs == SendAsBot) SendAs = SendAsDefault;
+            SendAsOptions.Remove(SendAsBot);
+        }
+    }
+
+    private ChatSendOptions SendOptions => SendAs switch
+    {
+        SendAsBot => new ChatSendOptions(Bot: true),
+        SendAsBroadcaster => new ChatSendOptions(Bot: false),
+        _ => ChatSendOptions.Default,
+    };
 
     private bool Visible(ChatMessage m) =>
         Filter == ChatHub.AllPlatforms || string.Equals(m.Platform, Filter, StringComparison.OrdinalIgnoreCase);
@@ -362,7 +610,10 @@ public sealed partial class ChatViewModel : PageViewModel
     private ChatLineViewModel CreateLine(ChatMessage message)
     {
         var raw = _services.Emotes?.ArgsFor(message.Id);
-        var line = new ChatLineViewModel(message, Segment(message, raw), ChatHighlighter.Evaluate(message, raw, _settings.Highlights), raw);
+        var line = new ChatLineViewModel(message, Segment(message, raw), ChatHighlighter.Evaluate(message, raw, _settings.Highlights), raw)
+        {
+            IsDeleted = _hub.IsDeleted(message),
+        };
         LoadImages(line);
         LookUpPronouns(line);
         return line;
@@ -454,9 +705,10 @@ public sealed partial class ChatViewModel : PageViewModel
         }
         try
         {
-            var sent = await _hub.SendAsync(SendTarget, SlashCommand.Unescape(text));
+            RefreshSendAs();
+            var sent = await _hub.SendAsync(SendTarget, SlashCommand.Unescape(text), SendOptions);
             Draft = "";
-            Status = $"Sent to {string.Join(", ", sent)}";
+            Status = $"Sent to {string.Join(", ", sent)}" + (SendAs == SendAsDefault ? "" : $" as {SendAs.ToLowerInvariant()}");
         }
         catch (Exception ex)
         {
@@ -628,15 +880,14 @@ public sealed partial class ChatViewModel : PageViewModel
     public IReadOnlyList<ChatMenuEntry> GetMenu(ChatLineViewModel line)
     {
         var entries = new List<ChatMenuEntry>();
-        var available = _services.Moderation?.AvailableFor(line.Platform) ?? ChatModerationActions.None;
-        if (available.HasFlag(ChatModerationActions.DeleteMessage) && !line.IsDeleted && line.Message.Id.Length > 0)
+        if (Runs(line, ModerationAction.Delete) && line.CanDelete && line.Message.Id.Length > 0)
             entries.Add(new("Delete message", () => DeleteAsync(line)));
-        if (available.HasFlag(ChatModerationActions.Timeout) && CanPunish(line))
+        if (Runs(line, ModerationAction.Timeout) && CanPunish(line))
         {
-            entries.Add(new("Timeout 1 minute", () => TimeoutAsync(line, TimeSpan.FromMinutes(1))));
-            entries.Add(new("Timeout 10 minutes", () => TimeoutAsync(line, TimeSpan.FromMinutes(10))));
+            entries.Add(new(TimeoutLabel(line, TimeSpan.FromMinutes(1), "Timeout 1 minute"), () => TimeoutAsync(line, TimeSpan.FromMinutes(1))));
+            entries.Add(new(TimeoutLabel(line, TimeSpan.FromMinutes(10), "Timeout 10 minutes"), () => TimeoutAsync(line, TimeSpan.FromMinutes(10))));
         }
-        if (available.HasFlag(ChatModerationActions.Ban) && CanPunish(line))
+        if (Runs(line, ModerationAction.Ban) && CanPunish(line))
             entries.Add(new($"Ban {line.User}…", () => BanAsync(line), $"Yes, ban {line.User}"));
 
         var quick = _settings.QuickActions.Where(q => q.ActionName.Length > 0).ToArray();
@@ -653,37 +904,20 @@ public sealed partial class ChatViewModel : PageViewModel
         return entries;
     }
 
-    public Task DeleteAsync(ChatLineViewModel line) =>
-        Moderate(line, async m =>
-        {
-            await m.DeleteMessageAsync(line.Message.Id);
-            line.IsDeleted = true;
-        }, $"Deleted {line.User}'s message");
+    /// <summary>The menu label, with what the platform will really apply when it differs ("Timeout 1 minute (Rumble: 5 min...)").</summary>
+    private string TimeoutLabel(ChatLineViewModel line, TimeSpan duration, string label) =>
+        _moderation?.PreviewDuration(line.Platform, duration).Note is { Length: > 0 } note ? $"{label} ({note})" : label;
+
+    public async Task DeleteAsync(ChatLineViewModel line)
+    {
+        if (await RunAsync(Command(line, ModerationAction.Delete)) is { Ok: true }) line.IsDeleted = true;
+        RefreshModeration();
+    }
 
     public Task TimeoutAsync(ChatLineViewModel line, TimeSpan duration) =>
-        Moderate(line, m => m.TimeoutAsync(line.Message.UserId, line.Login, duration, null),
-            $"Timed out {line.User} for {duration.TotalMinutes:0} min");
+        RunAsync(Command(line, ModerationAction.Timeout) with { Duration = duration });
 
-    public Task BanAsync(ChatLineViewModel line) =>
-        Moderate(line, m => m.BanAsync(line.Message.UserId, line.Login, null), $"Banned {line.User}");
-
-    private async Task Moderate(ChatLineViewModel line, Func<IChatModerator, Task> action, string done)
-    {
-        if (_services.Moderation?.ModeratorFor(line.Platform) is not { } moderator)
-        {
-            Status = $"{line.Platform} has no moderation support";
-            return;
-        }
-        try
-        {
-            await action(moderator);
-            Status = done;
-        }
-        catch (Exception ex)
-        {
-            Status = ex.Message;
-        }
-    }
+    public Task BanAsync(ChatLineViewModel line) => RunAsync(Command(line, ModerationAction.Ban));
 
     /// <summary>Runs a quick action with the line's arguments (message and/or user, by scope).</summary>
     public async Task RunQuickActionAsync(QuickActionDefinition quick, ChatLineViewModel? line)

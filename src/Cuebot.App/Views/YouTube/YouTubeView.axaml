@@ -97,7 +97,7 @@
                        Text="Every time Cuebot asks YouTube for something, it uses up part of a daily allowance (quota). Cuebot checks for broadcasts, viewer numbers and new subscribers again and again. Checking less often makes the allowance last longer, but events arrive later." />
             <CheckBox Content="Stream live chat (messages arrive as they are posted, for a fraction of the quota)" IsChecked="{Binding StreamChat}"
                       ToolTip.Tip="Gets chat messages as they are posted, which uses far less of your daily allowance than asking again and again. Leave it ticked unless chat stops working." />
-            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
               <TextBlock Text="Minimum seconds between chat polls" VerticalAlignment="Center" />
               <NumericUpDown Grid.Column="1" Value="{Binding MinimumChatPollSeconds}" Minimum="2" Maximum="120" Increment="1" FormatString="0" Width="140" ToolTip.Tip="The shortest wait, in seconds, before Cuebot asks YouTube for new chat messages again. Lower is quicker but uses more allowance." />
               <TextBlock Grid.Row="1" Text="Seconds between checks for a live broadcast" VerticalAlignment="Center" />
@@ -108,6 +108,8 @@
               <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding SubscriberPollSeconds}" Minimum="60" Maximum="3600" Increment="60" FormatString="0" Width="140" ToolTip.Tip="How often, in seconds, Cuebot looks for new subscribers. Lower notices them sooner but uses more allowance." />
               <TextBlock Grid.Row="4" Text="Daily quota of your project (units)" VerticalAlignment="Center" />
               <NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding DailyQuota}" Minimum="1" Maximum="10000000" Increment="1000" FormatString="0" Width="140" ToolTip.Tip="How many units YouTube lets your project use each day (usually 10,000 unless you asked Google for more). Cuebot uses this number to estimate how much you have left." />
+              <TextBlock Grid.Row="5" Text="Units moderation must leave for reading chat" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="5" Grid.Column="1" Value="{Binding ModerationQuotaReserve}" Minimum="0" Maximum="10000000" Increment="500" FormatString="0" Width="140" ToolTip.Tip="Bans, timeouts and deletions from the Chat page and the mod portal stop when less than this is left for the day, so chat keeps arriving until the quota starts again at midnight Pacific time." />
             </Grid>
             <CheckBox Content="Check for new subscribers (only public subscriptions are visible)" IsChecked="{Binding PollNewSubscribers}"
                       ToolTip.Tip="Lets Cuebot look for new subscribers so the New subscriber trigger can run. YouTube only shows subscribers who made their subscription public." />

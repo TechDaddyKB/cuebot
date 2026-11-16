@@ -28,6 +28,7 @@ public sealed class RumbleService : IConnectable, IAsyncDisposable, Cuebot.Core.
     private readonly RumbleLoginClient _login;
     private readonly SemaphoreSlim _connectGate = new(1, 1);
     private readonly SemaphoreSlim _sendGate = new(1, 1);
+    private readonly ChatModerationClient _moderation;
     private RumbleConnection? _connection;
     private DateTimeOffset _lastSend = DateTimeOffset.MinValue;
 
@@ -51,6 +52,8 @@ public sealed class RumbleService : IConnectable, IAsyncDisposable, Cuebot.Core.
         _api = new LiveStreamApiClient(http);
         _chatReader = new ChatStreamReader(http, endpoints, timings, time, log);
         _chatPoster = new ChatPostClient(http, endpoints);
+        _moderation = new ChatModerationClient(http, endpoints);
+        Endpoints = endpoints;
         _login = new RumbleLoginClient(http, endpoints);
     }
 
@@ -200,6 +203,33 @@ public sealed class RumbleService : IConnectable, IAsyncDisposable, Cuebot.Core.
         {
             _sendGate.Release();
         }
+    }
+
+    internal RumbleEndpoints Endpoints { get; }
+
+    /// <summary>The live stream's chat id (base 10), while live.</summary>
+    public long? LiveChatId => _connection?.LiveChatId;
+
+    /// <summary>
+    /// True when the streamer turned on moderation through Rumble's unofficial addresses
+    /// (<see cref="RumbleSettings.UnofficialModeration"/>) and is signed in to Rumble chat.
+    /// </summary>
+    public bool UnofficialModerationReady => Settings.UnofficialModeration && CanSendChat;
+
+    /// <summary>Deletes a live chat message (unofficial; only with <see cref="RumbleSettings.UnofficialModeration"/> on).</summary>
+    internal Task DeleteChatMessageAsync(string messageId, CancellationToken ct = default) =>
+        _moderation.DeleteMessageAsync(RequireModeration(), messageId, Settings.SessionCookie, ct);
+
+    /// <summary>Mutes a viewer by name (unofficial; only with <see cref="RumbleSettings.UnofficialModeration"/> on).</summary>
+    internal Task MuteAsync(string userName, RumbleMute mute, CancellationToken ct = default) =>
+        _moderation.MuteAsync(RequireModeration(), userName, mute, Settings.SessionCookie, ct);
+
+    private long RequireModeration()
+    {
+        if (!Settings.UnofficialModeration)
+            throw new InvalidOperationException("Rumble moderation through unofficial addresses is turned off (Rumble settings).");
+        if (!CanSendChat) throw new InvalidOperationException("Sign in to Rumble chat (Rumble settings) first.");
+        return LiveChatId ?? throw new InvalidOperationException("Rumble moderation works only while you are live on Rumble.");
     }
 
     /// <summary>Disconnects. Safe to call more than once (DI disposes each registration of this singleton).</summary>

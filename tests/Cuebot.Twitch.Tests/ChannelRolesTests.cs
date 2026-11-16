@@ -39,5 +39,9 @@ public sealed class ChannelRolesTests : IDisposable
 
         Assert.False(await roles.IsModeratorAsync("4242"));
         Assert.False(await roles.IsModeratorAsync(""));
+        // The portal's "must stay a moderator" check needs to tell "no" from "could not ask".
+        Assert.Null(await roles.CheckModeratorAsync("4242"));
+        _h.On("GET /helix/moderation/moderators", """{"data":[],"pagination":{}}""");
+        Assert.False(await roles.CheckModeratorAsync("4242"));
     }
 }

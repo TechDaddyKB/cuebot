@@ -10,4 +10,10 @@ public static class RumbleEventTypes
     public const string GiftSub = "rumble.giftSub";
     public const string StreamOnline = "rumble.streamOnline";
     public const string StreamOffline = "rumble.streamOffline";
+
+    /// <summary>A moderator deleted a chat message (from the unofficial chat stream; carries messageId).</summary>
+    public const string MessageDeleted = "rumble.messageDeleted";
+
+    /// <summary>The platform-neutral form read by the combined chat, speech and overlays.</summary>
+    public const string NeutralMessageDeleted = "chat.messageDeleted";
 }

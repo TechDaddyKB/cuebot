@@ -153,13 +153,24 @@ internal sealed class FakeAdapter(string platform) : IChatEventAdapter
 internal sealed class FakeSender(string platform) : IChatSender
 {
     public List<string> Sent { get; } = [];
+
+    /// <summary>The options of each send that had some (the send-as selector).</summary>
+    public List<ChatSendOptions> Options { get; } = [];
+
     public string Platform => platform;
     public bool CanSend => true;
+    public bool CanSendAsBot { get; set; }
 
     public Task SendAsync(string text, CancellationToken ct = default)
     {
         Sent.Add(text);
         return Task.CompletedTask;
+    }
+
+    public Task SendAsync(string text, ChatSendOptions options, CancellationToken ct = default)
+    {
+        Options.Add(options);
+        return SendAsync(text, ct);
     }
 }
 

@@ -20,6 +20,16 @@ internal static class RumbleEvents
     public static BotEvent ChatMessage(ApiChatMessage m, long rantCents, string broadcaster) =>
         Chat("", m.UserName, "", m.Text, m.Badges, null, rantCents, broadcaster);
 
+    public static BotEvent MessageDeleted(string messageId) =>
+        new(RumbleEventTypes.MessageDeleted, new Dictionary<string, object?> { ["messageId"] = messageId, ["targetMessageId"] = messageId });
+
+    public static BotEvent NeutralMessageDeleted(string messageId) =>
+        new(RumbleEventTypes.NeutralMessageDeleted, new Dictionary<string, object?>
+        {
+            ["platform"] = RumbleChatAdapter.PlatformName,
+            ["messageId"] = messageId,
+        });
+
     public static BotEvent Rant(string user, string userId, string message, long cents, string messageId = "") =>
         new(RumbleEventTypes.Rant, new Dictionary<string, object?>
         {

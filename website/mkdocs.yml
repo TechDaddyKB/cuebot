@@ -141,6 +141,7 @@ nav:
           - Credits: guides/chat/credits.md
           - Top spenders: guides/chat/top-spenders.md
           - Users and groups: guides/chat/users-and-groups.md
+          - Moderating your chat: guides/chat/moderation.md
       - Overlays and alerts:
           - guides/overlays/index.md
           - Overlays: guides/overlays/overlays.md

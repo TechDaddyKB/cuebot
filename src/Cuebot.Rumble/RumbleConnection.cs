@@ -105,6 +105,15 @@ internal sealed class RumbleConnection : IChatStreamListener, IAsyncDisposable
         if (message.IsRant) _bus.Publish(RumbleEvents.Rant(message.UserName, message.UserId, message.Text, message.RantCents, message.Id));
     }
 
+    void IChatStreamListener.OnDeleted(IReadOnlyList<string> messageIds)
+    {
+        foreach (var id in messageIds)
+        {
+            _bus.Publish(RumbleEvents.MessageDeleted(id));
+            _bus.Publish(RumbleEvents.NeutralMessageDeleted(id));
+        }
+    }
+
     private async Task PollAsync(CancellationToken ct)
     {
         var delay = _timings.PollInterval(_pollSeconds());

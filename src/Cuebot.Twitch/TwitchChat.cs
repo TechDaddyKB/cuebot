@@ -15,7 +15,7 @@ internal sealed class TwitchChatAdapter : IChatEventAdapter
     {
         if (e.Type is not (TwitchEventTypes.ChatMessage or TwitchEventTypes.Announcement)) return null;
         var bits = Int(e, "bits");
-        return new ChatMessage(Platform, Str(e, "messageId"), Str(e, "user"), Str(e, "userId"), Str(e, "message"), e.Time)
+        return ChatMessage.Create(Platform, Str(e, "messageId"), Str(e, "user"), Str(e, "userId"), Str(e, "message"), e.Time) with
         {
             Roles = (Bool(e, "isBroadcaster") ? ChatRoles.Broadcaster : 0)
                     | (Bool(e, "isModerator") ? ChatRoles.Moderator : 0)
@@ -130,6 +130,7 @@ internal sealed class TwitchChatSender(TwitchService twitch) : IChatSender
 {
     public string Platform => TwitchChatAdapter.PlatformName;
     public bool CanSend => twitch.State == Cuebot.Core.ConnectionState.Connected;
+    public bool CanSendAsBot => twitch.Api.IsBotReady;
     public Task SendAsync(string text, CancellationToken ct = default) => twitch.SendChatMessageAsync(text, ct);
 
     public Task SendAsync(string text, ChatSendOptions options, CancellationToken ct = default) =>
@@ -150,9 +151,13 @@ internal sealed class TwitchChannelRoles(Func<TwitchApi> api, Cuebot.Core.Loggin
 
     public string Platform => TwitchChatAdapter.PlatformName;
 
-    public async Task<bool> IsModeratorAsync(string userId, CancellationToken ct = default)
+    public async Task<bool> IsModeratorAsync(string userId, CancellationToken ct = default) =>
+        await CheckModeratorAsync(userId, ct).ConfigureAwait(false) == true;
+
+    /// <summary>Null when signed out, without a moderator-read scope, or when the lookup failed (not cached, asked again next time).</summary>
+    public async Task<bool?> CheckModeratorAsync(string userId, CancellationToken ct = default)
     {
-        if (userId.Length == 0) return false;
+        if (userId.Length == 0) return null;
         lock (_cache)
             if (_cache.TryGetValue(userId, out var hit) && hit.Until > _time.GetUtcNow()) return hit.IsModerator;
         bool result;
@@ -163,7 +168,7 @@ internal sealed class TwitchChannelRoles(Func<TwitchApi> api, Cuebot.Core.Loggin
         catch (Exception ex) when (ex is TwitchApiException or HttpRequestException or InvalidOperationException)
         {
             log.Warn("Twitch", $"Could not check whether user {userId} is a moderator: {ex.Message}");
-            return false;
+            return null;
         }
         lock (_cache) _cache[userId] = (result, _time.GetUtcNow() + CacheFor);
         return result;
@@ -171,11 +176,16 @@ internal sealed class TwitchChannelRoles(Func<TwitchApi> api, Cuebot.Core.Loggin
 }
 
 /// <summary>
-/// Delete, timeout and ban for the combined chat, as the broadcaster (Helix moderation). Offered while connected and
-/// only for the scopes the broadcaster granted.
+/// Moderation for the combined chat, as the broadcaster (Helix moderation): delete, timeout (1 s to 14 days), ban,
+/// unban, warn, clear, the four chat modes and pins. Each tool is offered while connected and only when the broadcaster
+/// granted its scope; otherwise it says which permission is missing.
 /// </summary>
 internal sealed class TwitchChatModerator(Func<TwitchApi> api, Func<bool> connected) : Cuebot.Core.Chat.Moderation.IChatModerator
 {
+    /// <summary>Helix's longest timeout and reason.</summary>
+    internal static readonly TimeSpan MaxTimeout = TimeSpan.FromSeconds(1_209_600);
+    internal const int MaxReason = 500;
+
     public string Platform => TwitchChatAdapter.PlatformName;
 
     public Cuebot.Core.Chat.Moderation.ChatModerationActions Available
@@ -199,4 +209,105 @@ internal sealed class TwitchChatModerator(Func<TwitchApi> api, Func<bool> connec
 
     public Task BanAsync(string userId, string userName, string? reason, CancellationToken ct = default) =>
         api().BanAsync(userId, reason ?? "", ct);
+
+    public Cuebot.Core.Chat.Moderation.ModerationCapability Capability(Cuebot.Core.Chat.Moderation.ModerationAction action)
+    {
+        if (!connected()) return Cuebot.Core.Chat.Moderation.ModerationCapability.NotAvailable(action, "Connect Twitch first.");
+        var scope = ScopeFor(action);
+        if (!api().HasBroadcasterScope(scope))
+            return Cuebot.Core.Chat.Moderation.ModerationCapability.NotAvailable(action,
+                $"Sign in to Twitch again and allow \"{TwitchScopes.Catalog.FirstOrDefault(c => c.Scope == scope)?.Description ?? scope}\".");
+        var works = Cuebot.Core.Chat.Moderation.ModerationCapability.Works(action);
+        return action switch
+        {
+            Cuebot.Core.Chat.Moderation.ModerationAction.Timeout => works with
+            {
+                MinDuration = TimeSpan.FromSeconds(1), MaxDuration = MaxTimeout, MaxReasonLength = MaxReason,
+            },
+            Cuebot.Core.Chat.Moderation.ModerationAction.Ban or Cuebot.Core.Chat.Moderation.ModerationAction.Warn => works with { MaxReasonLength = MaxReason },
+            Cuebot.Core.Chat.Moderation.ModerationAction.SlowMode => works with { Note = "3 to 120 seconds between messages." },
+            Cuebot.Core.Chat.Moderation.ModerationAction.FollowersOnly => works with { Note = "Viewers must have followed for 0 minutes to 90 days." },
+            Cuebot.Core.Chat.Moderation.ModerationAction.Pin => works with { Note = "Stays pinned until the stream ends." },
+            _ => works,
+        };
+    }
+
+    private static string ScopeFor(Cuebot.Core.Chat.Moderation.ModerationAction action) => action switch
+    {
+        Cuebot.Core.Chat.Moderation.ModerationAction.Timeout or Cuebot.Core.Chat.Moderation.ModerationAction.Ban
+            or Cuebot.Core.Chat.Moderation.ModerationAction.Unban => TwitchScopes.ManageBannedUsers,
+        Cuebot.Core.Chat.Moderation.ModerationAction.Warn => TwitchScopes.ManageWarnings,
+        Cuebot.Core.Chat.Moderation.ModerationAction.SlowMode or Cuebot.Core.Chat.Moderation.ModerationAction.FollowersOnly
+            or Cuebot.Core.Chat.Moderation.ModerationAction.SubscribersOnly or Cuebot.Core.Chat.Moderation.ModerationAction.EmoteOnly
+            => TwitchScopes.ManageChatSettings,
+        _ => TwitchScopes.ManageChatMessages,   // delete, clear, pin, unpin
+    };
+
+    public async Task<Cuebot.Core.Chat.Moderation.ModerationOutcome> ExecuteAsync(Cuebot.Core.Chat.Moderation.ModerationRequest r,
+        CancellationToken ct = default)
+    {
+        var capability = Capability(r.Action);
+        if (!capability.CanRun) return Cuebot.Core.Chat.Moderation.ModerationOutcome.Failed(capability.Note);
+        var twitch = api();
+        var reason = r.Reason ?? "";
+        switch (r.Action)
+        {
+            case Cuebot.Core.Chat.Moderation.ModerationAction.Delete:
+                await twitch.DeleteMessageAsync(r.MessageId, ct).ConfigureAwait(false);
+                break;
+            case Cuebot.Core.Chat.Moderation.ModerationAction.Timeout:
+                var applied = capability.Apply(r.Duration ?? TimeSpan.FromMinutes(10));
+                await twitch.TimeoutAsync(r.UserId, (int)applied.TotalSeconds, reason, ct).ConfigureAwait(false);
+                return Cuebot.Core.Chat.Moderation.ModerationOutcome.Done(applied);
+            case Cuebot.Core.Chat.Moderation.ModerationAction.Ban:
+                await twitch.BanAsync(r.UserId, reason, ct).ConfigureAwait(false);
+                break;
+            case Cuebot.Core.Chat.Moderation.ModerationAction.Unban:
+                await twitch.UnbanAsync(r.UserId, ct).ConfigureAwait(false);
+                break;
+            case Cuebot.Core.Chat.Moderation.ModerationAction.Warn:
+                await twitch.WarnAsync(r.UserId, reason.Length > 0 ? reason : "Please follow the chat rules.", ct).ConfigureAwait(false);
+                break;
+            case Cuebot.Core.Chat.Moderation.ModerationAction.Clear:
+                await twitch.ClearChatAsync(ct).ConfigureAwait(false);
+                break;
+            case Cuebot.Core.Chat.Moderation.ModerationAction.SlowMode:
+                await twitch.UpdateChatSettingsAsync(new ChatSettingsUpdate
+                {
+                    SlowMode = r.Enabled, SlowModeWaitTime = r.Enabled ? Math.Clamp(r.ModeValue ?? 30, 3, 120) : null,
+                }, ct).ConfigureAwait(false);
+                break;
+            case Cuebot.Core.Chat.Moderation.ModerationAction.FollowersOnly:
+                await twitch.UpdateChatSettingsAsync(new ChatSettingsUpdate
+                {
+                    FollowerMode = r.Enabled, FollowerModeDuration = r.Enabled ? Math.Clamp(r.ModeValue ?? 0, 0, 129_600) : null,
+                }, ct).ConfigureAwait(false);
+                break;
+            case Cuebot.Core.Chat.Moderation.ModerationAction.SubscribersOnly:
+                await twitch.UpdateChatSettingsAsync(new ChatSettingsUpdate { SubscriberMode = r.Enabled }, ct).ConfigureAwait(false);
+                break;
+            case Cuebot.Core.Chat.Moderation.ModerationAction.EmoteOnly:
+                await twitch.UpdateChatSettingsAsync(new ChatSettingsUpdate { EmoteMode = r.Enabled }, ct).ConfigureAwait(false);
+                break;
+            case Cuebot.Core.Chat.Moderation.ModerationAction.Pin:
+                await twitch.PinMessageAsync(r.MessageId, 0, ct).ConfigureAwait(false);
+                break;
+            case Cuebot.Core.Chat.Moderation.ModerationAction.Unpin:
+                await twitch.UnpinMessageAsync(r.MessageId, ct).ConfigureAwait(false);
+                break;
+        }
+        return Cuebot.Core.Chat.Moderation.ModerationOutcome.Done();
+    }
+}
+
+/// <summary>The broadcaster and bot accounts may only be acted against by the streamer.</summary>
+internal sealed class TwitchProtectedAccounts(Func<TwitchApi> api) : Cuebot.Core.Chat.Moderation.IProtectedAccounts
+{
+    public string? WhyProtected(string platform, string userId, string userName)
+    {
+        if (!string.Equals(platform, TwitchChatAdapter.PlatformName, StringComparison.OrdinalIgnoreCase) || userId.Length == 0) return null;
+        var twitch = api();
+        if (userId == twitch.Broadcaster.UserId) return "This is your own Twitch account.";
+        return twitch.IsBotReady && userId == twitch.Bot.UserId ? "This is your Twitch bot account." : null;
+    }
 }

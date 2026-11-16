@@ -130,6 +130,13 @@ public sealed partial class YouTubeViewModel : PageViewModel
         set { _youtube.Settings.DailyQuota = (int)Math.Max(1, value); Save(); }
     }
 
+    /// <summary>Units moderation must leave unspent each day, so reading chat keeps working.</summary>
+    public decimal ModerationQuotaReserve
+    {
+        get => _youtube.Settings.ModerationQuotaReserve;
+        set { _youtube.Settings.ModerationQuotaReserve = (int)Math.Max(0, value); Save(); }
+    }
+
     public string QuotaUsage
     {
         get

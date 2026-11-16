@@ -33,11 +33,12 @@ internal sealed class YouTubeChatAdapter : IChatEventAdapter
                 return null;
         }
         var id = a.GetString("messageId");
-        return new ChatMessage(Platform, id.Length > 0 ? id : Guid.NewGuid().ToString("N"), a.GetString("user"), a.GetString("userId"),
-            a.GetString("message"), e.Time)
+        return ChatMessage.Create(Platform, id, a.GetString("user"), a.GetString("userId"),
+            a.GetString("message"), e.Time) with
         {
             Roles = Roles(a),
             Amount = string.IsNullOrEmpty(amount) ? null : amount,
+            ChannelId = a.GetString("liveChatId") is { Length: > 0 } chat ? chat : null,
         };
     }
 

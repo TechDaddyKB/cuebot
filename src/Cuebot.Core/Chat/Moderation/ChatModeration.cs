@@ -12,7 +12,9 @@ public enum ChatModerationActions
 
 /// <summary>
 /// Implemented by platform modules (Twitch, YouTube, Kick...) that can moderate their chat. Register in DI as
-/// <c>IChatModerator</c>; the combined chat offers only the actions in <see cref="Available"/>.
+/// <c>IChatModerator</c>. Version 2 adds <see cref="Capability"/> (what each tool does on this platform) and
+/// <see cref="ExecuteAsync"/> (every tool, with the platform's reference in the result); both have defaults built on
+/// the first three methods, so older moderators keep working. Callers should go through <see cref="ModerationService"/>.
 /// </summary>
 public interface IChatModerator
 {
@@ -28,6 +30,34 @@ public interface IChatModerator
     Task TimeoutAsync(string userId, string userName, TimeSpan duration, string? reason, CancellationToken ct = default);
 
     Task BanAsync(string userId, string userName, string? reason, CancellationToken ct = default);
+
+    /// <summary>What <paramref name="action"/> does on this platform right now.</summary>
+    ModerationCapability Capability(ModerationAction action) => ModerationCapability.FromLegacy(action, Available);
+
+    /// <summary>
+    /// Runs one tool. Returns a failed outcome (not an exception) for refusals the caller should show as text;
+    /// exceptions are platform errors, which <see cref="ModerationService"/> logs as failed.
+    /// </summary>
+    async Task<ModerationOutcome> ExecuteAsync(ModerationRequest request, CancellationToken ct = default)
+    {
+        var capability = Capability(request.Action);
+        if (!capability.CanRun) return ModerationOutcome.Failed(capability.Note);
+        switch (request.Action)
+        {
+            case ModerationAction.Delete:
+                await DeleteMessageAsync(request.MessageId, ct).ConfigureAwait(false);
+                return ModerationOutcome.Done();
+            case ModerationAction.Timeout:
+                var applied = capability.Apply(request.Duration ?? TimeSpan.FromMinutes(10));
+                await TimeoutAsync(request.UserId, request.UserName, applied, request.Reason, ct).ConfigureAwait(false);
+                return ModerationOutcome.Done(applied);
+            case ModerationAction.Ban:
+                await BanAsync(request.UserId, request.UserName, request.Reason, ct).ConfigureAwait(false);
+                return ModerationOutcome.Done();
+            default:
+                return ModerationOutcome.Failed($"{Platform} cannot do this from Cuebot.");
+        }
+    }
 }
 
 /// <summary>Kinds of special chat posts.</summary>
@@ -61,6 +91,13 @@ public interface IChannelRoles
 
     /// <summary>True when the user moderates the channel (the broadcaster counts). False when unknown or the lookup failed.</summary>
     Task<bool> IsModeratorAsync(string userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// As <see cref="IsModeratorAsync"/>, but null when Cuebot cannot tell (signed out, missing permission, the lookup
+    /// failed), so a check that removes access does not act on an error.
+    /// </summary>
+    async Task<bool?> CheckModeratorAsync(string userId, CancellationToken ct = default) =>
+        await IsModeratorAsync(userId, ct).ConfigureAwait(false) ? true : null;
 }
 
 /// <summary>Looks up moderators and announcers by platform for the combined chat.</summary>

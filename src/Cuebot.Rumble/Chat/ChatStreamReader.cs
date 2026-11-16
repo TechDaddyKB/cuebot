@@ -13,6 +13,11 @@ internal interface IChatStreamListener
     void OnDetached(string reason);
 
     void OnMessage(ChatStreamMessage message);
+
+    /// <summary>A moderator deleted these messages (on Rumble's website or through Cuebot).</summary>
+    void OnDeleted(IReadOnlyList<string> messageIds)
+    {
+    }
 }
 
 /// <summary>
@@ -106,6 +111,7 @@ internal sealed class ChatStreamReader(HttpClient http, RumbleEndpoints endpoint
             }
         }
 
+        if (batch.DeletedIds.Count > 0 && !seeding) listener.OnDeleted(batch.DeletedIds);
         foreach (var message in batch.Messages)
         {
             var isNew = message.Id.Length == 0 || session.SeenIds.Add(message.Id);

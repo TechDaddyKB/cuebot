@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Cuebot.Core.Chat;
 
-/// <summary>Registration for chat extras: emotes (7TV/BTTV/FFZ + platform emotes), pronouns and moderation lookup.</summary>
+/// <summary>Registration for chat extras: emotes (7TV/BTTV/FFZ + platform emotes), pronouns, moderation lookup, the mod log and <see cref="ModerationService"/>.</summary>
 public static class ChatExtrasFeatures
 {
     public static IServiceCollection AddChatExtrasFeatures(this IServiceCollection services)
@@ -39,6 +39,16 @@ public static class ChatExtrasFeatures
         services.AddSingleton<IScriptFunctionProvider, PronounScriptFunctions>();
 
         services.AddSingleton(sp => new ChatModerationService(sp.GetServices<IChatModerator>(), sp.GetServices<IChatAnnouncer>()));
+        // The mod log (modlog.db in the profile folder, so backups include it) and the one way into moderation.
+        services.AddSettingsFile<ModerationSettings>("moderation.json");
+        services.AddSingleton(sp => new ModLog(sp.GetRequiredService<AppPaths>().File(ModLog.FileName)));
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<JsonFile<ModerationSettings>>();
+            return new ModerationService(sp.GetRequiredService<ChatModerationService>(), sp.GetRequiredService<ModLog>(),
+                sp.GetService<ChatHub>(), sp.GetServices<IProtectedAccounts>(), sp.GetServices<IPlatformQuota>(),
+                sp.GetServices<IChannelRoles>(), () => settings.Value, sp.GetRequiredService<AppLog>());
+        });
         return services;
     }
 }

@@ -40,6 +40,8 @@ public static class TwitchServiceCollectionExtensions
             var twitch = sp.GetRequiredService<TwitchService>();
             return new TwitchChatModerator(() => twitch.Api, () => twitch.State == Cuebot.Core.ConnectionState.Connected && twitch.IsAuthorized);
         });
+        services.AddSingleton<Cuebot.Core.Chat.Moderation.IProtectedAccounts>(sp =>
+            new TwitchProtectedAccounts(() => sp.GetRequiredService<TwitchService>().Api));
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IChannelRoles>(sp =>
             new TwitchChannelRoles(() => sp.GetRequiredService<TwitchService>().Api, sp.GetRequiredService<AppLog>()));
         return services;

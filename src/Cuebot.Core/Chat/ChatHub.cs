@@ -15,6 +15,12 @@ public sealed class ChatHub : IDisposable
     public const string MessageEvent = "chat.message";
     public const string ActivityEvent = "chat.activity";
     public const string AllPlatforms = "All";
+
+    /// <summary>Platform-neutral moderation events the platform modules publish (also read by speech and overlays).</summary>
+    public const string MessageDeletedEvent = "chat.messageDeleted";
+    public const string UserBannedEvent = "chat.userBanned";
+    public const string UserTimedOutEvent = "chat.userTimedOut";
+
     private const int HistorySize = 500;
 
     private readonly EventBus _bus;
@@ -25,6 +31,8 @@ public sealed class ChatHub : IDisposable
     private readonly object _gate = new();
     private readonly Queue<ChatMessage> _messages = new();
     private readonly Queue<FeedItem> _feed = new();
+    private readonly Queue<ChatModerationNotice> _moderation = new();
+    private readonly HashSet<string> _deleted = new(StringComparer.Ordinal);
 
     public ChatHub(EventBus bus, AppLog log, IEnumerable<IChatEventAdapter> adapters, IEnumerable<IChatSender> senders)
     {
@@ -37,6 +45,12 @@ public sealed class ChatHub : IDisposable
 
     public event Action<ChatMessage>? MessageReceived;
     public event Action<FeedItem>? FeedItemAdded;
+
+    /// <summary>
+    /// Raised when a platform reports a deleted message, a ban or a timeout, whoever made it (Cuebot, a mod on the
+    /// website, another tool), so every client can mark the lines and the mod log can record outside actions.
+    /// </summary>
+    public event Action<ChatModerationNotice>? ModerationSeen;
 
     /// <summary>Platforms that have a chat adapter, e.g. "Twitch", "Rumble".</summary>
     public IReadOnlyList<string> Platforms => _adapters.Select(a => a.Platform).Distinct().ToArray();
@@ -52,6 +66,23 @@ public sealed class ChatHub : IDisposable
     {
         lock (_gate) return _feed.ToArray();
     }
+
+    /// <summary>Recent deletions, bans and timeouts, oldest first.</summary>
+    public IReadOnlyList<ChatModerationNotice> RecentModeration()
+    {
+        lock (_gate) return _moderation.ToArray();
+    }
+
+    /// <summary>True when the platform reported this message deleted.</summary>
+    public bool IsDeleted(ChatMessage message)
+    {
+        lock (_gate) return _deleted.Contains(Key(message.Platform, message.Id));
+    }
+
+    /// <summary>True when some connected platform can send this as the bot account (<see cref="AllPlatforms"/>: any of them).</summary>
+    public bool CanSendAsBot(string platform) =>
+        _senders.Any(s => s.CanSend && s.CanSendAsBot
+                          && (platform == AllPlatforms || string.Equals(s.Platform, platform, StringComparison.OrdinalIgnoreCase)));
 
     /// <summary>
     /// Sends to one platform, or to every connected one with <see cref="AllPlatforms"/>. Returns the platforms
@@ -92,6 +123,11 @@ public sealed class ChatHub : IDisposable
     private void OnEvent(BotEvent e)
     {
         if (e.Type is MessageEvent or ActivityEvent) return;
+        if (e.Type is MessageDeletedEvent or UserBannedEvent or UserTimedOutEvent)
+        {
+            if (ChatModerationNotice.From(e) is { } notice) Add(notice);
+            return;
+        }
         foreach (var adapter in _adapters)
         {
             if (adapter.ToChatMessage(e) is { } message) Add(message, e);
@@ -159,6 +195,22 @@ public sealed class ChatHub : IDisposable
         }));
     }
 
+    private void Add(ChatModerationNotice notice)
+    {
+        lock (_gate)
+        {
+            Push(_moderation, notice);
+            if (notice.Kind == ChatModerationKind.MessageDeleted && notice.MessageId.Length > 0)
+            {
+                _deleted.Add(Key(notice.Platform, notice.MessageId));
+                if (_deleted.Count > HistorySize * 4) _deleted.Clear();   // the history holds 500 lines; old keys are useless
+            }
+        }
+        ModerationSeen?.Invoke(notice);
+    }
+
+    private static string Key(string platform, string id) => platform.ToLowerInvariant() + "|" + id;
+
     private static void Push<T>(Queue<T> queue, T value)
     {
         queue.Enqueue(value);
@@ -166,4 +218,50 @@ public sealed class ChatHub : IDisposable
     }
 
     public void Dispose() => _subscription.Dispose();
+}
+
+/// <summary>What a platform reported: a deleted message, a ban or a timeout.</summary>
+public enum ChatModerationKind { MessageDeleted, UserBanned, UserTimedOut }
+
+/// <summary>
+/// A deletion, ban or timeout a platform reported ("chat.messageDeleted", "chat.userBanned", "chat.userTimedOut"), with
+/// the moderator where the platform names one.
+/// </summary>
+public sealed record ChatModerationNotice(string Platform, ChatModerationKind Kind, DateTimeOffset Time)
+{
+    public string MessageId { get; init; } = "";
+    public string UserId { get; init; } = "";
+    public string User { get; init; } = "";
+
+    /// <summary>Timeouts: the length in seconds.</summary>
+    public int? DurationSeconds { get; init; }
+
+    /// <summary>The moderator's name, when the platform reports it.</summary>
+    public string Moderator { get; init; } = "";
+
+    public string Reason { get; init; } = "";
+
+    internal static ChatModerationNotice? From(BotEvent e)
+    {
+        var a = e.Args;
+        var platform = a.GetString("platform");
+        if (platform.Length == 0) return null;
+        var kind = e.Type switch
+        {
+            ChatHub.MessageDeletedEvent => ChatModerationKind.MessageDeleted,
+            ChatHub.UserBannedEvent => ChatModerationKind.UserBanned,
+            _ => ChatModerationKind.UserTimedOut,
+        };
+        var duration = double.TryParse(a.GetString("duration"), System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var seconds) ? (int)seconds : 0;
+        return new ChatModerationNotice(platform, kind, e.Time)
+        {
+            MessageId = kind == ChatModerationKind.MessageDeleted ? a.GetString("messageId") : "",
+            UserId = a.GetString("userId"),
+            User = a.GetString("user") is { Length: > 0 } user ? user : a.GetString("userName"),
+            DurationSeconds = kind == ChatModerationKind.UserTimedOut && duration > 0 ? duration : null,
+            Moderator = a.GetString("moderator") is { Length: > 0 } mod ? mod : a.GetString("moderatorName"),
+            Reason = a.GetString("reason"),
+        };
+    }
 }

@@ -29,6 +29,7 @@ public static class RumbleServiceCollectionExtensions
         services.AddSingleton<IChatEventAdapter, RumbleChatAdapter>();
         services.AddSingleton<Cuebot.Core.Overlays.Events.IOverlayEventAdapter, RumbleOverlayAdapter>();
         services.AddSingleton<IChatSender, RumbleChatSender>();
+        services.AddSingleton<Cuebot.Core.Chat.Moderation.IChatModerator>(sp => new RumbleChatModerator(sp.GetRequiredService<RumbleService>()));
         services.AddSingleton<ITriggerProvider, RumbleTriggers>();
         services.AddSingleton<ISubActionHandler, SendChatMessageSubAction>();
         services.AddSingleton<IScriptFunctionProvider, RumbleScriptFunctions>();

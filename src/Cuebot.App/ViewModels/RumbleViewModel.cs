@@ -33,6 +33,13 @@ public sealed partial class RumbleViewModel : PageViewModel
         set { _rumble.Settings.AutoConnect = value; _rumble.SaveSettings(); OnPropertyChanged(); }
     }
 
+    /// <summary>Moderation through Rumble's unofficial chat addresses (off by default; see the warning on the page).</summary>
+    public bool UnofficialModeration
+    {
+        get => _rumble.Settings.UnofficialModeration;
+        set { _rumble.Settings.UnofficialModeration = value; _rumble.SaveSettings(); OnPropertyChanged(); }
+    }
+
     public string State => _rumble.State.ToString();
     public string StatusMessage => _rumble.StatusMessage;
     public string Channel => _rumble.ChannelName ?? "—";

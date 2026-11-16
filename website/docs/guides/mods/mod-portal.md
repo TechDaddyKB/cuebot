@@ -26,7 +26,9 @@ Each mod has a row under **Mods** on **Chat > Mod portal**:
   [Approving and undoing changes](#approving-and-undoing-changes)).
 - **Paused**: tick it and the mod can do nothing until you untick it.
 - **Must stay a Twitch mod** (for mods who signed in with Twitch): if you remove them as a moderator on Twitch, their
-  access here is paused too.
+  access here is paused too, within a few minutes. If you make them a moderator again, it comes back by itself. While
+  Cuebot cannot ask Twitch (you are signed out of Twitch, for example), nothing changes. This needs Cuebot's Twitch
+  permission to read your moderators.
 - **Sign out** signs this mod out on every device. **Remove** takes away their access; a new invite lets them back.
 
 ![The Mods card: each mod with Role, Their changes, Paused, Sign out and Remove](../../assets/screens/card-mods.png)

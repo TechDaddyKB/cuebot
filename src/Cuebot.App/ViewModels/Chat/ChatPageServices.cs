@@ -21,6 +21,12 @@ public sealed class ChatPageServices
     public JsonFile<EmoteSettings>? EmoteSettings { get; init; }
     public PronounService? Pronouns { get; init; }
     public ChatModerationService? Moderation { get; init; }
+
+    /// <summary>The one way into moderation (permissions, safety rules, the mod log). Without it the page uses <see cref="Moderation"/> unlogged.</summary>
+    public ModerationService? ModerationActions { get; init; }
+
+    /// <summary>Opens a web page (website moderation tools); the system browser when null.</summary>
+    public Action<string>? OpenUrl { get; init; }
     public ActionEngine? Engine { get; init; }
 
     /// <summary>Action names offered in the quick action editor.</summary>
@@ -41,6 +47,7 @@ public sealed class ChatPageServices
             Images = new EmoteImageLoader(host.Get<HttpClient>(), paths.GetSharedDirectory(Path.Combine("cache", "emote-images"))),
             Pronouns = host.GetAll<PronounService>().FirstOrDefault(),
             Moderation = host.GetAll<ChatModerationService>().FirstOrDefault(),
+            ModerationActions = host.GetAll<ModerationService>().FirstOrDefault(),
             Engine = host.Get<ActionEngine>(),
             ActionNames = () => host.Get<ProfileService>().Snapshot.Actions.Select(a => a.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase),
             Settings = new JsonFile<ChatPageSettings>(paths.File("chat-page.json"), log),

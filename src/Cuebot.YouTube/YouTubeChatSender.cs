@@ -9,6 +9,8 @@ internal sealed class YouTubeChatSender(YouTubeService youtube) : IChatSender
 
     public bool CanSend => youtube.IsLive;
 
+    public bool CanSendAsBot => youtube.IsBotSignedIn;
+
     public Task SendAsync(string text, CancellationToken ct = default) => youtube.SendChatMessageAsync(text, ct: ct);
 
     /// <summary>The bot account and a broadcast id are honoured; YouTube echoes are never flagged internal.</summary>

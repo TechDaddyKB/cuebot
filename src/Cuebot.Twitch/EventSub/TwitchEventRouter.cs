@@ -485,6 +485,8 @@ internal sealed class TwitchEventRouter(
             ["user"] = Str(source, "user"),
             ["userName"] = Str(source, "userName"),
         };
+        // Who did it, for the mod log's record of actions made outside Cuebot.
+        if (Str(source, "moderator") is { Length: > 0 } moderator) args["moderator"] = moderator;
         if (includeDuration)
         {
             args["duration"] = Int(source, "duration");

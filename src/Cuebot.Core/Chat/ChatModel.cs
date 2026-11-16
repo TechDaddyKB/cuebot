@@ -30,6 +30,26 @@ public sealed record ChatMessage(
 
     /// <summary>Paid highlight (Twitch bits, Rumble rant): a display amount such as "100 bits" or "$5.00".</summary>
     public string? Amount { get; init; }
+
+    /// <summary>
+    /// The chat the message was posted in, where a platform has several at once (the YouTube live chat id). Moderation
+    /// of the message and its author goes to that chat.
+    /// </summary>
+    public string? ChannelId { get; init; }
+
+    /// <summary>
+    /// False when the platform gave the message no id of its own (Cuebot made one up), so it cannot be deleted.
+    /// </summary>
+    public bool CanDelete { get; init; } = true;
+
+    /// <summary>
+    /// A message for the combined chat with the platform's id, or a made-up one (and <see cref="CanDelete"/> false)
+    /// when the platform sent none.
+    /// </summary>
+    public static ChatMessage Create(string platform, string? id, string user, string userId, string text, DateTimeOffset time) =>
+        string.IsNullOrEmpty(id)
+            ? new ChatMessage(platform, Guid.NewGuid().ToString("N"), user, userId, text, time) { CanDelete = false }
+            : new ChatMessage(platform, id, user, userId, text, time);
 }
 
 /// <summary>Kinds of activity shown in the event feed.</summary>
@@ -100,6 +120,12 @@ public interface IChatSender
     /// of them send as <see cref="SendAsync(string, CancellationToken)"/> does.
     /// </summary>
     Task SendAsync(string text, ChatSendOptions options, CancellationToken ct = default) => SendAsync(text, ct);
+
+    /// <summary>
+    /// True when a bot account is signed in, so <see cref="ChatSendOptions.Bot"/> = true really posts as the bot (the
+    /// chat page offers "Bot" only then).
+    /// </summary>
+    bool CanSendAsBot => false;
 }
 
 /// <summary>How a chat message is sent (Streamer.bot's SendMessage options).</summary>

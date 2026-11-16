@@ -1,6 +1,9 @@
 # Unified multistream mod chat: research and plan
 
-- **Status (2026-11-12):** research and design only. Nothing here is built. Kris decides what gets built.
+- **Status (2026-11-16):** phases 0 and 1 are built (branch `feat/unified-mod-chat`): the fixes in section 2,
+  `IChatModerator` v2, `ModerationService`, the SQLite mod log, `YouTubeQuotaBudget`, opt-in Rumble moderation and the
+  desktop Chat page's tools, mod log and send-as selector. The live checks of phase 0 are listed in
+  `docs/LIVE_TESTING.md` (4b) and have not been run. Phases 2 to 6 are not built.
 - **Owner:** Kris.
 - **Scope:** one window where a moderator sees the Twitch, YouTube, Kick and Rumble chats of one streamer and moderates
   them with one set of tools; a record of mod actions; cross-platform identity links and linked bans.

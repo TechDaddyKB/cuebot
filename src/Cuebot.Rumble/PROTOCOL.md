@@ -47,7 +47,7 @@ Every response repeats the *recent* windows, so Cuebot diffs successive response
   - `init`: sent on every (re)connect; `data.messages[]`, `data.users[]`, `data.channels[]`, `data.config`
     (badge definitions, rant levels, `message_length_max`). The messages replay recent history.
   - `messages`: new `data.messages[]` plus the `users[]`/`channels[]` they reference.
-  - also `delete_messages`, `delete_non_rant_messages`, `pin_message`, ... (ignored by Cuebot).
+  - also `delete_messages`, `delete_non_rant_messages` (see section 4), `pin_message`, ... (the rest are ignored).
 - Message: `{id, time, user_id, channel_id?, text, rant?: {price_cents, duration, expires_on},
   gift_purchase_notification?, raid_notification?}`. User: `{id, username, link, color ("rrggbb"), badges[],
   is_follower}`. A message with `channel_id` was posted as that channel; its `username` is the display name.
@@ -74,6 +74,28 @@ Login (`POST https://rumble.com/service.php?name=<step>`, form-encoded, JSON ans
 Send: `POST https://web7.rumble.com/chat/api/chat/{chatId}/message` with `Cookie: u_s=...` and JSON
 `{"data": {"request_id": "<random 43 chars>", "message": {"text": "..."}, "rant": null, "channel_id": null}}`.
 Limits: 200 characters per message, about one message per 3 seconds.
+
+## 4. Moderation (unofficial, opt-in)
+
+Used only when the streamer ticks **Rumble moderation through unofficial endpoints** (`RumbleSettings.UnofficialModeration`,
+off by default). Rumble's terms forbid automated use without written permission; the setting says so. Shapes from
+cocorum's `chatapi.py` (`delete_message`) and `servicephp.py` (`mute_user`, `unmute_user`, `chat_pin`), read on
+2026-11-16; not yet tried against a live channel (docs/LIVE_TESTING.md, 4b). All requests send `Cookie: u_s=...`.
+
+- **Delete**: `DELETE https://web7.rumble.com/chat/api/chat/{chatId}/message/{messageId}`, no body; success is any 2xx.
+  (Whether the `u_s` cookie is accepted on the `web7` host is unconfirmed.)
+- **Mute**: `POST https://rumble.com/service.php?name=moderation.mute`, form fields `user_to_mute` (the username),
+  `entity_type=user`, `video` (the chat id, base 10), `type` (`video`: this stream; `total`: every chat of the
+  channel) and `duration` in seconds (Cuebot sends `300` for a 5-minute mute; omitted means until the stream ends, or
+  permanent with `type=total`). A JSON answer `{"data": {"success": false}}` means refused.
+- **Unmute** (`service.php?name=moderation.unmute`, form field `record_id`) needs a record id that only Rumble's
+  "muted users" page lists (`rumble.com/account/moderation/muting`); Cuebot does not scrape it and opens that page
+  instead.
+- **Pin / unpin** (`service.php?name=chat.message.pin` / `chat.message.unpin`, `video_id`, `message_id`): not used;
+  the button opens the chat.
+- **Deleted messages** arrive on the chat stream as `{"type": "delete_messages" | "delete_non_rant_messages", "data":
+  {"message_ids": [...]}}`; ids may be numbers or strings. Cuebot publishes `rumble.messageDeleted` and the neutral
+  `chat.messageDeleted` for each.
 
 ## What may break
 

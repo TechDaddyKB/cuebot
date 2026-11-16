@@ -17,8 +17,8 @@ internal sealed class KickChatAdapter : IChatEventAdapter
         var a = e.Args;
         var id = a.GetString("messageId");
         var color = a.GetString("color");
-        return new ChatMessage(Platform, id.Length > 0 ? id : Guid.NewGuid().ToString("N"), a.GetString("user"), a.GetString("userId"),
-            a.GetString("message"), e.Time)
+        return ChatMessage.Create(Platform, id, a.GetString("user"), a.GetString("userId"),
+            a.GetString("message"), e.Time) with
         {
             Roles = Roles(a),
             Color = color.Length > 0 ? color : null,
@@ -86,6 +86,8 @@ internal sealed class KickChatSender(KickService kick) : IChatSender
     public string Platform => KickChatAdapter.PlatformName;
 
     public bool CanSend => kick.IsBroadcasterSignedIn && kick.Settings.Broadcaster.UserId > 0;
+
+    public bool CanSendAsBot => kick.IsBotSignedIn;
 
     public Task SendAsync(string text, CancellationToken ct = default) => kick.SendChatMessageAsync(text, ct: ct);
 

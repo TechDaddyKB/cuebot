@@ -59,6 +59,24 @@
                  ItemsSource="{Binding PlatformChips}" SelectedItem="{Binding Filter}" Margin="0,0,0,4"
                  ToolTip.Tip="Show the chat of one platform only, or everything together." />
 
+        <!-- Chat-wide moderation tools for the selected message's platform (or the filtered one) -->
+        <StackPanel x:Name="ChannelToolBar" DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,4" IsVisible="{Binding HasChannelTools}">
+          <ItemsControl ItemsSource="{Binding ChannelTools}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vmc:ModToolViewModel">
+                <Button Content="{Binding Label}" Command="{Binding RunCommand}" IsEnabled="{Binding IsEnabled}"
+                        ToolTip.Tip="{Binding Hint}" ToolTip.ShowOnDisabled="True" Margin="0,0,6,4" Padding="8,3" FontSize="12" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" FontSize="12" Text="{Binding QuotaText}" IsVisible="{Binding HasQuotaText}" TextWrapping="Wrap" />
+        </StackPanel>
+
         <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0">
           <!-- Quick actions (global ones work without a selection) -->
           <ItemsControl x:Name="QuickActionBar" ItemsSource="{Binding QuickActions}" IsVisible="{Binding HasQuickActions}">
@@ -93,11 +111,13 @@
             </ListBox>
           </Border>
 
-          <Grid ColumnDefinitions="Auto,8,*,8,Auto">
+          <Grid ColumnDefinitions="Auto,8,Auto,8,*,8,Auto">
             <ComboBox ItemsSource="{Binding SendTargets}" SelectedItem="{Binding SendTarget}" MinWidth="110" ToolTip.Tip="Where your message goes: one platform or all connected ones." />
-            <TextBox x:Name="DraftBox" Grid.Column="2" Text="{Binding Draft}" PlaceholderText="Message (type : for emotes, /help for commands)"
-                     ToolTip.Tip="Write a message to post in your chat as yourself. Press Enter to send." />
-            <Button Grid.Column="4" Content="Send" Classes="accent" Command="{Binding SendCommand}" ToolTip.Tip="Posts your message to the chosen chat." />
+            <ComboBox x:Name="SendAsBox" Grid.Column="2" ItemsSource="{Binding SendAsOptions}" SelectedItem="{Binding SendAs}" MinWidth="110"
+                      ToolTip.Tip="Who posts it: Default uses each platform's own setting, Broadcaster your channel, Bot your bot account (offered when a bot account is signed in)." />
+            <TextBox x:Name="DraftBox" Grid.Column="4" Text="{Binding Draft}" PlaceholderText="Message (type : for emotes, /help for commands)"
+                     ToolTip.Tip="Write a message to post in your chat. Press Enter to send." />
+            <Button Grid.Column="6" Content="Send" Classes="accent" Command="{Binding SendCommand}" ToolTip.Tip="Posts your message to the chosen chat." />
           </Grid>
           <TextBlock x:Name="StatusText" Text="{Binding Status}" Classes="muted" TextWrapping="Wrap"
                      IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -162,6 +182,7 @@
                           <TextBlock Text="{Binding Badges}" Classes="muted" FontSize="12"
                                      IsVisible="{Binding Badges, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                           <TextBlock Text="{Binding Pronouns}" Classes="muted" FontSize="12" IsVisible="{Binding HasPronouns}" />
+                          <TextBlock Text="{Binding ActionNote}" Classes="muted" FontSize="12" IsVisible="{Binding HasActionNote}" />
                         </WrapPanel>
                       </StackPanel>
                     </DataTemplate>
@@ -185,8 +206,41 @@
                       </Panel>
                     </Button>
                   </WrapPanel>
+                  <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" IsVisible="{Binding HasTimeoutNote}" Text="{Binding TimeoutNote}" />
+                  <ItemsControl x:Name="UserTools" ItemsSource="{Binding UserTools}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate DataType="vmc:ModToolViewModel">
+                        <Button Content="{Binding Label}" Command="{Binding RunCommand}" IsEnabled="{Binding IsEnabled}"
+                                ToolTip.Tip="{Binding Hint}" ToolTip.ShowOnDisabled="True" Margin="0,0,6,6" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <TextBox Text="{Binding ModReason}" PlaceholderText="Reason (optional)"
+                           ToolTip.Tip="Why you time out, ban or warn this person. It is saved in the mod log; Twitch and Kick also show it to their moderators." />
                   <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
                              IsVisible="{Binding ModerationHint, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Text="{Binding ModerationHint}" />
+                </StackPanel>
+
+                <!-- This person's rows in the mod log -->
+                <StackPanel Spacing="4" IsVisible="{Binding HasUserLog}">
+                  <TextBlock Classes="label" Text="MOD LOG" />
+                  <ItemsControl x:Name="UserLogLines" ItemsSource="{Binding UserLogLines}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate DataType="vmc:ModLogLineViewModel">
+                        <StackPanel Margin="0,2">
+                          <TextBlock FontSize="12.5" TextWrapping="Wrap">
+                            <Run Text="{Binding Time}" Classes="muted" /><Run Text="  " /><Run Text="{Binding Actor}" FontWeight="SemiBold" /><Run Text=" " /><Run Text="{Binding Summary}" />
+                          </TextBlock>
+                          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding Detail}" IsVisible="{Binding HasDetail}" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
                 </StackPanel>
 
                 <!-- Recent messages -->
@@ -205,6 +259,31 @@
                 </StackPanel>
               </StackPanel>
             </ScrollViewer>
+          </Panel>
+        </TabItem>
+        <TabItem x:Name="ModLogTab" Header="Mod log" IsVisible="{Binding HasModLog}">
+          <Panel>
+            <TextBlock Classes="muted" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" Margin="12"
+                       IsVisible="{Binding !HasModLogLines}"
+                       Text="Bans, timeouts, deletions and warnings show up here: yours, your mods' and those made on the platforms' websites." />
+            <ListBox x:Name="ModLogList" ItemsSource="{Binding ModLogLines}" Background="Transparent">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="vmc:ModLogLineViewModel">
+                  <Grid ColumnDefinitions="Auto,*">
+                    <Border Width="4" CornerRadius="2" Background="{Binding PlatformBrush}" Margin="0,0,10,0" />
+                    <StackPanel Grid.Column="1">
+                      <TextBlock TextWrapping="Wrap">
+                        <Run Text="{Binding Actor}" FontWeight="SemiBold" /><Run Text=" " /><Run Text="{Binding Summary}" />
+                      </TextBlock>
+                      <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding Detail}" IsVisible="{Binding HasDetail}" />
+                      <TextBlock Classes="muted" FontSize="12">
+                        <Run Text="{Binding Platform}" /><Run Text=" · " /><Run Text="{Binding Time}" />
+                      </TextBlock>
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
           </Panel>
         </TabItem>
       </TabControl>

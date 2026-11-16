@@ -19,13 +19,18 @@ namespace Cuebot.Portal;
 /// </summary>
 public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, ProfileService profile, CommandStore commands,
     ActionEngine engine, Registry registry, PortalControls? controls = null, PortalUploads? uploads = null,
-    PortalOverlays? overlays = null, PortalAssistant? assistant = null, PortalRewards? rewards = null)
+    PortalOverlays? overlays = null, PortalAssistant? assistant = null, PortalRewards? rewards = null,
+    PortalModeratorCheck? moderatorCheck = null)
 {
     private readonly PortalFiles _files = new(uploads?.Store);
 
     public async Task<JsonObject> HandleAsync(Guid memberId, JsonObject request)
     {
         var member = directory.Member(memberId);
+        // "Must stay a Twitch moderator": re-checked on every request (cached for a few minutes), and may pause the member.
+        if (member is not null && moderatorCheck is not null) member = await moderatorCheck.RefreshAsync(member).ConfigureAwait(false);
+        if (member is { Suspended: true, SuspendedReason: PortalModeratorCheck.Reason })
+            return Error("Your access is paused: you are no longer a moderator of the streamer's Twitch channel.");
         if (member is null || member.Suspended) return Error("Your access was removed or paused by the streamer.");
         var role = directory.RoleOf(member);
         try

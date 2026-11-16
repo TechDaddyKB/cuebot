@@ -51,6 +51,12 @@ public sealed class YouTubeSettings
     /// <summary>The Google Cloud project's daily YouTube Data API quota (default 10,000 units), for estimates.</summary>
     public int DailyQuota { get; set; } = 10_000;
 
+    /// <summary>
+    /// Units of the daily quota that moderation (bans, timeouts, deletions from Cuebot and the mod portal) must leave
+    /// unspent, so reading chat keeps working until the reset.
+    /// </summary>
+    public int ModerationQuotaReserve { get; set; } = 2_000;
+
     /// <summary>Quota day (yyyy-MM-dd, Pacific time, when Google resets quotas) that <see cref="QuotaUsed"/> belongs to.</summary>
     public string QuotaDay { get; set; } = "";
 

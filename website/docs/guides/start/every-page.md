@@ -59,7 +59,7 @@ brackets.
 
 | Page | What it is for | Guide |
 | --- | --- | --- |
-| **Chat** | Read and answer every platform's chat in one place, and moderate. Tabs **Chatter** and **Activity**. | [Chat in one place](#the-chat-page) |
+| **Chat** | Read and answer every platform's chat in one place, and moderate. Tabs **Chatter**, **Mod log** and **Activity**. | [Chat in one place](#the-chat-page), [Moderating your chat](../chat/moderation.md) |
 | **History** | Every run, and every event that came in. Tabs **Action history** and **Trigger viewer**. | [History](../actions/history.md) |
 | **Users & Groups** | Viewers Cuebot has seen, and groups of them. Tabs **Users** and **Groups**. | [Users & Groups](../chat/users-and-groups.md) |
 | **Mod portal** | Invite mods and choose what they may do from their phone or browser. | [The mod portal](../mods/mod-portal.md) |
@@ -212,14 +212,17 @@ brackets.
 
 **Chat > Chat** shows the chat of every platform you are signed in to, in one list.
 
-1. Type in the box at the bottom and press ++enter++ (or click **Send**) to write in chat. The list next to it picks
-   where it goes: one platform, or all connected ones.
+1. Type in the box at the bottom and press ++enter++ (or click **Send**) to write in chat. The first list next to it
+   picks where it goes: one platform, or all connected ones. The second picks who posts it: **Default**,
+   **Broadcaster**, or **Bot** when a bot account is signed in.
 2. Click a message to see what you can do with it: **Reply**, **Delete message**, **Timeout 1 min**, **Timeout 10
-   min**, or ban the person (click once, then again to confirm).
+   min**, ban the person (click once, then again to confirm), **Unban** and **Warn**. Buttons above the chat clear it
+   or switch chat modes. See [Moderating your chat](../chat/moderation.md).
 3. In the send box, type `:` for emotes, or `/help` for the slash commands.
 4. The chat options let you show emotes as pictures (also from 7TV, BTTV and FFZ), show pronouns, colour messages
    that mention your name or come from first-time chatters, and add **quick action** buttons that run an action.
-5. The **Activity** tab lists follows, subs, raids, tips and other events.
+5. The **Activity** tab lists follows, subs, raids, tips and other events. The **Mod log** tab lists bans, timeouts,
+   deletions and warnings, also the ones your mods made on the platforms' websites.
 
 Want the chat inside OBS? The [HTTP server](../developers/http-server.md) gives you a chat dock and an event dock.
 

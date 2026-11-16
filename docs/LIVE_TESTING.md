@@ -181,6 +181,32 @@ The mod does these on their own device; you watch Cuebot.
 - [ ] The mod's message count goes down by one per message, and the Assistant cannot do anything the role does not
       allow (ask it for something outside the role, such as changing a setting it has no permission for).
 
+### 4b. While live: chat moderation (phases 0 and 1 of docs/UNIFIED_MOD_CHAT_PLAN.md)
+
+Use your own test accounts as the targets, never a real viewer. Nothing below was confirmed against a live channel yet.
+
+- [ ] **YouTube timeout limits**: time out a test account for 10 seconds, 1 hour and 2 days from the Chat page. Note
+      what YouTube accepts and what the test account sees (`banDurationSeconds` limits are not documented).
+- [ ] **YouTube, two broadcasts**: with two monitored broadcasts, time out a test account from a message in the older
+      one. The timeout applies in that chat, not the newest one.
+- [ ] **YouTube unban after a restart**: ban a test account, restart Cuebot, click **Unban** on its message. It works
+      (the ban id comes from the mod log).
+- [ ] **YouTube moderator token**: note whether a moderator's own Google account can ban through the API (plan section
+      3.4); Cuebot itself still uses your account.
+- [ ] **Kick**: time out for 90 seconds; Kick shows 2 minutes and the mod log says 2 min. Read the Kick developer terms
+      on the app setup page and note anything about moderation.
+- [ ] **Warn**: Twitch shows the warning to the test account; on YouTube and Kick a chat message @-mentions it.
+- [ ] **Chat modes**: on Twitch, slow mode and emote-only switch on and off from the buttons above the chat.
+- [ ] **Outside actions**: a mod deletes a message and bans a test account on each platform's website. The message is
+      crossed out in Cuebot, the name card says banned, and the **Mod log** tab shows the mod's name (YouTube and
+      Twitch report it; Kick and Rumble may not).
+- [ ] **Send as**: with a bot account signed in, **Bot** in the send box posts as the bot; **Broadcaster** as you.
+- [ ] **Rumble (opt-in only)**: with **Rumble moderation through unofficial endpoints** ticked and the chat sign-in
+      done, delete a message and give a test account a 5-minute mute. Confirm the cookie works on `web7.rumble.com`
+      for deletes. Untick it afterwards if you do not want it.
+- [ ] **Portal, must stay a Twitch mod**: tick it for a test mod, remove them as moderator on Twitch. Within five
+      minutes their portal pages say access is paused; mod them again and it comes back.
+
 ### 5. While live: Fourthwall
 
 These can only be confirmed with a real shop. Small real amounts are enough.
