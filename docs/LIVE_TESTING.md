@@ -17,7 +17,7 @@ helps find it in the log.
 
 **App and connections**
 
-- [ ] The title bar shows **Cuebot 0.1.0-rc.21**.
+- [ ] The title bar shows **Cuebot 0.1.0-rc.22**.
 - [ ] Every platform and service you use shows as connected in the top bar. With more than four, they are small
       badges; hovering one shows its name and status. Nothing covers the search box, title or profile switcher.
 - [ ] Optional: run the automated tests for what you will use on stream (see [Running](#running)), for example
@@ -267,6 +267,22 @@ again afterwards.
       keeps its mod log row (name blank, user id kept) and still works on the platform.
 - [ ] **YouTube 30-day refresh**: not practical live; covered by tests (`IdentityLinksTests`). With a YouTube test
       account linked, check the log after a day for no "could not refresh" warnings while signed in.
+
+### 4e. While live: stream data and the companion app (#44, #45)
+
+- [ ] **Test events stay out of lasting totals**: before going live, send a StreamElements or Streamlabs test tip and an
+      Emulate (everything) cheer. **Chat & Events > Stream Data** lists both as "Test · This stream only"; a stats
+      label shows them as latest, but the all-time top donation does not change.
+- [ ] **Going live clears them**: go live after being offline for more than 15 minutes. The test entries are gone from
+      the latest labels and recent lists.
+- [ ] **Fix a real event**: pick a real follow or tip on Stream Data, change the name, **Save**: the label and event
+      list on the overlay update. **Remove this event**: the totals go down by it.
+- [ ] **Reset mode**: set **Only by hand**, stop and start the stream after 15 minutes: this stream's totals are kept.
+      Set it back.
+- [ ] **Companion events card**: on the phone or tablet, open Chat. Follows, subs, tips and raids from every platform
+      show in the events card (beside chat on the tablet, a strip on the phone), newest first.
+- [ ] **Companion side menu**: the hamburger opens the menu; picking a section closes it. On the tablet, **Keep menu
+      open** keeps it beside the page.
 
 ### 5. While live: Fourthwall
 
