@@ -27,10 +27,11 @@ in points. 0 means the event does not count.
 | Event | What the number is for |
 | --- | --- |
 | Twitch sub, tier 1, 2 and 3 | Each sub or resub |
-| Kick sub, YouTube membership, Other subscriptions | Each sub (Other is Rumble, Ko-fi, Patreon and the rest) |
+| Kick sub, YouTube membership | Each sub or membership |
+| Other subscriptions | Each sub that comes without a price, like Rumble's. Ko-fi, Patreon and Fourthwall memberships come with a price, so they count as money |
 | Gift subs | Count like subs, one for each sub gifted. Untick **Gift subs count like subs** to leave them out |
 | Each 100 bits, Kicks or Jewels | 500 bits count 5 times |
-| Each 1 of money | Tips, Super Chats, Super Stickers, rants, donations and shop orders |
+| Each 1 of money | Tips, Super Chats, Super Stickers, rants, donations and shop orders. A service can have its own number (see [below](#money-by-service)) |
 | Follow | Each new follower |
 | Raid, and Raid per viewer | A raid of 25 viewers counts *Raid* + 25 × *Raid per viewer* |
 | Channel point rewards | One reward per line, like `Add a minute = 60` |
@@ -44,6 +45,27 @@ try your timers and goals before the stream; they are shown as tests in the acti
 You can change any number at any time, even in the middle of a subathon. The new numbers count from then on. Time and
 points already added stay as they are.
 
+### Money by service
+
+Not every dollar is the same to you:
+
+- **Throne** doesn't pay you. A viewer buys you something from your wishlist.
+- **Fourthwall** and **Shopify** sell your merch, and you only keep part of each sale.
+- A **Ko-fi** or **Streamlabs** donation is money in your pocket.
+
+So under **Money by service** every service has its own box:
+
+- **Empty box:** money from that service uses **Each 1 of money**.
+- **A number:** money from that service uses that number instead.
+- **0:** money from that service doesn't count at all.
+
+For example: **Each 1 of money** is `60` (a minute per dollar), **Throne** is `30` and **Fourthwall** is `20`. A $10
+donation adds 10 minutes, a $10 Throne gift adds 5 minutes, and a $10 hoodie sale adds a bit over 3 minutes.
+
+![Money by service, with its own number for Throne and Fourthwall](../../assets/screens/subathon-money.png)
+
+**Manual** is money you add yourself on the [Top spenders](../chat/top-spenders.md) page, like cash at a meetup.
+
 ### Too much or too little: the multiplier
 
 Each timer and goal has a **Multiplier**. Everything events add is multiplied by it:
@@ -54,6 +76,58 @@ Each timer and goal has a **Multiplier**. Everything events add is multiplied by
 
 The **Set a subathon timer's multiplier** sub-action changes it from an action. For example, a Stream Deck button
 can start a happy hour, and a second action can end it an hour later with a **Delay**.
+
+## History: see and fix what added time
+
+The **History** tab lists every change to your timers and goals, newest first. For each one you see:
+
+- who it was
+- where it came from (Twitch, Throne, Ko-fi... or **By hand** for a change you made)
+- what it was, like `Wishlist gift, $10.00`
+- how much time or how many points it added
+
+![The History tab, with one donation changed and a test removed](../../assets/screens/subathon-history.png)
+
+### Look at a day, a week, a month or a year
+
+Pick a timer or goal, then a period: **Today**, **This week**, **This month** or **This year**. Or type your own dates
+in **From** and **To**, like `2026-11-01` and `2026-11-30`. You can also pick a name or a source.
+
+The line above the list adds it all up. It shows how many changes there were, how much time they added, and how much
+money came in, with a total for each source. **Export CSV…** saves what the list shows as a spreadsheet for your
+records.
+
+### Fix a mistake
+
+Click a change, then:
+
+- **Take it back:** its time comes off the timer and it stops counting in the totals. Use this for a chargeback, a
+  refund or a test that slipped in. It stays in the list, faded, so you can still see it.
+- **Put it back:** undoes **Take it back**.
+- **Added:** type the right number of seconds (or points for a goal) and click **Save**. The timer moves by the
+  difference.
+- **Money:** type the right amount and click **Save**. The time follows at the same rate. A $50 entry that was really
+  $5 then adds a tenth of the time.
+- **Note:** write why, like `Refunded`. The note shows in the list and in the CSV.
+
+**Take back all test changes** removes every test and sample event at once. **Take back the changes shown**
+removes everything the list shows, like everything from one person on one day (it asks you to click twice).
+
+Two things to know:
+
+- **Time that has already counted down can't come back.** If a $10 donation added 10 minutes and only 4 are left,
+  taking it back takes off those 4. The note says so.
+- **A reset starts a new run.** After **Reset**, changes from before it stay in the list for your records, but fixing
+  them doesn't move the clock any more. The list marks them **Before the last reset**.
+
+### Add something Cuebot didn't see
+
+Open **Add a change by hand** at the bottom of the History tab. Pick the timer or goal, type the seconds or points
+(a negative number takes away), and add a name and a note, like `Cash at the meetup`. It's listed like any other
+change.
+
+The AI assistant can do all of this too: ask it "how much did Throne add to the donothon this week?" or "take back
+the test donations".
 
 ## Settings
 

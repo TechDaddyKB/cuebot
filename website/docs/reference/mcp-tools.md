@@ -7,7 +7,7 @@ An AI app connected to Cuebot's **MCP server** can use these tools. You do not c
 
 **Asks first** means the tool can delete or change something big, or send a message. While **Confirm destructive tools** is ticked on **Apps > Servers**, Cuebot asks you (or makes the AI ask) before it does it. **Always** means it asks even when that box is not ticked, because it publishes something (a feature request on GitHub).
 
-There are 125 tools.
+There are 128 tools.
 
 | Tool | What it does | Only reads | Asks first |
 | --- | --- | --- | --- |
@@ -25,6 +25,7 @@ There are 125 tools.
 | [`control_prediction`](#control-prediction) | Lock, resolve or cancel the prediction |  |  |
 | [`control_queue`](#control-queue) | Control action queue |  |  |
 | [`control_speech`](#control-speech) | Control speech |  |  |
+| [`correct_subathon_history`](#correct-subathon-history) | Correct a subathon history entry |  |  |
 | [`create_action`](#create-action) | Create action |  |  |
 | [`create_command`](#create-command) | Create command |  |  |
 | [`create_command_with_action`](#create-command-with-action) | Create command with its action |  |  |
@@ -41,6 +42,7 @@ There are 125 tools.
 | [`delete_quote`](#delete-quote) | Delete a quote |  | yes |
 | [`delete_store_item`](#delete-store-item) | Delete a store item |  | yes |
 | [`delete_stream_events`](#delete-stream-events) | Remove stored stream events |  | yes |
+| [`delete_subathon_history`](#delete-subathon-history) | Take back subathon history entries |  | yes |
 | [`delete_timer`](#delete-timer) | Delete timer |  | yes |
 | [`delete_viewer_variable`](#delete-viewer-variable) | Delete a viewer's variable |  | yes |
 | [`delete_voice_alias`](#delete-voice-alias) | Delete a voice alias |  | yes |
@@ -93,6 +95,7 @@ There are 125 tools.
 | [`list_stream_events`](#list-stream-events) | List stored stream events | yes |  |
 | [`list_streamelements_overlays`](#list-streamelements-overlays) | List StreamElements overlays | yes |  |
 | [`list_subaction_types`](#list-subaction-types) | List sub-action types | yes |  |
+| [`list_subathon_history`](#list-subathon-history) | List subathon timer and goal history | yes |  |
 | [`list_timers`](#list-timers) | List timers | yes |  |
 | [`list_trigger_types`](#list-trigger-types) | List trigger types | yes |  |
 | [`list_widget_kinds`](#list-widget-kinds) | List widget kinds | yes |  |
@@ -278,6 +281,19 @@ There are 125 tools.
 | --- | --- | --- |
 | `command` (required) | one of `status`, `next`, `pause`, `resume`, `skip` |  |
 
+## correct_subathon_history
+
+**Correct a subathon history entry.** Fix one change (id from list_subathon_history): remove: true takes it back off its timer or goal (time that already ran cannot be taken back), restore: true puts it back, value sets the seconds or points it added, amount sets the money it was worth (the value follows at the same rate), note adds a note. The timer or goal changes to match unless the entry is from before its last reset.
+
+| Input | Type | What it is |
+| --- | --- | --- |
+| `id` (required) | text | The entry's id |
+| `remove` | true/false | Take it back |
+| `restore` | true/false | Put a removed entry back |
+| `value` | number | New seconds or points |
+| `amount` | number | New money amount |
+| `note` | text | A note |
+
 ## create_action
 
 **Create action.** Create an action. Pick trigger and sub-action types with list_trigger_types / list_subaction_types and check their parameters with describe_subaction_type first. Every parameter value is a string and may use %arguments%, ~globals~ and $functions()$ (resource cuebot://docs/variables). Unknown types or invalid values are rejected with a list of problems.
@@ -425,6 +441,21 @@ There are 125 tools.
 | `to` | text | ISO date and time |
 | `testOnly` | true/false | Only test and emulated events |
 | `all` | true/false | Every stored event (only with no other filter) |
+| `confirmationToken` | text | Only when a previous call answered confirmationRequired: the token it returned, after the user agreed |
+
+## delete_subathon_history
+
+**Take back subathon history entries.** Take every change matching the filter off its timer or goal (testOnly: true takes back all test and emulated changes). all: true with no filter takes back everything.
+
+| Input | Type | What it is |
+| --- | --- | --- |
+| `owner` | text | Timer or goal name or id |
+| `from` | text | ISO date and time |
+| `to` | text | ISO date and time |
+| `name` | text | Part of a name |
+| `source` | text | Source |
+| `testOnly` | true/false | Only test and emulated changes |
+| `all` | true/false | Everything (only with no other filter) |
 | `confirmationToken` | text | Only when a previous call answered confirmationRequired: the token it returned, after the user agreed |
 
 ## delete_timer
@@ -860,6 +891,21 @@ It takes no inputs.
 | --- | --- | --- |
 | `category` | text | Exact category, e.g. Logic |
 | `search` | text | Words in the type id, name or category, e.g. 'send message' |
+
+## list_subathon_history
+
+**List subathon timer and goal history.** Every change to subathon timers (seconds) and goal ladders (points), newest first: id, timer or goal, time, kind (Event, Manual, Set), name, source (Twitch, Throne, Ko-fi... or By hand), what it was, money amount, the value it added, whether it was removed, whether it is a test, and whether correcting it still changes the timer or goal (not after a reset). Also totals by source. Filters: owner (timer or goal name or id), from, to (ISO dates), name, source, testOnly, includeRemoved (default true), limit (default 100).
+
+| Input | Type | What it is |
+| --- | --- | --- |
+| `owner` | text | Timer or goal name or id |
+| `from` | text | ISO date and time |
+| `to` | text | ISO date and time |
+| `name` | text | Part of a name |
+| `source` | text | Twitch, Throne, Ko-fi, By hand... |
+| `testOnly` | true/false | Only test and emulated changes |
+| `includeRemoved` | true/false | Include removed changes (default true) |
+| `limit` | whole number | At most this many (default 100) |
 
 ## list_timers
 

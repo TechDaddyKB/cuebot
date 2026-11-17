@@ -40,8 +40,13 @@ public sealed class SubathonService : IPeriodicService, IDisposable
     public static readonly TimeSpan NewStreamGap = TimeSpan.FromMinutes(15);
     public static readonly TimeSpan SaveEvery = TimeSpan.FromSeconds(10);
 
+    /// <summary>How many history entries are kept (all timers and goals together); the oldest go first.</summary>
+    public const int HistoryLimit = 50_000;
+
     private readonly JsonFile<SubathonFile>? _file;
     private readonly SubathonFile _memory = new();
+    private readonly JsonFile<SubathonHistoryFile>? _historyFile;
+    private readonly SubathonHistoryFile _historyMemory = new();
     private readonly ChatHub? _chat;
     private readonly EventBus _bus;
     private readonly AppLog _log;
@@ -57,7 +62,11 @@ public sealed class SubathonService : IPeriodicService, IDisposable
         _bus = bus;
         _log = log;
         _time = time ?? TimeProvider.System;
-        if (paths is not null) _file = new JsonFile<SubathonFile>(paths.File("subathon.json"), log);
+        if (paths is not null)
+        {
+            _file = new JsonFile<SubathonFile>(paths.File("subathon.json"), log);
+            _historyFile = new JsonFile<SubathonHistoryFile>(paths.File("subathon-history.json"), log);
+        }
         lock (_gate)
         {
             foreach (var t in Data.Timers.Where(t => t.State == TimerState.Running))
@@ -79,6 +88,8 @@ public sealed class SubathonService : IPeriodicService, IDisposable
     public event Action? Changed;
 
     private SubathonFile Data => _file?.Value ?? _memory;
+
+    private List<SubathonHistoryEntry> Log => (_historyFile?.Value ?? _historyMemory).Entries;
 
     // ---------------------------------------------------------------- reading
 
@@ -141,9 +152,11 @@ public sealed class SubathonService : IPeriodicService, IDisposable
         return Json.Clone(goal);
     }
 
-    public bool RemoveTimer(string id) => Remove(Data.Timers, t => t.Id == id);
+    /// <summary>Deletes a timer and its history.</summary>
+    public bool RemoveTimer(string id) => Remove(Data.Timers, t => t.Id == id, id);
 
-    public bool RemoveGoal(string id) => Remove(Data.Goals, g => g.Id == id);
+    /// <summary>Deletes a goal and its history.</summary>
+    public bool RemoveGoal(string id) => Remove(Data.Goals, g => g.Id == id, id);
 
     /// <summary>
     /// Changes a timer's settings (name, starting length, limit, multiplier, values, automation). Its state and time left
@@ -230,6 +243,7 @@ public sealed class SubathonService : IPeriodicService, IDisposable
     /// <summary>Back to stopped, with the starting length and nothing added or run yet.</summary>
     public void Reset(string? timer) => Control(timer, (t, _) =>
     {
+        t.Run++;
         t.State = TimerState.Stopped;
         t.RemainingSeconds = t.InitialSeconds;
         t.ElapsedSeconds = 0;
@@ -245,7 +259,12 @@ public sealed class SubathonService : IPeriodicService, IDisposable
     public double AddTime(string? timer, double seconds, bool useMultiplier = false, string user = "", string reason = "Manual")
     {
         double added = 0;
-        Control(timer, (t, now) => added = AddCore(t, now, useMultiplier ? seconds * t.Multiplier : seconds, user, "", reason));
+        Control(timer, (t, now) =>
+        {
+            var multiplier = useMultiplier ? t.Multiplier : 1;
+            added = AddCore(t, now, seconds * multiplier, user, "", reason);
+            Note(t, now, HistoryKind.Manual, new Cause(user, "", reason), multiplier, added);
+        });
         return added;
     }
 
@@ -255,6 +274,7 @@ public sealed class SubathonService : IPeriodicService, IDisposable
         Sync(t, now);
         var value = Math.Max(0, seconds);
         if (t.MaxSeconds > 0) value = Math.Min(value, Math.Max(0, t.MaxSeconds - t.ElapsedSeconds));
+        Note(t, now, HistoryKind.Set, new Cause("", "", "Set time left"), 1, Math.Round(value - t.RemainingSeconds, 3));
         t.RemainingSeconds = value;
         if (t.State == TimerState.Ended && value > 0) t.State = TimerState.Paused;
         if (t.State == TimerState.Running) After(t, now);
@@ -268,16 +288,23 @@ public sealed class SubathonService : IPeriodicService, IDisposable
     public double AddPoints(string? goal, double points, bool useMultiplier = false, string user = "", string reason = "Manual")
     {
         double added = 0;
-        GoalControl(goal, g => added = AddPointsCore(g, useMultiplier ? points * g.Multiplier : points, user, "", reason));
+        GoalControl(goal, g =>
+        {
+            var multiplier = useMultiplier ? g.Multiplier : 1;
+            added = AddPointsCore(g, points * multiplier, user, "", reason);
+            Note(g, _time.GetUtcNow(), HistoryKind.Manual, new Cause(user, "", reason), multiplier, added);
+        });
         return added;
     }
 
     /// <summary>Sets the points; steps reached on the way up are announced once, as with any other change.</summary>
-    public void SetPoints(string? goal, double points) => GoalControl(goal, g => AddPointsCore(g, Math.Max(0, points) - g.Points, "", "", "Set"));
+    public void SetPoints(string? goal, double points) => GoalControl(goal, g =>
+        Note(g, _time.GetUtcNow(), HistoryKind.Set, new Cause("", "", "Set points"), 1, AddPointsCore(g, Math.Max(0, points) - g.Points, "", "", "Set")));
 
     /// <summary>Back to 0 points, with every step ready to be reached again.</summary>
     public void ResetGoal(string? goal) => GoalControl(goal, g =>
     {
+        g.Run++;
         g.Points = 0;
         g.ReachedThrough = null;
     });
@@ -329,16 +356,16 @@ public sealed class SubathonService : IPeriodicService, IDisposable
                 OnLive(item.Platform, live: false);
                 return;
             case FeedKind.Follow:
-                Apply(item.User, item.Platform, "Follow", v => v.Follow);
+                Apply(new Cause(item.User, item.Platform, "Follow", "Follow", 1, IsTest: item.IsTest), v => v.Follow);
                 return;
             case FeedKind.Raid:
                 var viewers = ExtrasText.FirstNumber(item.Title) ?? 0;
-                Apply(item.User, item.Platform, "Raid", v => v.RaidEach + viewers * v.RaidPerViewer);
+                Apply(new Cause(item.User, item.Platform, "Raid", "Raid", viewers, IsTest: item.IsTest), v => v.RaidEach + viewers * v.RaidPerViewer);
                 return;
             case FeedKind.Redemption:
                 var marker = item.Title.IndexOf(" redeemed ", StringComparison.OrdinalIgnoreCase);
                 var reward = (marker >= 0 ? item.Title[(marker + " redeemed ".Length)..] : item.Title).Trim();
-                Apply(item.User, item.Platform, reward, v => RewardValue(v, reward));
+                Apply(new Cause(item.User, item.Platform, reward, "Redemption", 1, IsTest: item.IsTest), v => RewardValue(v, reward));
                 return;
         }
     }
@@ -352,13 +379,15 @@ public sealed class SubathonService : IPeriodicService, IDisposable
         var quantity = Number(a, "quantity");
         var amount = Number(a, "amount");
         var tier = a.GetString("tier");
-        Apply(a.GetString("user"), platform, a.GetString("label"), v => Worth(v, unit, quantity, amount, platform, tier));
+        var cause = new Cause(a.GetString("user"), platform, a.GetString("label"), unit.ToString(), quantity, amount, a.GetString("currency"),
+            a.GetValueOrDefault("isTest") is true);
+        Apply(cause, v => Worth(v, unit, quantity, amount, platform, tier));
     }
 
     /// <summary>What a purchase is worth to one timer or goal.</summary>
     public static double Worth(EventValues v, SpendUnit unit, double quantity, double amount, string platform, string tier) => unit switch
     {
-        SpendUnit.Money => amount * v.PerCurrencyUnit,
+        SpendUnit.Money => amount * v.MoneyValue(platform),
         SpendUnit.Bits => quantity / 100 * v.Per100Bits,
         SpendUnit.Kicks => quantity / 100 * v.Per100Kicks,
         SpendUnit.Jewels => quantity / 100 * v.Per100Jewels,
@@ -379,7 +408,11 @@ public sealed class SubathonService : IPeriodicService, IDisposable
         _ => v.OtherSub,
     };
 
-    private void Apply(string user, string platform, string reason, Func<EventValues, double> worth)
+    /// <summary>What caused a change, for its history entry.</summary>
+    private sealed record Cause(string User, string Source, string Reason, string Unit = "", double Quantity = 0, double Amount = 0,
+        string Currency = "", bool IsTest = false);
+
+    private void Apply(Cause cause, Func<EventValues, double> worth)
     {
         var changed = false;
         lock (_gate)
@@ -389,12 +422,20 @@ public sealed class SubathonService : IPeriodicService, IDisposable
             {
                 var accepts = t.State == TimerState.Running || t.State == TimerState.Paused && t.AddWhilePaused;
                 var seconds = worth(t.Values) * t.Multiplier;
-                if (accepts && seconds > 0 && double.IsFinite(seconds) && AddCore(t, now, seconds, user, platform, reason) > 0) changed = true;
+                if (!accepts || !(seconds > 0) || !double.IsFinite(seconds)) continue;
+                var added = AddCore(t, now, seconds, cause.User, cause.Source, cause.Reason);
+                if (added == 0) continue;
+                Note(t, now, HistoryKind.Event, cause, t.Multiplier, added);
+                changed = true;
             }
             foreach (var g in Data.Goals)
             {
                 var points = worth(g.Values) * g.Multiplier;
-                if (points > 0 && double.IsFinite(points) && AddPointsCore(g, points, user, platform, reason) != 0) changed = true;
+                if (!(points > 0) || !double.IsFinite(points)) continue;
+                var added = AddPointsCore(g, points, cause.User, cause.Source, cause.Reason);
+                if (added == 0) continue;
+                Note(g, now, HistoryKind.Event, cause, g.Multiplier, added);
+                changed = true;
             }
             if (changed) Save();
         }
@@ -416,6 +457,7 @@ public sealed class SubathonService : IPeriodicService, IDisposable
                 {
                     foreach (var g in Data.Goals.Where(g => g.ResetOnNewStream))
                     {
+                        g.Run++;
                         g.Points = 0;
                         g.ReachedThrough = null;
                     }
@@ -443,6 +485,252 @@ public sealed class SubathonService : IPeriodicService, IDisposable
         Flush(true);
     }
 
+    // ---------------------------------------------------------------- history
+
+    /// <summary>The newest entries matching <paramref name="filter"/> first, as copies.</summary>
+    public IReadOnlyList<SubathonHistoryEntry> History(HistoryFilter filter, int limit = 500)
+    {
+        lock (_gate) return Matching(filter).Reverse().Take(Math.Max(1, limit)).Select(Json.Clone).ToList();
+    }
+
+    /// <summary>One entry by id (a copy), or null.</summary>
+    public SubathonHistoryEntry? HistoryEntry(string id)
+    {
+        lock (_gate) return Log.FirstOrDefault(e => e.Id == id.Trim()) is { } e ? Json.Clone(e) : null;
+    }
+
+    /// <summary>What the entries matching <paramref name="filter"/> add up to, by source; removed entries are counted apart.</summary>
+    public HistorySummary Summarize(HistoryFilter filter)
+    {
+        lock (_gate)
+        {
+            var all = Matching(filter with { IncludeRemoved = true }).ToList();
+            var counted = all.Where(e => !e.Removed).ToList();
+            var bySource = counted
+                .GroupBy(e => SourceName(e), StringComparer.OrdinalIgnoreCase)
+                .Select(g => new HistorySourceTotal(g.Key, g.Count(), Math.Round(g.Sum(e => e.Amount), 2), Math.Round(g.Sum(e => e.Value), 3)))
+                .OrderByDescending(x => x.Value)
+                .ToList();
+            return new HistorySummary(counted.Count, all.Count - counted.Count, Math.Round(counted.Sum(e => e.Value), 3),
+                Math.Round(counted.Sum(e => e.Amount), 2), bySource);
+        }
+    }
+
+    /// <summary>The name of the timer or goal an entry belongs to ("" when it was deleted).</summary>
+    public string OwnerName(SubathonHistoryEntry e)
+    {
+        lock (_gate)
+            return e.IsGoal ? Data.Goals.FirstOrDefault(g => g.Id == e.OwnerId)?.Name ?? "" : Data.Timers.FirstOrDefault(t => t.Id == e.OwnerId)?.Name ?? "";
+    }
+
+    /// <summary>Whether correcting the entry changes its timer or goal (it belongs to the current run, which was not reset since).</summary>
+    public bool IsCurrent(SubathonHistoryEntry e)
+    {
+        lock (_gate)
+            return e.IsGoal ? Data.Goals.Any(g => g.Id == e.OwnerId && g.Run == e.Run) : Data.Timers.Any(t => t.Id == e.OwnerId && t.Run == e.Run);
+    }
+
+    /// <summary>
+    /// Takes an entry back: its seconds or points come off its timer or goal (as far as they still can: time that has
+    /// already run cannot be taken back) and it stops counting in the totals. An entry from before the last reset is only
+    /// marked. Removing an entry twice does nothing.
+    /// </summary>
+    public SubathonHistoryEntry RemoveEntry(string id, string? note = null) => Correct(id, (e, now) =>
+    {
+        RemoveCore(e, now);
+        if (note is not null) e.Note = note.Trim();
+    });
+
+    /// <summary>Puts a removed entry back: what removing it took off is added again.</summary>
+    public SubathonHistoryEntry RestoreEntry(string id) => Correct(id, (e, now) =>
+    {
+        if (!e.Removed) return;
+        var expected = e.Reversed;
+        var (applied, live) = Adjust(e, expected, now);
+        e.Removed = false;
+        e.Reversed = 0;
+        if (live && Math.Abs(applied - expected) > 0.001) e.Note = Join(e.Note, $"Only {Change(e, applied)} could be put back (the limit)");
+    });
+
+    /// <summary>
+    /// Corrects an entry: a new value (seconds or points), or a new money amount (the value follows at the rate the entry
+    /// was counted with), and/or a note. The difference is added to or taken off its timer or goal.
+    /// </summary>
+    public SubathonHistoryEntry ChangeEntry(string id, double? value = null, double? amount = null, string? note = null) => Correct(id, (e, now) =>
+    {
+        if (e.Removed && (value is not null || amount is not null)) throw new ArgumentException("This entry was removed; put it back first.");
+        double? target = value;
+        if (amount is { } newAmount)
+        {
+            if (!(e.Amount > 0)) throw new ArgumentException("This entry has no money amount to change; change its value instead.");
+            if (!(newAmount >= 0) || !double.IsFinite(newAmount)) throw new ArgumentException("The amount must be 0 or more.");
+            target ??= e.Value * newAmount / e.Amount;
+            e.OriginalAmount ??= e.Amount;
+            e.Amount = Math.Round(newAmount, 4);
+        }
+        if (target is { } wanted)
+        {
+            if (!double.IsFinite(wanted)) throw new ArgumentException("The value must be a number.");
+            wanted = Math.Round(wanted, 3);
+            var delta = wanted - e.Value;
+            var (applied, live) = Adjust(e, delta, now);
+            e.OriginalValue ??= e.Value;
+            e.Value = live ? Math.Round(e.Value + applied, 3) : wanted;
+            if (live && Math.Abs(applied - delta) > 0.001)
+                e.Note = Join(e.Note, $"Only {Change(e, applied)} could be applied; the rest had already run or was past the limit");
+        }
+        if (note is not null) e.Note = note.Trim();
+    });
+
+    /// <summary>Removes every entry matching <paramref name="filter"/> (like <see cref="RemoveEntry"/>); returns how many.</summary>
+    public int RemoveEntries(HistoryFilter filter)
+    {
+        int removed;
+        lock (_gate)
+        {
+            var now = _time.GetUtcNow();
+            var matching = Matching(filter with { IncludeRemoved = false }).ToList();
+            foreach (var e in matching)
+            {
+                RemoveCore(e, now);
+                e.ChangedAt = now;
+            }
+            removed = matching.Count;
+            if (removed > 0)
+            {
+                SaveHistory();
+                Save();
+            }
+        }
+        Flush(removed > 0);
+        return removed;
+    }
+
+    /// <summary>The entries matching <paramref name="filter"/> as CSV (oldest first), for a spreadsheet or the streamer's records.</summary>
+    public string HistoryCsv(HistoryFilter filter)
+    {
+        List<(SubathonHistoryEntry Entry, string Owner)> rows;
+        lock (_gate)
+        {
+            var names = Data.Timers.ToDictionary(t => t.Id, t => t.Name);
+            foreach (var g in Data.Goals) names[g.Id] = g.Name;
+            rows = Matching(filter).Select(e => (Json.Clone(e), names.GetValueOrDefault(e.OwnerId, ""))).ToList();
+        }
+        var csv = new System.Text.StringBuilder("Time,Timer or goal,Kind,Name,Source,What,Unit,Quantity,Amount,Currency,Added,Unit added,Removed,Test,Note\n");
+        foreach (var (e, owner) in rows)
+        {
+            string[] cells =
+            [
+                e.Time.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), owner, e.Kind.ToString(), e.User, e.Source,
+                e.Reason, e.Unit, Num(e.Quantity), Num(e.Amount), e.Currency, Num(e.Value), e.IsGoal ? "points" : "seconds",
+                e.Removed ? "yes" : "", e.IsTest ? "yes" : "", e.Note,
+            ];
+            csv.AppendJoin(',', cells.Select(Cell)).Append('\n');
+        }
+        return csv.ToString();
+
+        static string Num(double n) => n.ToString("0.###", CultureInfo.InvariantCulture);
+        static string Cell(string text) => text.IndexOfAny([',', '"', '\n', '\r']) >= 0 ? "\"" + text.Replace("\"", "\"\"") + "\"" : text;
+    }
+
+    /// <summary>"+5:00:00"-style text for a timer entry's change, "+2 points" for a goal's.</summary>
+    public static string Change(SubathonHistoryEntry e, double? value = null)
+    {
+        var v = value ?? e.Value;
+        var sign = v < 0 ? "-" : "+";
+        return e.IsGoal
+            ? sign + Math.Abs(v).ToString("0.###", CultureInfo.InvariantCulture) + (Math.Abs(v) == 1 ? " point" : " points")
+            : sign + Format(Math.Abs(v), roundUp: false);
+    }
+
+    /// <summary>Where an entry came from, for lists and totals ("By hand" for manual changes).</summary>
+    public static string SourceName(SubathonHistoryEntry e) => e.Source.Trim().Length > 0 ? e.Source.Trim() : "By hand";
+
+    private void Note(SubathonTimer t, DateTimeOffset now, HistoryKind kind, Cause cause, double multiplier, double value) =>
+        Note(t.Id, false, t.Run, now, kind, cause, multiplier, value);
+
+    private void Note(GoalLadder g, DateTimeOffset now, HistoryKind kind, Cause cause, double multiplier, double value) =>
+        Note(g.Id, true, g.Run, now, kind, cause, multiplier, value);
+
+    private void Note(string owner, bool isGoal, int run, DateTimeOffset now, HistoryKind kind, Cause c, double multiplier, double value)
+    {
+        if (value == 0 || !double.IsFinite(value)) return;
+        var log = Log;
+        log.Add(new SubathonHistoryEntry
+        {
+            OwnerId = owner, IsGoal = isGoal, Run = run, Time = now, Kind = kind,
+            User = c.User.Trim().TrimStart('@'), Source = c.Source.Trim(), Reason = c.Reason.Trim(), Unit = c.Unit,
+            Quantity = c.Quantity, Amount = Math.Round(c.Amount, 4), Currency = c.Currency, Multiplier = multiplier,
+            Value = Math.Round(value, 3), IsTest = c.IsTest,
+        });
+        if (log.Count > HistoryLimit) log.RemoveRange(0, log.Count - HistoryLimit);
+        SaveHistory();
+    }
+
+    private IEnumerable<SubathonHistoryEntry> Matching(HistoryFilter f)
+    {
+        string? owner = null;
+        if (!string.IsNullOrWhiteSpace(f.Owner)) owner = FindTimer(f.Owner)?.Id ?? FindGoal(f.Owner)?.Id ?? "\0none";
+        var user = f.User?.Trim().TrimStart('@') ?? "";
+        var source = f.Source?.Trim() ?? "";
+        return Log.Where(e =>
+            (owner is null || e.OwnerId == owner)
+            && (f.From is not { } from || e.Time >= from)
+            && (f.To is not { } to || e.Time <= to)
+            && (user.Length == 0 || e.User.Contains(user, StringComparison.OrdinalIgnoreCase))
+            && (source.Length == 0 || string.Equals(SourceName(e), source, StringComparison.OrdinalIgnoreCase))
+            && (!f.TestOnly || e.IsTest)
+            && (f.IncludeRemoved || !e.Removed));
+    }
+
+    private void RemoveCore(SubathonHistoryEntry e, DateTimeOffset now)
+    {
+        if (e.Removed) return;
+        var (applied, live) = Adjust(e, -e.Value, now);
+        e.Removed = true;
+        e.Reversed = Math.Round(-applied, 3);
+        if (live && Math.Abs(applied + e.Value) > 0.001)
+            e.Note = Join(e.Note, $"Only {Change(e, -applied).TrimStart('+')} could be taken back; the rest had already run");
+    }
+
+    /// <summary>
+    /// Adds <paramref name="delta"/> to the entry's timer or goal when it still belongs to the current run; returns what
+    /// was really applied (limits and time already run can make it less) and whether the timer or goal was changed.
+    /// </summary>
+    private (double Applied, bool Live) Adjust(SubathonHistoryEntry e, double delta, DateTimeOffset now)
+    {
+        delta = Math.Round(delta, 3);
+        if (e.IsGoal)
+        {
+            if (Data.Goals.FirstOrDefault(g => g.Id == e.OwnerId) is not { } g || g.Run != e.Run) return (0, false);
+            return (delta == 0 ? 0 : AddPointsCore(g, delta, e.User, e.Source, "Correction"), true);
+        }
+        if (Data.Timers.FirstOrDefault(t => t.Id == e.OwnerId) is not { } t || t.Run != e.Run) return (0, false);
+        if (delta == 0) return (0, true);
+        var applied = AddCore(t, now, delta, e.User, e.Source, "Correction");
+        if (applied < 0) t.AddedSeconds = Math.Max(0, t.AddedSeconds + applied);   // a taken-back event was never really added
+        return (applied, true);
+    }
+
+    private SubathonHistoryEntry Correct(string id, Action<SubathonHistoryEntry, DateTimeOffset> change)
+    {
+        SubathonHistoryEntry copy;
+        lock (_gate)
+        {
+            var e = Log.FirstOrDefault(x => x.Id == id.Trim()) ?? throw new ArgumentException($"No history entry '{id}'");
+            var now = _time.GetUtcNow();
+            change(e, now);
+            e.ChangedAt = now;
+            SaveHistory();
+            Save();
+            copy = Json.Clone(e);
+        }
+        Flush(true);
+        return copy;
+    }
+
+    private static string Join(string note, string add) => note.Trim().Length == 0 ? add : $"{note.Trim()}. {add}";
+
     // ---------------------------------------------------------------- the maths
 
     private void StartCore(SubathonTimer t, DateTimeOffset now)
@@ -456,6 +744,7 @@ public sealed class SubathonService : IPeriodicService, IDisposable
                 Emit(SubathonEvents.Resumed, TimerArgs(t));
                 return;
             case TimerState.Ended:
+                t.Run++;
                 t.RemainingSeconds = t.InitialSeconds;
                 t.ElapsedSeconds = 0;
                 t.AddedSeconds = 0;
@@ -637,13 +926,17 @@ public sealed class SubathonService : IPeriodicService, IDisposable
         return list.FirstOrDefault(x => id(x) == key) ?? list.FirstOrDefault(x => string.Equals(title(x), key, StringComparison.OrdinalIgnoreCase));
     }
 
-    private bool Remove<T>(List<T> list, Predicate<T> match)
+    private bool Remove<T>(List<T> list, Predicate<T> match, string id)
     {
         int removed;
         lock (_gate)
         {
             removed = list.RemoveAll(match);
-            if (removed > 0) Save();
+            if (removed > 0)
+            {
+                if (Log.RemoveAll(e => e.OwnerId == id) > 0) SaveHistory();
+                Save();
+            }
         }
         if (removed > 0) Changed?.Invoke();
         return removed > 0;
@@ -686,7 +979,13 @@ public sealed class SubathonService : IPeriodicService, IDisposable
 
     private void Save() => _file?.ScheduleSave();
 
-    public void FlushFile() => _file?.Flush();
+    private void SaveHistory() => _historyFile?.ScheduleSave();
+
+    public void FlushFile()
+    {
+        _file?.Flush();
+        _historyFile?.Flush();
+    }
 
     public void Dispose()
     {
@@ -700,5 +999,6 @@ public sealed class SubathonService : IPeriodicService, IDisposable
             Save();
         }
         _file?.Dispose();
+        _historyFile?.Dispose();
     }
 }

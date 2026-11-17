@@ -725,6 +725,80 @@ public sealed class ExtrasPagesTests : IAsyncDisposable
         window.Close();
     }
 
+    [AvaloniaFact]
+    public void Subathon_history_lists_changes_and_corrects_them()
+    {
+        using var service = new Cuebot.Core.Subathon.SubathonService(new AppPaths(_dataDir), null, Bus, Get<Cuebot.Core.Logging.AppLog>());
+        var vm = new SubathonGoalsViewModel(service);
+        var window = Open(new SubathonGoalsView(), vm);
+        vm.AddTimerCommand.Execute(null);
+        Pump();
+        var timer = Assert.Single(vm.Timers);
+        timer.StartingMinutes = 60;
+        timer.Values.PerCurrencyUnit = 60;
+        var throne = timer.Values.MoneySources.Single(r => r.Name == "Throne");
+        throne.Value = 10;
+        Assert.Equal(10, service.Timer("")!.Values.MoneyValue("throne"));
+        timer.StartCommand.Execute(null);
+
+        void Money(double amount, string platform, string user, bool test = false) =>
+            Bus.Publish(new Cuebot.Core.Events.BotEvent(Cuebot.Core.Spending.SpendingEvents.Recorded, new Dictionary<string, object?>
+            {
+                ["user"] = user, ["platform"] = platform, ["label"] = "Donation", ["unit"] = "Money", ["quantity"] = amount, ["amount"] = amount,
+                ["currency"] = "USD", ["isTest"] = test,
+            }));
+        throne.Value = 10;
+        timer.Values.MoneySources.Single(r => r.Name == "Fourthwall").Value = 20;
+        foreach (var expander in window.GetVisualDescendants().OfType<Expander>()) expander.IsExpanded = expander.Header is "What events add (seconds)";
+        Pump();
+        window.GetVisualDescendants().OfType<CheckBox>().First(c => c.Content is string text && text.StartsWith("Gift subs", StringComparison.Ordinal)).BringIntoView();
+        Pump();
+        SaveBothThemes(window, "subathon-money");
+        Money(20, "Throne", "PixelPanda");
+        Money(5, "Ko-fi", "CozyCass");
+        Money(5, "Ko-fi", "Test viewer", test: true);
+        Pump();
+
+        vm.SelectedTabIndex = 2;
+        var history = vm.History;
+        Assert.Equal(["Test viewer", "CozyCass", "PixelPanda"], history.Rows.Select(r => r.Who));
+        Assert.Equal("Donation, $20.00", history.Rows[^1].What);
+        Assert.Equal("+0:03:20", history.Rows[^1].Change);
+        Assert.Contains("3 change(s), +0:13:20, $30.00 in purchases", history.Summary);
+        Assert.Contains("Throne: 1 · $20.00 · +0:03:20", history.BySource);
+
+        history.SourceFilter = "Throne";
+        var panda = Assert.Single(history.Rows);
+        history.Selected = panda;
+        history.EditAmount = 2;
+        history.SaveEditCommand.Execute(null);
+        Pump();
+        Assert.Contains("was changed to match", history.Status);
+        Assert.Equal(20, service.History(new Cuebot.Core.Subathon.HistoryFilter(Source: "Throne")).Single().Value);
+
+        history.SourceFilter = Cuebot.App.ViewModels.Extras.SubathonHistoryViewModel.AllSources;
+        history.RemoveTestEntriesCommand.Execute(null);
+        history.RemoveTestEntriesCommand.Execute(null);
+        Pump();
+        Assert.Contains("Removed 1 test change", history.Status);
+        Assert.Contains("Removed", history.Rows.First(r => r.Who == "Test viewer").Badges);
+
+        history.AddValue = 120;
+        history.AddName = "NightOwlNora";
+        history.AddNote = "At the meetup";
+        history.AddCorrectionCommand.Execute(null);
+        Pump();
+        Assert.Equal("At the meetup", history.Rows[0].What);
+        Assert.Equal("By hand", history.Rows[0].Source);
+
+        history.Period = "Today";
+        Assert.NotEmpty(history.FromFilter);
+        Pump();
+        SaveBothThemes(window, "subathon-history");
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
     private sealed class FixedRates : Cuebot.Core.Spending.IExchangeRateSource
     {
         public Task<Cuebot.Core.Spending.ExchangeRateTable?> FetchAsync(string baseCurrency, CancellationToken ct) =>

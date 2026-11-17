@@ -118,6 +118,37 @@ public static partial class McpTools
                 : OptBool(a, "testOnly") == true ? "Remove every test event from the stream totals" : "Remove the matching events from the stream totals",
         },
 
+        new("list_subathon_history", "List subathon timer and goal history",
+            "Every change to subathon timers (seconds) and goal ladders (points), newest first: id, timer or goal, time, kind "
+            + "(Event, Manual, Set), name, source (Twitch, Throne, Ko-fi... or By hand), what it was, money amount, the value it "
+            + "added, whether it was removed, whether it is a test, and whether correcting it still changes the timer or goal "
+            + "(not after a reset). Also totals by source. Filters: owner (timer or goal name or id), from, to (ISO dates), name, "
+            + "source, testOnly, includeRemoved (default true), limit (default 100).",
+            Schema([], ("owner", Str("Timer or goal name or id")), ("from", Str("ISO date and time")), ("to", Str("ISO date and time")),
+                ("name", Str("Part of a name")), ("source", Str("Twitch, Throne, Ko-fi, By hand...")), ("testOnly", Bool("Only test and emulated changes")),
+                ("includeRemoved", Bool("Include removed changes (default true)")), ("limit", Int("At most this many (default 100)"))),
+            ReadOnlyHints, (a, _) => Done(ops.SubathonHistory(a))),
+        new("correct_subathon_history", "Correct a subathon history entry",
+            "Fix one change (id from list_subathon_history): remove: true takes it back off its timer or goal (time that already "
+            + "ran cannot be taken back), restore: true puts it back, value sets the seconds or points it added, amount sets the "
+            + "money it was worth (the value follows at the same rate), note adds a note. The timer or goal changes to match "
+            + "unless the entry is from before its last reset.",
+            Schema(["id"], ("id", Str("The entry's id")), ("remove", Bool("Take it back")), ("restore", Bool("Put a removed entry back")),
+                ("value", Num("New seconds or points")), ("amount", Num("New money amount")), ("note", Str("A note"))),
+            WriteHints, (a, _) => Done(ops.CorrectSubathonHistory(ReqStr(a, "id"), a))),
+        new("delete_subathon_history", "Take back subathon history entries",
+            "Take every change matching the filter off its timer or goal (testOnly: true takes back all test and emulated "
+            + "changes). all: true with no filter takes back everything.",
+            Schema([], ("owner", Str("Timer or goal name or id")), ("from", Str("ISO date and time")), ("to", Str("ISO date and time")),
+                ("name", Str("Part of a name")), ("source", Str("Source")), ("testOnly", Bool("Only test and emulated changes")),
+                ("all", Bool("Everything (only with no other filter)")), Confirm()),
+            DestructiveHints, (a, _) => Done(ops.RemoveSubathonHistory(a)))
+        {
+            Confirmation = a => OptBool(a, "testOnly") == true
+                ? "Take every test change off the subathon timers and goals"
+                : "Take the matching changes off the subathon timers and goals",
+        },
+
         new("request_feature", "Request a feature",
             "File a feature request for Cuebot's developers as a PUBLIC GitHub issue (labelled enhancement), for something the streamer "
             + "wants that Cuebot cannot do. Only after checking with the other tools that it really cannot (no trigger, sub-action, "

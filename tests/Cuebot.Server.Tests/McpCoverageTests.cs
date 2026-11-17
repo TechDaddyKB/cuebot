@@ -30,7 +30,7 @@ public sealed class McpCoverageTests : IAsyncLifetime
         "list_gallery", "import_gallery_item", "list_streamelements_overlays", "import_streamelements_overlay",
         "list_connections", "connect_service", "get_speech_settings", "update_speech_settings", "list_speech_voices", "save_voice_alias",
         "delete_voice_alias", "speak", "set_viewer_voice", "get_feature_settings", "update_feature_settings", "get_stream_totals",
-        "set_stream_totals", "list_stream_events", "update_stream_event", "delete_stream_events", "list_hotkeys", "save_hotkey", "delete_hotkey", "list_decks", "get_deck", "save_deck", "delete_deck",
+        "set_stream_totals", "list_stream_events", "update_stream_event", "delete_stream_events", "list_subathon_history", "correct_subathon_history", "delete_subathon_history", "list_hotkeys", "save_hotkey", "delete_hotkey", "list_decks", "get_deck", "save_deck", "delete_deck",
     ];
 
     private ApiHost _host = null!;
@@ -440,6 +440,31 @@ public sealed class McpCoverageTests : IAsyncLifetime
         await Confirmed("set_stream_totals", Args(("command", "setTopDonation"), ("type", "tip"), ("period", "alltime"), ("name", "")));
         await Confirmed("set_stream_totals", Args(("command", "set"), ("type", "tip"), ("period", "total"), ("count", 1), ("amount", 7)));
         await Ok("set_stream_totals", Args(("command", "setCountTestEvents"), ("enabled", false)));
+
+        // Subathon history: list, correct, take back test changes.
+        var donothon = Bot.Subathon.AddTimer("Donothon");
+        Bot.Subathon.UpdateTimer(donothon.Id, t => t.Values.MoneyBySource["Throne"] = 10);
+        Bot.Subathon.Start(donothon.Id);
+        void Spend(double amount, string platform, string user, bool test = false) =>
+            Bot.Bus.Publish(new Cuebot.Core.Events.BotEvent(Cuebot.Core.Spending.SpendingEvents.Recorded, new Dictionary<string, object?>
+            {
+                ["user"] = user, ["platform"] = platform, ["label"] = "Donation", ["unit"] = "Money", ["quantity"] = amount, ["amount"] = amount,
+                ["currency"] = "USD", ["isTest"] = test,
+            }));
+        Spend(10, "Throne", "Ann");
+        Spend(5, "Ko-fi", "Sample", test: true);
+        var history = await Ok("list_subathon_history", Args(("owner", "Donothon")));
+        Assert.Equal(2, history["entries"]!.AsArray().Count);
+        var annEntry = history["entries"]!.AsArray().Single(e => S(e!["name"]) == "Ann")!;
+        Assert.Equal((100.0, "Throne", true), (annEntry["value"]!.GetValue<double>(), S(annEntry["source"]), annEntry["changesTimerOrGoal"]!.GetValue<bool>()));
+        Assert.Equal(400.0, history["summary"]!["value"]!.GetValue<double>());
+        var corrected = await Ok("correct_subathon_history", Args(("id", S(annEntry["id"])), ("amount", 20)));
+        Assert.Equal(200.0, corrected["value"]!.GetValue<double>());
+        await Fails("correct_subathon_history", Args(("id", "missing"), ("remove", true)));
+        await Fails("list_subathon_history", Args(("owner", "Nope")));
+        var takenBack = await Confirmed("delete_subathon_history", Args(("testOnly", true)));
+        Assert.Equal(1, takenBack["removed"]!.GetValue<int>());
+        Assert.Single((await Ok("list_subathon_history", Args(("includeRemoved", false))))["entries"]!.AsArray());
 
         // Hotkeys run actions; decks hold buttons.
         Bot.AddAction("Scene: BRB");

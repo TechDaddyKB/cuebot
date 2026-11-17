@@ -29,6 +29,9 @@ count. A service's own test button (like **Send test event**) never adds points.
 sends with **emulate event** ("everything") do, so you can try a goal before the stream. The full list, and how money
 is counted, is under [What events are worth](subathon-timers.md#what-events-are-worth).
 
+Every point a goal gets is listed on the **History** tab, where you can take a change back or fix it. See
+[History](subathon-timers.md#history-see-and-fix-what-added-time).
+
 Each goal also has a **Multiplier** that everything events add is multiplied by: `2` for double points, `0.5` for half.
 See [the multiplier](subathon-timers.md#too-much-or-too-little-the-multiplier).
 

@@ -35,7 +35,22 @@ public sealed partial class EventValuesViewModel : ObservableObject
         RaidEach = (decimal)v.RaidEach;
         RaidPerViewer = (decimal)v.RaidPerViewer;
         Redemptions = string.Join(Environment.NewLine, v.Redemptions.Select(r => $"{r.Key} = {r.Value.ToString("0.###", CultureInfo.InvariantCulture)}"));
+        var own = new Dictionary<string, double>(v.MoneyBySource, StringComparer.OrdinalIgnoreCase);
+        foreach (var source in EventValues.MoneySources.Concat(own.Keys.Where(k => !EventValues.MoneySources.Contains(k, StringComparer.OrdinalIgnoreCase))))
+            MoneySources.Add(new MoneySourceRowViewModel(this, source, own.TryGetValue(source, out var value) ? (decimal)value : null));
         _loading = false;
+    }
+
+    /// <summary>Each service's own value for 1 of money; empty uses "Each 1 of money".</summary>
+    public ObservableCollection<MoneySourceRowViewModel> MoneySources { get; } = [];
+
+    /// <summary>Saves the services that have their own value (an empty box takes a service back to the general value).</summary>
+    internal void SaveMoneySources()
+    {
+        if (_loading) return;
+        var own = MoneySources.Where(r => r.Value is not null)
+            .ToDictionary(r => r.Name, r => (double)Math.Max(0, r.Value!.Value), StringComparer.OrdinalIgnoreCase);
+        _save(v => v.MoneyBySource = own);
     }
 
     /// <summary>"seconds" or "points", for the labels.</summary>
@@ -97,6 +112,16 @@ public sealed partial class EventValuesViewModel : ObservableObject
     {
         if (!_loading) _save(change);
     }
+}
+
+/// <summary>One service's value for 1 of money (null: the general "Each 1 of money").</summary>
+public sealed partial class MoneySourceRowViewModel(EventValuesViewModel owner, string name, decimal? value) : ObservableObject
+{
+    public string Name { get; } = name;
+
+    [ObservableProperty] private decimal? _value = value;
+
+    partial void OnValueChanged(decimal? value) => owner.SaveMoneySources();
 }
 
 /// <summary>One subathon timer: its clock and controls, its settings and its value list.</summary>
@@ -342,6 +367,7 @@ public sealed partial class SubathonGoalsViewModel : PageViewModel
     public SubathonGoalsViewModel(SubathonService service) : base(PageTitle)
     {
         _service = service;
+        History = new SubathonHistoryViewModel(service);
         service.Changed += () => OnUi(Refresh);
         Refresh();
         _clock = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) => Tick());
@@ -350,6 +376,9 @@ public sealed partial class SubathonGoalsViewModel : PageViewModel
 
     public ObservableCollection<SubathonTimerCardViewModel> Timers { get; } = [];
     public ObservableCollection<GoalLadderCardViewModel> Goals { get; } = [];
+
+    /// <summary>The History tab.</summary>
+    public SubathonHistoryViewModel History { get; }
 
     [ObservableProperty] private int _selectedTabIndex;
 
@@ -388,6 +417,7 @@ public sealed partial class SubathonGoalsViewModel : PageViewModel
         }
         OnPropertyChanged(nameof(HasNoTimers));
         OnPropertyChanged(nameof(HasNoGoals));
+        History.Refresh();
     }
 
     /// <summary>Moves the clocks of running timers on (the service is not changed, so nothing is saved).</summary>

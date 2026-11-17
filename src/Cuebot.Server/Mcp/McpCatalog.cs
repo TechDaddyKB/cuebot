@@ -254,6 +254,7 @@ public sealed class McpCatalog(ApiOperations ops, ServerServices services)
         | Hotkeys, decks | save_hotkey; get_deck / save_deck |
         | Feature settings | get_feature_settings / update_feature_settings (points, media, polls, viewers) |
         | Stream totals and goals | get_stream_totals, set_stream_totals; list_stream_events, update_stream_event, delete_stream_events (fix or remove test events) |
+        | Subathon history | list_subathon_history, correct_subathon_history, delete_subathon_history (review a donothon's day or month, fix or take back a change) |
         | Trying things | emulate_event (sample follow, sub, cheer, raid, tip...), test_action, get_history |
         | Sharing automations | export_bundle, preview_import, apply_import |
 

@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Cuebot.App.ViewModels.Extras"
+             xmlns:views="using:Cuebot.App.Views.Extras"
              x:Class="Cuebot.App.Views.Extras.SubathonGoalsView"
              x:DataType="vm:SubathonGoalsViewModel">
   <UserControl.Resources>
@@ -26,6 +27,23 @@
           <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Raid" /><NumericUpDown Value="{Binding RaidEach}" Minimum="0" Increment="1" FormatString="0.##" Width="130" /></StackPanel>
           <StackPanel Margin="0,0,16,8" Spacing="2"><TextBlock Text="Raid, per viewer" /><NumericUpDown Value="{Binding RaidPerViewer}" Minimum="0" Increment="0.1" FormatString="0.##" Width="130" /></StackPanel>
         </WrapPanel>
+        <TextBlock Text="Money by service" FontWeight="SemiBold" Margin="0,4,0,0" />
+        <TextBlock Classes="muted" TextWrapping="Wrap"
+                   Text="Not all money is the same. Throne buys things for you instead of paying you, and Fourthwall only pays you part of a merch sale. Give a service its own value for each 1 of money. Leave it empty (default) to use 'Each 1 of money' above, or put 0 so money from it does not count." />
+        <ItemsControl ItemsSource="{Binding MoneySources}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="vm:MoneySourceRowViewModel">
+              <StackPanel Margin="0,0,16,8" Spacing="2">
+                <TextBlock Text="{Binding Name}" />
+                <NumericUpDown Value="{Binding Value}" Minimum="0" Increment="1" FormatString="0.##" Width="130" PlaceholderText="default"
+                               AutomationProperties.Name="{Binding Name}" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
         <CheckBox Content="Gift subs count like subs (one for each sub gifted)" IsChecked="{Binding CountGiftSubs}" />
         <TextBlock Text="Channel point rewards (one per line, like  Add a minute = 60)" />
         <TextBox Text="{Binding Redemptions, UpdateSourceTrigger=LostFocus}" AcceptsReturn="True" MinHeight="60" MaxHeight="160" TextWrapping="NoWrap"
@@ -178,6 +196,94 @@
               </ItemsControl.ItemTemplate>
             </ItemsControl>
           </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="History">
+        <DockPanel DataContext="{Binding History}" x:DataType="vm:SubathonHistoryViewModel" Margin="0,8,0,0">
+          <TextBlock DockPanel.Dock="Top" Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8"
+                     Text="Every change to your timers and goals: who, where it came from, what it was and how much it added. Click one to fix it. You can take it back, put it back, or change its value or money amount, and its timer or goal changes to match. Time that has already counted down cannot be taken back." />
+          <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,4">
+            <ComboBox ItemsSource="{Binding OwnerChoices}" SelectedItem="{Binding OwnerFilter}" Width="200" Margin="0,0,8,6" AutomationProperties.Name="Timer or goal" />
+            <ComboBox ItemsSource="{x:Static vm:SubathonHistoryViewModel.Periods}" SelectedItem="{Binding Period}" Width="140" Margin="0,0,8,6" AutomationProperties.Name="Period" />
+            <TextBox Text="{Binding FromFilter}" PlaceholderText="From (2026-11-17)" Width="150" Margin="0,0,8,6" AutomationProperties.Name="From" />
+            <TextBox Text="{Binding ToFilter}" PlaceholderText="To" Width="150" Margin="0,0,8,6" AutomationProperties.Name="To" />
+            <TextBox Text="{Binding NameFilter}" PlaceholderText="Name" Width="140" Margin="0,0,8,6" AutomationProperties.Name="Name" />
+            <ComboBox ItemsSource="{Binding SourceChoices}" SelectedItem="{Binding SourceFilter}" Width="160" Margin="0,0,8,6" AutomationProperties.Name="Source" />
+            <CheckBox Content="Test changes only" IsChecked="{Binding TestOnly}" VerticalAlignment="Center" Margin="0,0,8,6" />
+            <CheckBox Content="Show removed" IsChecked="{Binding ShowRemoved}" VerticalAlignment="Center" Margin="0,0,8,6" />
+          </WrapPanel>
+          <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <Button Content="{Binding ConfirmRemoveTests, Converter={x:Static views:SubathonGoalsView.RemoveTestsText}}" Command="{Binding RemoveTestEntriesCommand}"
+                    Margin="0,0,8,6" ToolTip.Tip="Takes every test and emulated change off its timer or goal" />
+            <Button Content="{Binding ConfirmRemoveShown, Converter={x:Static views:SubathonGoalsView.RemoveShownText}}" Command="{Binding RemoveShownCommand}"
+                    Margin="0,0,8,6" ToolTip.Tip="Takes every change the list shows off its timer or goal, for example everything from one person" />
+            <Button Content="Export CSV…" Click="OnExportHistory" Margin="0,0,8,6" ToolTip.Tip="Saves the changes the list shows (all of them, not only the newest 500) for a spreadsheet" />
+          </WrapPanel>
+          <TextBlock DockPanel.Dock="Top" Text="{Binding Summary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock DockPanel.Dock="Top" Text="{Binding BySource}" Classes="muted" TextWrapping="Wrap" Margin="0,2,0,8"
+                     IsVisible="{Binding BySource, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+          <Expander DockPanel.Dock="Bottom" Header="Add a change by hand" HorizontalAlignment="Stretch" Margin="0,8,0,0">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="muted" TextWrapping="Wrap" Text="For a cash donation, a gift that came another way, or anything Cuebot could not see. It is listed with the name and note you give." />
+              <WrapPanel>
+                <ComboBox ItemsSource="{Binding AddChoices}" SelectedItem="{Binding AddTo}" Width="200" Margin="0,0,8,6" AutomationProperties.Name="Add to" />
+                <NumericUpDown Value="{Binding AddValue}" Increment="60" FormatString="0.##" Width="130" Margin="0,0,6,6" AutomationProperties.Name="Amount to add" />
+                <TextBlock Text="{Binding AddUnit}" VerticalAlignment="Center" Margin="0,0,12,6" />
+                <TextBox Text="{Binding AddName}" PlaceholderText="Name (optional)" Width="160" Margin="0,0,8,6" />
+                <TextBox Text="{Binding AddNote}" PlaceholderText="Note, like Cash at the meetup" Width="220" Margin="0,0,8,6" />
+                <Button Content="Add" Command="{Binding AddCorrectionCommand}" Margin="0,0,8,6" />
+              </WrapPanel>
+            </StackPanel>
+          </Expander>
+          <Border DockPanel.Dock="Bottom" Classes="card" Margin="0,8,0,0" IsVisible="{Binding HasSelection}">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="muted" Text="{Binding EditHint}" TextWrapping="Wrap" />
+              <WrapPanel>
+                <StackPanel Orientation="Horizontal" IsVisible="{Binding SelectedIsCounted}">
+                  <TextBlock Text="Added" VerticalAlignment="Center" Margin="0,0,6,6" />
+                  <NumericUpDown Value="{Binding EditValue}" Increment="60" FormatString="0.###" Width="130" Margin="0,0,6,6" AutomationProperties.Name="Value" />
+                  <TextBlock Text="{Binding EditUnit}" VerticalAlignment="Center" Margin="0,0,12,6" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" IsVisible="{Binding SelectedHasAmount}"
+                            ToolTip.Tip="The money it was worth. The time or points follow at the rate it was counted with.">
+                  <TextBlock Text="Money" VerticalAlignment="Center" Margin="0,0,6,6" />
+                  <NumericUpDown Value="{Binding EditAmount}" Minimum="0" Increment="1" FormatString="0.00" Width="130" Margin="0,0,12,6" AutomationProperties.Name="Money" />
+                </StackPanel>
+                <TextBox Text="{Binding EditNote}" PlaceholderText="Note" Width="220" Margin="0,0,8,6" />
+                <Button Content="Save" Classes="accent" Command="{Binding SaveEditCommand}" Margin="0,0,8,6" />
+                <Button Content="Take it back" Command="{Binding RemoveSelectedCommand}" IsVisible="{Binding SelectedIsCounted}" Margin="0,0,8,6"
+                        ToolTip.Tip="Takes this change off its timer or goal and out of the totals; you can put it back later" />
+                <Button Content="Put it back" Command="{Binding RestoreSelectedCommand}" IsVisible="{Binding SelectedIsRemoved}" Margin="0,0,8,6" />
+              </WrapPanel>
+            </StackPanel>
+          </Border>
+          <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Classes="muted" Margin="0,6,0,0" TextWrapping="Wrap"
+                     IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+          <Grid>
+            <ListBox ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}" AutomationProperties.Name="History">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="vm:HistoryRowViewModel">
+                  <Grid ColumnDefinitions="150,*,120,110" RowDefinitions="Auto,Auto" Opacity="{Binding IsRemoved, Converter={x:Static views:SubathonGoalsView.RemovedOpacity}}">
+                    <TextBlock Grid.RowSpan="2" Classes="muted" Text="{Binding Time}" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                      <TextBlock Text="{Binding Who}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding What}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Horizontal" Spacing="6">
+                      <TextBlock Classes="muted" Text="{Binding Owner}" />
+                      <TextBlock Classes="muted" Text="{Binding Badges}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Grid.RowSpan="2" Classes="muted" Text="{Binding Source}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="3" Grid.RowSpan="2" Text="{Binding Change}" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Classes="muted" IsVisible="{Binding IsEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
+                       Text="Nothing matches. Changes are listed here as they happen, from this version on." />
+          </Grid>
         </DockPanel>
       </TabItem>
     </TabControl>
