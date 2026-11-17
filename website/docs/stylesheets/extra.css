@@ -1,0 +1,47 @@
+/* The left menu: make each section's name a clear heading and indent its pages under a line, so it is easy to see
+   which pages belong together (with navigation.sections, Material otherwise draws section names almost like pages). */
+
+/* Section names ("Chat and community", "Overlays and alerts"...). */
+.md-nav--primary .md-nav__item--section > .md-nav__link {
+  margin-top: 1.1em;
+  padding-bottom: 0.15em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--md-primary-fg-color);
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+[data-md-color-scheme="slate"] .md-nav--primary .md-nav__item--section > .md-nav__link {
+  color: var(--md-accent-fg-color);
+}
+.md-nav--primary .md-nav__item--section:first-child > .md-nav__link {
+  margin-top: 0.4em;
+}
+
+/* The pages in a section: indented, with a thin line on the left that shows where the section starts and ends. */
+.md-nav--primary .md-nav__item--section > .md-nav {
+  margin-left: 0.35em;
+  padding-left: 0.6em;
+  border-left: 2px solid var(--md-default-fg-color--lightest);
+}
+
+/* Folders inside a section ("Widgets"): a little bolder than pages, and their own pages indented one more step. */
+.md-nav--primary .md-nav__item--section .md-nav__item--nested > .md-nav__link {
+  font-weight: 600;
+}
+.md-nav--primary .md-nav__item--section .md-nav__item--nested > .md-nav {
+  margin-left: 0.6em;
+}
+
+/* The page you are on stands out from the rest of its section. */
+.md-nav--primary .md-nav__link--active {
+  font-weight: 700;
+}
+
+/* On phones the menu slides in; keep its section headings readable there too. */
+@media screen and (max-width: 76.2344em) {
+  .md-nav--primary .md-nav__item--section > .md-nav__link {
+    margin-top: 0.6em;
+  }
+}

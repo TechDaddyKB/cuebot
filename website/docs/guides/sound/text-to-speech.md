@@ -91,9 +91,12 @@ not the voice itself. Later you can change the voice behind "Narrator", and ever
 
 Set **Default alias** at the top. It is used whenever an action does not name an alias.
 
-**Volume**, **Rate** and **Pitch** set how the alias sounds. For Windows voices, Piper and OpenAI, Cuebot changes the
-pitch itself, so it works with every voice, including the newer Windows ones such as "Microsoft Ana Online". UberDuck
-and TTS Monster can't change pitch: for those voices the slider is switched off and a note says so.
+**Volume**, **Rate** and **Pitch** set how the alias sounds. **Pitch** makes the voice higher or lower, like a
+chipmunk or a giant.
+
+- For Windows voices, Piper and OpenAI, Cuebot changes the pitch itself. So it works with every one of them, including
+  the newer Windows voices such as "Microsoft Ana Online".
+- UberDuck and TTS Monster can't change pitch. For those voices the slider is switched off, and a note says so.
 
 ## 3. Make an action talk
 
@@ -116,9 +119,18 @@ events, and one for a single **Speak** step.
 ## The queue and VoiceGate
 
 Texts are spoken one after another, like a line at a shop. The **Overview** tab shows what is speaking now, what is
-waiting and what was spoken. Next to **Play** and **Pause**, a label says whether the queue is **Playing** or
-**Paused** (or **Held while you talk** when VoiceGate waits for you). **Pause** lets the text being read finish, then
-holds the rest; **Play** carries on. **Skip**, **Clear** and **Speak next** are there too.
+waiting and what was spoken.
+
+| You want | Do this |
+| --- | --- |
+| A break from the voice | Click **Pause**. The text being read finishes first, then the rest waits. |
+| The voice to carry on | Click **Play**. |
+| To skip the text being read | Click **Skip**. |
+| To throw away everything waiting | Click **Clear**. |
+| To go through the line one text at a time | Click **Pause**, then **Speak next** for each text. |
+
+A label next to **Play** and **Pause** says what the queue is doing: **Playing**, **Paused**, or **Held while you
+talk** (when VoiceGate waits for you).
 
 ![Audio > Speech > VoiceGate & queue](../../assets/screens/tab-speech-voicegate-queue.png)
 

@@ -34,6 +34,8 @@ You do not need to be good with computers. Every page here explains one thing at
 5. [Variables, the %words%](guides/actions/variables.md): put the viewer's name and other values into your messages.
 6. [Words you will see](guides/start/glossary.md): a small dictionary for when a word is new.
 
+Updating from an earlier test version? See [What's new](guides/start/whats-new.md).
+
 ## Download
 
 Get Cuebot from the [releases page on GitHub](https://github.com/TechDaddyKB/cuebot/releases). While Cuebot is in

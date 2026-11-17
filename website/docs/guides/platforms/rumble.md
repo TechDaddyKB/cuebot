@@ -26,8 +26,9 @@ Rumble works a little differently. Reading works with a "key link" from Rumble. 
     website. Reading followers, live state and chat was tried with a real Rumble channel; writing in chat is not
     confirmed yet. See [What's experimental](../help/experimental.md).
 
-**Moderation (experimental)**: Rumble has no official way for apps to moderate. Tick **Rumble moderation through
-unofficial endpoints** to let Cuebot delete messages and mute viewers itself; read the warning first. See
+**Moderation (experimental)**: Rumble has no official way for apps to moderate. At first, the moderation buttons on
+the **Chat** page open Rumble's own chat, where you do it yourself. Tick **Rumble moderation through unofficial
+endpoints** to let Cuebot delete messages and mute viewers itself. Read the warning first: see
 [Moderating your chat](../chat/moderation.md#rumble).
 
 Tick **Connect automatically** so Cuebot connects every time it starts. **Check every (seconds)** sets how often Cuebot

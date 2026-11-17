@@ -1,8 +1,16 @@
 # Linked accounts and linked bans
 
 Some viewers chat on more than one platform: `rowdy_guy` on Twitch, `Rowdy Guy` on YouTube, `rowdyguy` on Kick.
-**Identity links** let you and your mods record that these accounts belong to one person, keep notes about them, and
-ban or time out all of their accounts at once.
+**Identity links** let you and your mods write down that these accounts are one person.
+
+**In short:**
+
+- **Link** the accounts of one person. A link is only trusted when the viewer proved it, or two of your team agree.
+- **Keep notes** about that person for your team.
+- **Ban or time out all of their accounts at once.** You see a list first, and you can undo it all with one click.
+
+**Example:** `rowdy_guy` is banned on Twitch for spam. He comes back as `rowdyguy` on Kick. If the two accounts are
+linked, one **Ban** covers both.
 
 !!! warning "Pending review: off by default"
     Identity links are **off** until you turn them on. The wording to show viewers, the privacy (GDPR) position and how
@@ -14,17 +22,25 @@ ban or time out all of their accounts at once.
 
 On the **Chat** page, click **Options**. Under **Moderation**:
 
+![Chat options, Moderation: Identity links (off by default) and Automatic mirroring (off by default), both unticked](../../assets/screens/chat-links-setting-off.png)
+
 - **Identity links (off by default)**: shows linked accounts and notes on the **Chatter** tab, lets viewers verify
   with `!link`, and makes **Ban** and **Timeout** offer a person's other accounts.
 - **Automatic mirroring (off by default)**: see [Automatic mirroring](#automatic-mirroring). It needs identity links.
 
-While identity links are off, nothing about them shows anywhere, `!link` gets no answer, no ban or timeout goes through
-a link, and Cuebot suggests nothing. Links you made earlier are kept (and still removed on time, see
-[How long things are kept](#how-long-things-are-kept)); they come back when you turn it on again.
+While identity links are off:
+
+- nothing about them shows anywhere;
+- `!link` gets no answer;
+- no ban or timeout goes through a link;
+- Cuebot suggests nothing.
+
+Links you made earlier are kept, and come back when you turn it on again. They are still removed on time (see
+[How long things are kept](#how-long-things-are-kept)).
 
 ## How sure is a link?
 
-Every link has one of three levels:
+Every link has one of three levels. Only the first two are ticked by themselves in a linked ban.
 
 | Level | How it happens | Used in a linked ban? |
 | --- | --- | --- |
@@ -32,30 +48,36 @@ Every link has one of three levels:
 | **Confirmed** | A mod suggested it and a **second person** agreed: you, or a mod allowed to confirm links. | Yes, ticked |
 | **Suggested** | A mod suggested it; nobody has confirmed it yet. | Shown, but **unticked**. A mod cannot tick it for a ban. |
 
-A viewer saying "I'm X on Twitch" from their YouTube account proves nothing about the Twitch account: anyone can claim
-to be someone else, even to get them banned. That is why one person's word only ever makes a suggestion, and why the
-mod who suggested a link can never confirm it themselves (not even you).
+Why so careful? A viewer saying "I'm X on Twitch" from their YouTube account proves nothing about the Twitch account.
+Anyone can claim to be someone else, even to get that person banned. So:
+
+- one person's word only ever makes a **suggestion**;
+- the mod who suggested a link can never confirm it themselves (not even you).
 
 ## On the Chatter tab
 
-Click a message. With identity links on, the **Chatter** tab has a **Linked accounts** section:
+Click a message. With identity links on, the **Chatter** tab has a **Linked accounts** section.
 
-- The accounts linked to this person, how sure each link is ("verified 2026-10-02", "suggested by Sam, not
-  confirmed", "confirmed by Kris and Sam"), and their platform user id (hold the mouse over the line). Names can be
-  copied; ids cannot.
+![The Chatter card for Bob: Linked accounts (Kick: Bob, confirmed by Sam and Streamer, with Unlink…), Same person as… and Verify with !link, a note, and the mod log rows about the link](../../assets/screens/chat-links-user-card.png)
+
+What you see and can do there:
+
+- The accounts linked to this person, and how sure each link is ("verified 2026-10-02", "suggested by Sam, not
+  confirmed", "confirmed by Kris and Sam").
+- Their platform user id: hold the mouse over the line. Names can be copied by anyone; ids cannot.
 - **Confirm** and **Wrong** on a suggestion. **Wrong** removes it and remembers it, so it is not suggested again.
 - **Unlink…** takes one account out, or **all** of them (see [Unlinking](#unlinking)).
-- **Same person as…**: pick the platform, type their name as it shows in that chat (they must have chatted recently),
-  and say what shows it, like the message where they said so. This makes a **suggestion**.
+- **Same person as…** makes a **suggestion**. Pick the platform and type their name as it shows in that chat (they
+  must have chatted recently). Then say what shows it, like the message where they said so.
 - **Verify with !link** gives you a one-time code (see below).
 - Accounts on other platforms **with the same name** are shown as a hint, with **Same person…** to fill in a
-  suggestion. A hint creates nothing; the same name proves nothing. Cuebot never guesses links from how people write or
-  when they chat.
+  suggestion. A hint creates nothing: the same name proves nothing. Cuebot never guesses links from how people write
+  or when they chat.
 
 ### Rules Cuebot keeps
 
-- An account belongs to one person. If the other account is already linked to someone else, Cuebot shows both and asks
-  whether to **merge** the two or **move** the account. Merged and moved accounts become suggestions again.
+- An account belongs to one person. Is the other account already linked to someone else? Then Cuebot shows both and
+  asks: **Merge the two** or **Move the account**. Merged and moved accounts become suggestions again.
 - **You (the broadcaster), platform moderators, VIPs, your mod team in the mod portal and your bot accounts can never
   be linked**, by anyone.
 - A person with **more than four accounts**, or **two accounts on one platform** (an alt), needs **you** to confirm.
@@ -67,21 +89,28 @@ Click a message. With identity links on, the **Chatter** tab has a **Linked acco
 2. Send the code to the viewer **privately** (a whisper or DM), not in public chat. Anyone who sees it could use it.
 3. The viewer types `!link K7MP3Q` in chat from their **other** account.
 
-Cuebot answers "@name thanks, that's confirmed." and the link is **verified**. A code works once. Wrong codes get no
-answer; after five wrong codes in ten minutes an account is ignored for a while, so codes cannot be guessed.
+Cuebot answers "@name thanks, that's confirmed." and the link is **verified**.
+
+- A code works once.
+- Wrong codes get no answer.
+- After five wrong codes in ten minutes, that account is ignored for a while. So nobody can guess a code.
 
 ## Notes
 
-The **Notes** box keeps short notes about a viewer for your team, like "Warned about spoilers on Nov 14". A note
-written on one account shows on every account linked to it.
+The **Notes** box keeps short notes about a viewer for your team, like "Warned about spoilers on Nov 14". Type it in
+**Add a note** and click **Add**. A note written on one account shows on every account linked to it.
 
 Write only what helps you moderate: what happened and when. **Never** write down anything about health, religion or
 beliefs, politics, sexuality, ethnicity or anything similar.
 
 ## Linked bans and timeouts
 
-When the person you click has linked accounts, **Ban** and the **Timeout** buttons open a window that shows, before
-anything is sent:
+When the person you click has linked accounts, **Ban…** and the **Timeout** buttons first open a window, like
+**Ban Bob and linked accounts**. Nothing is sent yet. The window lists every account, and you tick the ones to act on.
+
+![Ban Bob and linked accounts: Twitch: Bob (the one clicked) and Kick: Bob (confirmed by Sam and Streamer), both ticked, with the reason "ban evasion" and Ban ticked accounts](../../assets/screens/chat-linked-ban-preview.png)
+
+A bigger example, for `rowdy_guy`:
 
 | | Account | Link | What will happen | Notes |
 | --- | --- | --- | --- | --- |
@@ -90,33 +119,55 @@ anything is sent:
 | ☐ | YouTube: `Rowdy Guy` | suggested by Sam, not confirmed | Ban, 50 quota units (7,400 left today) | Unticked: not confirmed |
 | — | Rumble: `RowdyG` | confirmed by Kris and Sam | By hand: open Rumble | No API |
 
-- For timeouts each row shows the time the platform will really use ("Kick: 10 min, rounded up from 9 min 30 s").
+- **Suggested** links start unticked. You can tick one yourself if you are sure; a mod cannot tick one for a ban.
+- For timeouts, each row shows the time the platform will really use ("Kick: 10 min, rounded up from 9 min 30 s").
 - An account that is already banned starts unticked.
 - A **reason is required**. Twitch and Kick also get the mod's name in front (`[mod: Sam] ban evasion`) and the
   platform's length limit.
 - A ban on **more than one platform** asks once more: "Ban 3 accounts on 3 platforms?".
 
-After you click, each platform is asked on its own. One that fails does not undo the others: its row says what went
-wrong, with **Retry**. A platform without a way for apps to ban (Rumble) shows **Open website** and **I did it**:
-press it after you did it there, and it is recorded.
+![The same window when the Kick link is only a suggestion: Kick: Bobby is unticked, with "Unticked: not confirmed", and Reason (required) is still empty](../../assets/screens/chat-linked-ban-suggested.png)
+
+Click **Ban ticked accounts** (or **Time out ticked accounts**). Then each platform is asked on its own:
+
+- **Done**: it worked.
+- **Failed**: the row says what went wrong, with **Retry**. One failure does not undo the others.
+- **By hand**: a platform without a way for apps to ban (Rumble) shows **Open website** and **I did it**. Do it on
+  the website, then press **I did it**, and it is recorded.
+
+### Undo
 
 The whole thing is one **incident**. **Undo** lifts every ban and timeout of it that worked (YouTube included, using the
-ban id Cuebot kept). It is offered on the chat page for 24 hours and at any time from the **Mod log** tab (**Undo
-incident**). Deleted messages cannot be brought back on any platform, and Twitch warnings cannot be withdrawn. Bans
-done by hand must be lifted by hand. Undoing is logged too, and costs YouTube quota.
+ban id Cuebot kept). You find it:
+
+- in the window, as **Undo incident**;
+- on the chat page, as **Undo**, for 24 hours;
+- at any time on the **Mod log** tab (**Undo incident**).
+
+![After the linked ban: both rows say Done, "Banned on Twitch, Kick.", and Undo incident in the window and Undo above the chat](../../assets/screens/chat-linked-ban-done.png)
+
+What Undo cannot do:
+
+- Deleted messages cannot be brought back, on any platform.
+- Twitch warnings cannot be withdrawn.
+- Bans done by hand must be lifted by hand.
+
+Undoing is logged too, and costs YouTube quota.
 
 ### When a banned person shows up with another account
 
-If an account is confirmed or verified as part of a person who is banned on another platform, the chat page shows:
-"rowdyguy on Kick is linked to a person banned on Twitch and YouTube. Apply here too?" with **Apply here too** and
-**Not now**. You get a notification.
+Say an account gets confirmed or verified as part of a person who is banned on another platform. Then the chat page
+shows: "rowdyguy on Kick is linked to a person banned on Twitch and YouTube. Apply here too?", with **Apply here too**
+and **Not now**. You also get a notification.
 
 ### Automatic mirroring
 
-With **Automatic mirroring** on, a ban on any platform (from Cuebot, from a mod, or on the platform's own website) is
-applied at once to the person's **verified and confirmed** accounts, never to suggested ones, without the preview. Each
-mirrored ban is in the mod log as "Automatic mirroring", you get a notification, and **Undo incident** lifts them all
-(including the first ban).
+**Automatic mirroring** copies a ban to the person's other accounts by itself, without the window.
+
+- It works for a ban on any platform: from Cuebot, from a mod, or on the platform's own website.
+- It bans only **verified and confirmed** accounts, never suggested ones.
+- Each copied ban is in the mod log as "Automatic mirroring", and you get a notification.
+- **Undo incident** lifts them all, including the first ban.
 
 ## Mods and safety
 
@@ -137,8 +188,8 @@ mirrored ban is in the mod log as "Automatic mirroring", you get a notification,
 
 ## How long things are kept
 
-These are the starting values from the plan; the reviewer may change them. You can make them shorter (never longer)
-in `moderation.json` in your data folder.
+Cuebot deletes old links and notes by itself. These are the starting values from the plan; the reviewer may change
+them. You can make them shorter (never longer) in `moderation.json` in your data folder.
 
 | What | Kept for | Setting |
 | --- | --- | --- |
@@ -149,10 +200,12 @@ in `moderation.json` in your data folder.
 | A note | 24 months after its last edit | `NoteMonthsAfterEdit` |
 | A **YouTube** account in a link | Refreshed every 30 days (seeing them in chat counts), or removed | |
 
-YouTube's rules allow keeping data from YouTube only while it is refreshed at least every 30 days. Cuebot reads a
-linked YouTube account again after 25 days (1 quota unit) and removes it from the link if YouTube no longer has it or
-it could not be refreshed within 30 days. Notes on YouTube accounts that are in no link go when the viewer has not
-chatted for 30 days.
+Why the YouTube row? YouTube's rules allow keeping data from YouTube only while it is refreshed at least every 30 days.
+So:
+
+- Cuebot reads a linked YouTube account again after 25 days (1 quota unit).
+- It removes the account from the link if YouTube no longer has it, or if it could not be refreshed within 30 days.
+- Notes on YouTube accounts that are in no link go when the viewer has not chatted for 30 days.
 
 ## Privacy
 

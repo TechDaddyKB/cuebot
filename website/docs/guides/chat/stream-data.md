@@ -1,8 +1,15 @@
 # Stream data
 
-**Stream data** is what your labels, goal bars, event lists and custom widgets read: the latest follower, sub, tip and
-cheer, the recent lists, counts and amounts for this stream, this week, this month and all time, and the top donation
-and top donator for each. **Chat & Events > Stream Data** lets you look at it and fix it.
+**Stream data** is Cuebot's memory of your stream events. Your labels, goal bars, event lists and custom widgets read
+from it:
+
+- the latest follower, sub, tip and cheer;
+- the recent lists;
+- counts and amounts for this stream, this week, this month and all time;
+- the top donation and top donator for each.
+
+**Chat & Events > Stream Data** lets you look at it and fix it. **Example:** you pressed a test button, and now a fake
+$500 tip is your "top donation". Remove that event here, and the real top tip comes back.
 
 ![Chat & Events > Stream Data](../../assets/screens/page-stream-data.png)
 
@@ -33,19 +40,23 @@ only kept the totals. Fix those with **Change a total by hand** below.
 
 ## Test and emulated events
 
-Test events (from a platform's or a tip service's **test** button, and Cuebot's **Emulate** buttons set to
-*everything*) count for **this stream only**: they show as the latest entry, in the recent lists and in this stream's
-totals, so you can see your overlays work. They never count in the week, month and all-time totals or the top
-donations, and they are cleared from the latest entries and recent lists when your next stream starts.
+Test events come from a platform's or a tip service's **test** button, and from Cuebot's **Emulate** buttons set to
+*everything*. They count for **this stream only**:
+
+- They show as the latest entry, in the recent lists and in this stream's totals, so you can see your overlays work.
+- They never count in the week, month and all-time totals, or in the top donations.
+- They are cleared from the latest entries and recent lists when your next stream starts.
 
 Tick **Count test events in week, month and all-time totals** if you want them to count like real ones.
 
 ## When this stream's totals reset
 
 "This stream" totals start again by themselves **15 minutes after your last platform goes offline** (or when you go
-live after that), so a short drop does not reset them. The page shows when this stream started and, while you are
-offline, when the reset happens. Pick **Only by hand** to keep them until you click **Reset this stream's totals now**.
-Week and month totals follow the calendar; all-time totals never reset.
+live after that). So a short drop does not reset them. The page shows when this stream started and, while you are
+offline, when the reset happens.
+
+Pick **Only by hand** to keep them until you click **Reset this stream's totals now**. Week and month totals follow the
+calendar; all-time totals never reset.
 
 ## Change a total by hand
 

@@ -10,9 +10,9 @@ someone else's stream.
 
 ![The Dashboard tab: connections, quick actions, the subathon timer and goals](../../assets/phone/android-dashboard.png)
 
-![The Dashboard's activity list, with TEST badges on test events](../../assets/phone/android-activity.png)
+![The Dashboard's Activity list: follows, subs, tips and raids from every platform](../../assets/phone/android-activity.png)
 
-![The Settings tab: paired Cuebots, Pair a Cuebot and the look](../../assets/phone/android-settings.png)
+![Settings, further down: Keep menu open, and About with the app's and Cuebot's versions](../../assets/phone/android-settings.png)
 
 </div>
 
@@ -29,12 +29,16 @@ the page gets the whole screen. On a tablet you can keep the menu open beside th
 
 ### The menu
 
-The menu button (☰) sits at the top left of every section. When changes from your mods are waiting, Android puts a
-dot on it.
+The menu button (☰) sits at the top left of every section. Tap it, and the menu slides in from the left. Tap a
+section, and the menu closes again. When changes from your mods are waiting, Android puts a dot on the menu button.
+
+![The side menu open: Deck, Dashboard, Chat, Mods and Settings](../../assets/phone/android-menu.png)
 
 On a tablet (or an iPad), go to **Settings** and switch on **Keep menu open** under **Menu**: the menu then stays
 beside the page and the menu button goes away. Phones always use the menu button, even with this switched on.
 **Stream mode** on the Deck hides the menu too.
+
+![A tablet with Keep menu open: the menu stays on the left, next to the Chat page](../../assets/phone/android-menu-pinned.png)
 
 ## Get the app
 
@@ -94,10 +98,16 @@ You can pair more than one Cuebot, like a gaming PC and a streaming PC. Tap one 
 
 ## Chat on your phone
 
-The **Chat** tab shows chat from every platform Cuebot is connected to, newest at the bottom, as plain text. Each
-line starts with the platform (**TW** for Twitch, **YO** for YouTube, **KI** for Kick, **RU** for Rumble). A deleted
-message stays in the list, crossed out and marked *(deleted)*. Bans and timeouts show up as grey lines, whoever made
-them: you, a mod in the [mod portal](mod-portal.md), or someone on the platform's own website.
+**In short:** read your chat from every platform, write in it, and moderate it, from your phone or tablet.
+
+![The Chat page on a tablet: chat from every platform, with the Events card beside it](../../assets/phone/android-chat.png)
+
+The **Chat** tab shows chat from every platform Cuebot is connected to, newest at the bottom, as plain text.
+
+- Each line starts with the platform: **TW** for Twitch, **YO** for YouTube, **KI** for Kick, **RU** for Rumble.
+- A deleted message stays in the list, crossed out and marked *(deleted)*.
+- Bans and timeouts show up as grey lines, whoever made them: you, a mod in the [mod portal](mod-portal.md), or
+  someone on the platform's own website.
 
 With more than one platform connected, the buttons at the top show **All** or only one platform.
 
@@ -109,6 +119,11 @@ With more than one platform connected, the buttons at the top show **All** or on
 3. Type the message and tap the send button.
 
 **Moderating:** tap a message (or press and hold it). A list of tools opens for that message and the person who wrote it:
+
+![Tapping a chat line: the moderation tools for that message and its writer](../../assets/phone/android-chat-moderation.png)
+
+A tool that is grey says why under it. In the picture above Kick is not connected, so every tool says
+**Connect Kick first.** Once the platform is connected (and your account may moderate there), the tools light up.
 
 | Tool | What it does |
 | --- | --- |
@@ -143,6 +158,8 @@ In **Settings**, under **Chat page**:
 | **Channel point redemptions**, **Everything else** | Off at the start. Switch them on to see redemptions, or going live and offline, too. |
 
 These settings are kept on each phone or tablet separately.
+
+![Settings: the Chat page options for the events card, and Keep menu open under Menu](../../assets/phone/android-settings-chat.png)
 
 !!! note "Mods use the mod portal"
     The Chat tab is for your own paired phone. Your mods moderate from the [mod portal](mod-portal.md) (in the

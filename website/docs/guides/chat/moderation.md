@@ -1,19 +1,35 @@
 # Moderating your chat
 
-The **Chat** page lets you moderate Twitch, YouTube, Kick and Rumble from one place, and keeps a **mod log** of what
-happened. Every button tells you what it will do on that platform before you click it.
+**In short:** you can delete messages, time people out and ban them on Twitch, YouTube, Kick and Rumble, all from the
+**Chat** page. Cuebot writes down everything that happened in a **mod log**.
+
+Not every platform can do the same things. That is fine: every button tells you what it will do on that platform
+before you click it.
 
 ## The buttons
 
-Click a message. The **Chatter** tab shows who wrote it and what you can do:
+Click a message. The **Chatter** tab on the right shows who wrote it and what you can do:
 
-- **Delete message**, **Timeout 1 min**, **Timeout 10 min** and **Ban…** (click once, then again to confirm).
-- **Unban** lifts a ban or a timeout. **Warn** warns the person.
-- **Reason (optional)**: why you did it. It is saved in the mod log. Twitch and Kick also show it to their moderators.
+| Button | What it does |
+| --- | --- |
+| **Delete message** | Removes this one message for everyone. |
+| **Timeout 1 min**, **Timeout 10 min** | Stops the person chatting for that long. |
+| **Ban…** | Stops the person chatting for good. Click once: it turns into **Confirm ban**. Click again to do it. |
+| **Unban** | Lifts a ban or a timeout. |
+| **Warn** | Warns the person. |
+| **Reason (optional)** | Why you did it. It goes in the mod log. Twitch and Kick also show it to their moderators. |
 
-Above the chat, buttons for the whole chat of that platform: **Clear chat**, **Slow mode**, **Followers-only**,
-**Subscribers-only** and **Emote-only**. They show for the platform of the message you clicked, or for the platform
-you picked in the chips above the chat. A chat mode button switches the mode on, then offers to switch it off again.
+![The Chatter card for a Kick viewer: Delete message, the timeouts, Ban…, Unban and Warn, and the note "Kick: 5 min, rounded up from 1 min"](../../assets/screens/chat-moderation-tools.png)
+
+**Buttons for the whole chat** sit above the chat: **Clear chat**, **Slow mode**, **Followers-only**,
+**Subscribers-only** and **Emote-only**. They work on one platform at a time:
+
+- the platform of the message you clicked, or
+- the platform you picked in the buttons above the chat (**All**, **Twitch**, **Kick**…).
+
+A chat mode button switches the mode on, like **Slow mode: turn on**. After that it offers to switch it off again.
+
+### What each platform can do
 
 Not every platform can do everything. Hold the mouse over a button to see what it does there:
 
@@ -22,7 +38,7 @@ Not every platform can do everything. Hold the mouse over a button to see what i
   whole minutes, so a timeout of 30 seconds becomes 1 minute. When that happens, the line under the timeout buttons
   says so.
 - **(website)**: the platform has no way for apps to do it. The button opens the platform's own page, where you do it
-  yourself.
+  yourself. Example: **Clear chat (website)** on Kick.
 - Greyed out: the platform has no such feature, or you need to sign in again and allow it. The tooltip says which.
 
 | Button | Twitch | YouTube | Kick | Rumble |
@@ -39,37 +55,51 @@ Not every platform can do everything. Hold the mouse over a button to see what i
 **Warn** on YouTube and Kick posts a chat message like "@Bob Warning from the mods: no spoilers". These platforms have
 no real warnings. You can switch this off in `moderation.json` (`"SoftWarnings": false`).
 
-The chat shows the result of a click under the send box: "Timed out Bob for 10 min", or what went wrong.
+After each click, the line under the send box says what happened: "Timed out Bob for 10 min", or what went wrong.
 
 ## Messages others delete
 
 When a mod deletes a message on the platform's website, Cuebot crosses it out too. When someone is banned or timed
 out, their name card says so. This works on Twitch, YouTube and Kick, and on Rumble for deleted messages.
 
-A message without a platform id (Rumble chat read from the key link, for example) cannot be deleted, so Cuebot does not
-offer **Delete message** for it.
+Some messages have no platform id, for example Rumble chat read from the key link. Cuebot cannot delete those, so it
+does not offer **Delete message** for them.
 
 ## Twitch: held messages, Shield Mode and more
 
-Twitch has more moderation tools than the other platforms. On the Chat page you find them in two extra tabs and on
-the **Chatter** tab.
+Twitch has more moderation tools than the other platforms. On the Chat page you find them in two extra tabs, **Held**
+and **Mod tools**, and on the **Chatter** tab.
 
-**Held.** Twitch's AutoMod (and your blocked terms) can hold a message back before anyone sees it. Held messages wait
-in the **Held** tab, oldest on top, with why they were held ("AutoMod: aggression, level 2", "Blocked term"). Click
-**Allow** to let the message into the chat, or **Deny** to keep it out. Denying does not punish the viewer. The tab's
-name shows how many are waiting, like **Held (2)**. When a mod decides on Twitch's website, the line says who.
+### Held messages
 
-**Mod tools.** This tab has three tools:
+Twitch's AutoMod (and your blocked terms) can hold a message back before anyone sees it. Think of it as a waiting
+room: the message waits there until a mod says yes or no.
+
+1. Open the **Held** tab. Its name shows how many wait, like **Held (2)**. The oldest is on top.
+2. Each message says why it was held, like "AutoMod: aggression, level 2" or "Blocked term".
+3. Click **Allow** to let it into the chat, or **Deny** to keep it out. Denying does not punish the viewer.
+
+When a mod decides on Twitch's website, the line says who.
+
+![The Held tab: two messages held by AutoMod, each with Allow and Deny](../../assets/screens/chat-held-lane.png)
+
+### Mod tools
+
+The **Mod tools** tab has three tools. **Refresh** reads them all again from Twitch.
 
 - **Shield Mode** is Twitch's emergency switch, for example during a hate raid. It turns on the strict settings you
   chose on Twitch. The tab shows whether it is on and who turned it on. Click **Turn Shield Mode on**, and later
   **Turn Shield Mode off**.
 - **Unban requests**: banned viewers can ask to be unbanned. Click **Load** to see the waiting ones. Write an answer if
-  you like ("One more chance, please follow the rules"), then **Approve** (the ban is lifted) or **Deny**.
-- **Blocked terms**: words and phrases Twitch keeps out of your chat. Click **Load** to see them, type a new one and
-  click **Block**, or click **Remove** next to one. `*` works as a wildcard, like `spoil*`.
+  you like ("One more chance, please follow the rules"). Then click **Approve** (the ban is lifted) or **Deny**.
+- **Blocked terms**: words and phrases Twitch keeps out of your chat. Click **Load** to see them. Type a new one and
+  click **Block**, or click **Remove** next to one. `*` works as a wildcard: `spoil*` blocks `spoiler` and `spoils`.
 
-**Suspicious chatters.** On the **Chatter** tab, Twitch messages get three more buttons:
+![The Mod tools tab: Shield Mode is off, one unban request with Approve and Deny, and one blocked term](../../assets/screens/chat-mod-tools.png)
+
+### Suspicious chatters
+
+On the **Chatter** tab, Twitch messages get three more buttons:
 
 - **Monitor**: the person's messages still show, marked for mods.
 - **Restrict**: only mods see their messages.
@@ -78,54 +108,76 @@ name shows how many are waiting, like **Held (2)**. When a mod decides on Twitch
 Twitch also marks people by itself, for example a likely ban evader. Their messages show **[suspicious]** in the chat,
 and the Chatter tab says why ("suspicious: monitored (likely ban evader)").
 
-**Missing permission?** These tools need Twitch permissions that you may not have given Cuebot yet. A greyed-out tool
-then says which one, like "Sign in to Twitch again and allow ...". Go to the **Twitch** page, tick the permission on
-the **Settings** tab (or click **Request everything**) and sign in again on the **Accounts** tab.
+![A restricted Twitch chatter: [suspicious] in front of their messages, and Monitor, Restrict and Not suspicious on the Chatter card](../../assets/screens/chat-suspicious-users.png)
+
+### Missing permission?
+
+These tools need Twitch permissions that you may not have given Cuebot yet. A greyed-out tool then says which one,
+like "Sign in to Twitch again and allow ...". To fix it:
+
+1. Go to the **Twitch** page.
+2. On the **Settings** tab, tick the permission (or click **Request everything**).
+3. Sign in again on the **Accounts** tab.
 
 ## The mod log
 
-The **Mod log** tab lists every ban, timeout, unban, deletion, warning and chat mode change: who did it (you, a mod
-from the [mod portal](../mods/mod-portal.md), an action, or a mod on the platform's website), to whom, and why. The
-**Chatter** tab shows the same rows for the person you clicked.
+The **Mod log** tab is a diary of moderation. It lists every ban, timeout, unban, deletion, warning and chat mode
+change, with:
 
-On Twitch the log also lists what mods do on Twitch itself, with their name: bans, timeouts, unbans, deletions,
+- **who** did it: you, a mod from the [mod portal](../mods/mod-portal.md), an action, or a mod on the platform's
+  website;
+- **to whom**;
+- **why** (the reason).
+
+The **Chatter** tab shows the same rows for the person you clicked, under **Mod log**.
+
+![The Chatter card for Bob: his deleted message is crossed out, and the Mod log part shows a mod on Twitch deleted it and you timed him out](../../assets/screens/chat-mod-log.png)
+
+**On Twitch** the log also lists what mods do on Twitch itself, with their name: bans, timeouts, unbans, deletions,
 warnings, chat modes, Shield Mode, VIPs and moderators added or removed, raids, blocked terms, unban request answers,
 held messages they allowed or denied, and actions in other channels of a shared chat. Your own actions from Cuebot
 are listed once, even though Twitch reports them back too.
 
-The log is a file on your computer (`modlog.db` in your data folder). It is part of your [backups](../help/backups.md)
-and is never sent anywhere. Each row is linked to the one before it, so a changed or missing row can be noticed.
+**Where it is kept:** in a file on your computer (`modlog.db` in your data folder). It is part of your
+[backups](../help/backups.md) and is never sent anywhere. Each row is linked to the one before it, so a changed or
+missing row can be noticed.
 
-Cuebot removes personal details from old rows by itself:
+**Old rows are cleaned up by themselves.** Cuebot removes personal details after a while:
 
-- the text of a deleted message after **60 days**;
-- who was timed out, warned or had a message deleted, after **180 days**;
-- who was banned, **24 months** after the ban was lifted. A ban that is still in place keeps its row.
+| What | Removed after |
+| --- | --- |
+| The text of a deleted message | 60 days |
+| Who was timed out, warned or had a message deleted | 180 days |
+| Who was banned | 24 months after the ban was lifted. A ban that is still in place keeps its row. |
 
 You can make these shorter (never longer) in `moderation.json` in your data folder: `MessageTextDays`, `TimeoutDays`
 and `BanMonthsAfterEnd`.
 
 ## YouTube quota
 
-Every YouTube action costs part of a daily allowance (quota) that resets at midnight Pacific time. A ban or timeout
-costs 50 units, a deletion 50. The chat page shows how much is left when you work on YouTube.
+YouTube gives every app a daily allowance, called **quota**. It resets at midnight Pacific time. Every YouTube action
+uses some of it: a ban, a timeout or a deletion each cost 50 units. The chat page shows how much is left when you work
+on YouTube.
 
-Cuebot keeps some quota back so your chat keeps arriving: moderation stops when less than **Units moderation must
+Cuebot keeps some quota back so your chat keeps arriving. Moderation stops when less than **Units moderation must
 leave for reading chat** is left (2,000 at first; change it on the **YouTube** page under **Polling and quota**). For
 more quota, use your own Google project: see **Advanced: use my own Google Cloud project** on the YouTube page.
 
-YouTube can only lift a ban when it knows the ban's id. Cuebot keeps it in the mod log, so **Unban** works for bans you
-made from Cuebot, even after a restart. Lift other bans in YouTube Studio.
+YouTube can only lift a ban when it knows the ban's id. Cuebot keeps that id in the mod log. So **Unban** works for
+bans you made from Cuebot, even after a restart. Lift other bans in YouTube Studio.
 
 ## Rumble
 
 Rumble has no official way for apps to moderate chat. At first, the buttons open your Rumble chat, where you do it
 yourself.
 
-On the **Rumble** page, under **Moderation (experimental)**, you can tick **Rumble moderation through unofficial
-endpoints**. Cuebot then deletes messages and mutes viewers through the same web addresses Rumble's own chat uses, with
-your chat sign-in. A timeout becomes a 5-minute mute (anything longer mutes until the stream ends) and a ban a
-permanent mute. Unmute viewers on Rumble's website.
+There is an experimental way around this. On the **Rumble** page, under **Moderation (experimental)**, tick **Rumble
+moderation through unofficial endpoints**. Cuebot then deletes messages and mutes viewers itself. It uses the same web
+addresses Rumble's own chat uses, with your chat sign-in.
+
+- A timeout becomes a 5-minute mute. Anything longer mutes until the stream ends.
+- A ban becomes a permanent mute.
+- Unmute viewers on Rumble's website.
 
 !!! warning
     Rumble's terms do not allow automated use of its website without Rumble's written permission. Rumble could act
@@ -142,15 +194,15 @@ The list next to the platform picker in the send box chooses who posts your mess
 
 ## Mods and safety
 
-Mods who moderate from the mod portal act with your account, so Cuebot adds a few safety rules:
+Mods who moderate from the mod portal act with your account. So Cuebot adds a few safety rules:
 
 - They cannot time out or ban you, platform moderators or VIPs, other portal mods, or your bot accounts. Only you can.
 - Each mod can make at most 10 bans and 30 timeouts in 10 minutes.
-- On Twitch and Kick their name goes in front of the reason, like `[mod: Sam] spam`, so the platform's own log shows
-  who it was.
+- On Twitch and Kick their name goes in front of the reason, like `[mod: Sam] spam`. That way the platform's own log
+  shows who it was.
 
 ## Linked accounts
 
-When one viewer chats on several platforms, you can link their accounts, keep notes on them, and ban or time out all
-of them at once, with a preview first and one **Undo**. It is off by default while its privacy side is being reviewed:
+Some viewers chat on several platforms. You can link their accounts, keep notes on them, and ban or time out all of
+them at once, with a preview first and one **Undo**. This is off by default while its privacy side is being reviewed:
 see [Linked accounts and linked bans](identity-links.md).

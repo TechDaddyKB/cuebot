@@ -1,8 +1,13 @@
 # Chat for mods
 
-The **Chat** page of the [mod portal](mod-portal.md) shows your Twitch, YouTube, Kick and Rumble chat in one list.
-Your mods can delete messages, time people out, ban and unban from there, from their phone or browser. Cuebot does it
-for them with your accounts, and writes down who did what.
+**In short:** the **Chat** page of the [mod portal](mod-portal.md) shows your Twitch, YouTube, Kick and Rumble chat
+in one list. Your mods can delete messages, time people out, ban and unban from there, in their browser or on their
+phone. Cuebot does it for them with your accounts, and writes down who did what.
+
+**Example:** Sam mods for you from a phone. Someone spams links on Kick. Sam taps the line, picks **Timeout**, types
+"spam" as the reason, and Cuebot times the person out on Kick. Your mod log now says Sam did it.
+
+![The mod portal's Chat page in a browser: chat from every platform in one list](../../assets/screens/portal-chat.png)
 
 ## What your mods see
 
@@ -19,14 +24,25 @@ for them with your accounts, and writes down who did what.
 New messages, deletions and log rows appear by themselves. If a mod's browser cannot get live updates, the page
 refreshes every few seconds instead.
 
+### On a phone
+
+The Chat page works in a phone's browser, and in the [phone app](phone-app.md#for-mods) under **Mods**.
+
+- The portal's menu becomes a row across the top. Swipe it sideways to see every page.
+- Tap a line for its tools. Tap a name, and the user card slides up over the lower part of the screen.
+
+![The mod portal's Chat page on a phone](../../assets/screens/portal-chat-phone.png){ width="320" }
+
 !!! tip "Look at the user id, not the name"
     Anyone can copy a display name, with lookalike letters too. The user card shows the platform and the account's
     user id, which nobody can copy. Check it before a ban.
 
 ## Each tool says what it will do
 
-The platforms do not all allow the same things. Before a mod clicks, each button shows (hover over it) what will
-happen on that platform:
+The platforms do not all allow the same things. Before a mod clicks, each button says what will happen on that
+platform. Hover over it to see:
+
+![A message clicked in the mod portal: Delete message, Timeout with its length, Ban, Unban, Warn and User card, with a box for the reason](../../assets/screens/portal-chat-actions.png)
 
 | Button looks | What it means | Example |
 |---|---|---|
@@ -35,9 +51,11 @@ happen on that platform:
 | **(website)** | There is no way to do it from Cuebot. The button opens the platform's own page. | Clear chat on Kick |
 | Greyed out | Not possible on this platform, or not part of the mod's role. The note says which. | Warn on Rumble |
 
-The timeout list shows what a platform really applies: on Kick, **14 days (applies 7 days)**, because Kick's longest
-timeout is 7 days. On YouTube each action uses some of your daily YouTube allowance (a ban costs 200 of 10,000 units);
-the tool notes say how much.
+The timeout list shows what a platform really applies. On Kick it says **14 days (applies 7 days)**, because Kick's
+longest timeout is 7 days.
+
+On YouTube each action uses some of your daily YouTube allowance (quota): a deletion, a timeout or a ban costs 50
+units. The tool notes say how much. See [YouTube quota](../chat/moderation.md#youtube-quota).
 
 **Chat modes and clear chat** (slow mode, followers-only, subscribers-only, emote-only, and Shield Mode on Twitch)
 are in a fold-out bar above the chat, one row per platform, for roles that have them.
@@ -46,8 +64,9 @@ Mods cannot send chat messages as you or your bot from the portal.
 
 ## Twitch's moderation queues
 
-Twitch holds some messages back and keeps lists that the other platforms do not have. The portal shows them for
-Twitch only:
+Twitch holds some messages back, and keeps lists that the other platforms do not have. The portal shows them for
+Twitch only. (The streamer's side is explained in
+[Moderating your chat](../chat/moderation.md#twitch-held-messages-shield-mode-and-more).)
 
 - **Held for review**, above the chat, lists the messages AutoMod or one of your blocked terms held back, with the
   number waiting. **Allow** lets a message into chat; **Deny** keeps it out. Messages decided a moment ago (by any
@@ -67,8 +86,9 @@ the mod log with the mod's name.
 
 ## Who may do what
 
-Moderation is not a "change": it never waits for your approval. It happens at once and goes into the mod log. What a
-mod may do comes from their role (**Chat > Mod portal > Roles**):
+Moderation is not a "change": it never waits for your approval. It happens at once and goes into the mod log.
+
+What a mod may do comes from their role (**Chat > Mod portal > Roles**):
 
 | Right | Standard Mod | Lead Mod | Tech Lead |
 |---|---|---|---|
@@ -94,8 +114,10 @@ Everyone who can see the chat sees whether Shield Mode is on.
 
 Notes and linked accounts have their own rights; see [Linked accounts in the portal](#linked-accounts-in-the-portal).
 
-**Bans by your mods are made with your account.** The platform's own log shows you, not the mod. On Twitch and Kick
-the reason starts with the mod's name, like `[mod: Sam] spam`, and Cuebot's mod log always names the mod.
+**Bans by your mods are made with your account.** So the platform's own log shows you, not the mod. To help:
+
+- On Twitch and Kick the reason starts with the mod's name, like `[mod: Sam] spam`.
+- Cuebot's mod log always names the mod.
 
 !!! note "Portals set up before the Chat page"
     Standard Mod, Lead Mod and Tech Lead get the rights in the table above when Cuebot starts. Roles you made yourself
@@ -123,7 +145,8 @@ A refused click is written to the mod log as **Not sent**, with the reason.
     reviewer. Read [Linked accounts and linked bans](../chat/identity-links.md) before you turn it on. While it is off,
     your mods see nothing about links or notes in the portal, and Cuebot refuses every link request from them.
 
-With identity links on, your mods get the same link tools in the portal as you have in Cuebot:
+With identity links on, your mods get the same link tools in the portal as you have in Cuebot. (Not sure what a link
+is? Read [How sure is a link?](../chat/identity-links.md#how-sure-is-a-link) first.)
 
 - **The user card** has a **Linked accounts** section: the person's other accounts, how sure each link is
   (**suggested, not confirmed**, **confirmed by Kris and Sam**, **verified**), and the evidence stored with it.
@@ -140,17 +163,26 @@ With identity links on, your mods get the same link tools in the portal as you h
 - **Notes** about a viewer follow their linked accounts. The portal reminds mods not to write down health, religion,
   politics or similar personal details.
 
-**Ban** and **Timeout** on a linked account open a preview before anything is sent. It has one row per account: the
-link and how sure it is, what will happen there (the timeout each platform really applies, the YouTube quota a ban
-costs), and whether the row is ticked. Confirmed and verified links start ticked; suggestions start unticked, and a mod
-cannot ban through a suggestion at all. Platforms without a moderation API (Rumble) show **By hand** with a link to the
-website. A reason is required. A permanent ban on more than one platform asks a second time ("Ban 3 accounts on 3
-platforms?").
+**Ban** and **Timeout** on a linked account open a preview first. Nothing is sent yet. It has one row per account,
+with:
 
-The result shows each platform: done, failed (with **Retry**), or by hand (open the website, then **I did it**). A
-failure on one platform does not undo the others. **Undo incident** lifts every ban and timeout of that decision still
-in force; it is in the dialog and next to the incident in the **Mod log**, where the rows of one decision are grouped.
-Lifting needs the ban and unban right. Deleted messages cannot be restored, and bans done by hand are lifted by hand.
+- the link, and how sure it is;
+- what will happen there: the timeout each platform really applies, or the YouTube quota a ban costs;
+- whether the row is ticked.
+
+Confirmed and verified links start ticked. Suggestions start unticked, and a mod cannot ban through a suggestion at
+all. Platforms without a moderation API (Rumble) show **By hand**, with a link to the website. A reason is required. A
+permanent ban on more than one platform asks a second time ("Ban 3 accounts on 3 platforms?").
+
+The result shows each platform:
+
+- **done**;
+- **failed**, with **Retry**. A failure on one platform does not undo the others;
+- **by hand**: open the website, do it there, then click **I did it**.
+
+**Undo incident** lifts every ban and timeout of that decision that is still in force. It is in the dialog, and next to
+the incident in the **Mod log**, where the rows of one decision are grouped. Lifting needs the ban and unban right.
+Deleted messages cannot be restored, and bans done by hand are lifted by hand.
 
 When an account is newly linked to someone banned elsewhere, a **Banned elsewhere** strip above the chat asks
 "... is linked to a person banned on Twitch. Apply here too?". **Ban here too** needs a reason; **Dismiss** leaves it.
@@ -182,8 +214,13 @@ text of deleted messages. It also keeps held messages a mod allowed or denied, t
 answer sent, and the terms blocked or removed. Tell your mods before you invite them. The invite page says so too.
 
 The log stays on your computer, in Cuebot's data folder (it is part of your backups). Nothing about your chat is kept
-on the portal relay. Old details are blanked after a while: deleted message text after 60 days, timeouts after 180
-days, and a ban 24 months after it was lifted. Change these in `moderation.json` if you want them shorter.
+on the portal relay. Old details are blanked after a while:
+
+- deleted message text after 60 days;
+- timeouts after 180 days;
+- a ban 24 months after it was lifted.
+
+Change these in `moderation.json` if you want them shorter.
 
 It is a good idea to say in your channel rules that you moderate every platform you stream on together, and how
 viewers can ask about a ban.

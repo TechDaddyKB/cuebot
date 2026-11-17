@@ -224,8 +224,9 @@ brackets.
 3. In the send box, type `:` for emotes, or `/help` for the slash commands.
 4. The chat options let you show emotes as pictures (also from 7TV, BTTV and FFZ), show pronouns, colour messages
    that mention your name or come from first-time chatters, and add **quick action** buttons that run an action.
-5. The **Activity** tab lists follows, subs, raids, tips and other events. The **Mod log** tab lists bans, timeouts,
-   deletions and warnings, also the ones your mods made on the platforms' websites.
+5. The **Activity** list (a tab when the window is narrow) shows follows, subs, raids, tips and other events. The
+   **Mod log** tab lists bans, timeouts, deletions and warnings, also the ones your mods made on the platforms'
+   websites.
 
 Want the chat inside OBS? The [HTTP server](../developers/http-server.md) gives you a chat dock and an event dock.
 
@@ -246,10 +247,11 @@ Want the chat inside OBS? The [HTTP server](../developers/http-server.md) gives 
 
 ## On your phone
 
-The phone app, **Cuebot Companion**, is not a page in Cuebot, but it shows a lot of the same things. It has four
-tabs: **Deck** (your deck buttons), **Dashboard** (connections, quick actions, subathon timers, goals and top
-spenders), **Mods** (changes your mods ask you to approve, and the mod portals you help with) and **Settings**. Pair
-it on **Apps > Servers**, under **Pair a phone**. See [The phone app](../mods/phone-app.md).
+The phone app, **Cuebot Companion**, is not a page in Cuebot, but it shows a lot of the same things. It has five
+sections, in a side menu (tap ☰): **Deck** (your deck buttons), **Dashboard** (connections, quick actions, subathon
+timers, goals and top spenders), **Chat** (chat from every platform, with the latest events next to it), **Mods**
+(changes your mods ask you to approve, and the mod portals you help with) and **Settings**. Pair it on **Apps >
+Servers**, under **Pair a phone**. See [The phone app](../mods/phone-app.md).
 
 <div class="grid" markdown>
 

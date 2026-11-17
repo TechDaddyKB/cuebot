@@ -55,9 +55,13 @@ Type what you want and click **Send** (or press **Enter**). Some ideas:
 - "Set up OBS so it hears the text-to-speech." It adds an audio capture source to the scene you're on. On Linux that
   captures everything you hear; to capture only Cuebot, install OBS's Application Audio Capture (PipeWire) plugin first.
 
-While the assistant works, a bar above the message box shows what it is doing, such as **Thinking...**, **Using list
-actions...** or **Waiting for you to Approve or Deny...**, and how long it has been working. Long questions can take a
-few minutes. **Assistant** in the sidebar shows **…** until it is done, so you can use other pages meanwhile.
+While the assistant works, a bar above the message box shows:
+
+- what it is doing, such as **Thinking...**, **Using list actions...** or **Waiting for you to Approve or Deny...**;
+- how long it has been working.
+
+Long questions can take a few minutes. **Assistant** in the sidebar shows **…** until it is done, so you can use other
+pages meanwhile.
 
 **Stop** stops an answer, **New chat** starts fresh.
 
@@ -142,8 +146,9 @@ filled in instead. That one needs a GitHub account.
   change other files.
 - **Cannot:** your sign-ins, API keys, passwords, and the server settings. Those stay out of its reach.
 
-Cuebot logs only the *names* of what the assistant did, not the details. The last conversation is saved in your data
-folder, so it is still there next time.
+Cuebot logs only the *names* of what the assistant did, not the details. When something goes wrong, the error
+message goes in the log too, so a [problem report](../help/troubleshooting.md#asking-for-help) shows it. The last
+conversation is saved in your data folder, so it is still there next time.
 
 ## Letting your mods use it
 

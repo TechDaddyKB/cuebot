@@ -7,6 +7,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+// With "chat" as a third argument it takes the Chat page (desktop and phone) against the same demo, which keeps chatting.
 // With "overlays" as a third argument it drives the overlay editor instead, against tests/Cuebot.UiTests/PortalOverlaysLiveDemo
 // (a picture upload, then text, picture, goal and alert edits saved to the overlay that OBS shows).
 const [invite, out, mode] = process.argv.slice(2);
@@ -66,7 +67,7 @@ try {
   await run(`(() => { const i = JSON.parse(sessionStorage.getItem("cuebot-invite"));
     sessionStorage.setItem("cuebot-signin", JSON.stringify({ ...i, provider: "google", state: "shots", verifier: "v".repeat(64) }));
     location.assign("/auth/return?code=test&state=shots"); return true; })()`);
-  await until(mode === "overlays" ? `document.querySelector(".shell .nav") !== null` : `document.querySelector(".shell .feed") !== null`);
+  await until(mode === "overlays" || mode === "chat" ? `document.querySelector(".shell .nav") !== null` : `document.querySelector(".shell .feed") !== null`);
   // Sets a labelled form control as if typed or picked (inside the element matching scope).
   await run(`window.setField = (label, value, scope = "main") => {
     const l = [...document.querySelectorAll(scope + " label")].find(x => x.textContent === label);
@@ -95,7 +96,18 @@ try {
     console.log(notice);
   };
 
-  if (mode === "overlays") {
+  if (mode === "chat") {
+    await open("Chat");
+    await until(`document.querySelectorAll(".chat-line").length >= 5`, 30000);
+    await shot("portal-chat.png");
+    await run(`document.querySelectorAll(".chat-line .chat-row")[1].click(), true`);
+    await until(`document.querySelector(".chat-actions") !== null`);
+    await shot("portal-chat-actions.png");
+    await run(`document.querySelector(".chat-line.selected .chat-row").click(), true`);
+    await size(390, 760, true);
+    await sleep(800);
+    await shot("portal-chat-phone.png");
+  } else if (mode === "overlays") {
     await open("Uploads");
     await until(`document.getElementById("upload-file") !== null`);
     await run(`setField("What is it?", "Image")`);

@@ -173,9 +173,12 @@ Some drops are not allowed, and the port stays grey:
 
 ### Connect boxes by dragging from a port
 
-You can also do it the other way round: press the mouse on a **+** port, drag, and let go over a step. A dashed line
-follows the mouse; the step under the pointer gets a **green** outline when it can be connected there. Let go, and
-that step (with everything inside it) moves to run at that port, exactly as if you had dropped the step on the port.
+You can also do it the other way round, from the port to the step:
+
+1. Press the mouse on a **+** port and drag. A dashed line follows the mouse.
+2. Move over a step. It gets a **green** outline when it can be connected there.
+3. Let go. That step (with everything inside it) moves to run at that port, exactly as if you had dropped the step on
+   the port.
 
 - Just clicking the **+** (without dragging) still opens the search window to add a new step.
 - Let go anywhere that is not a green step and nothing changes.
@@ -191,12 +194,15 @@ that step (with everything inside it) moves to run at that port, exactly as if y
 Right-click a wire between two steps (or from the ACTION box or a branch port to a step) and choose **Disconnect**.
 The wire turns blue while the menu is open.
 
-A step that is not in the running order would never run, so Cuebot does not throw anything away. Instead:
+A step that is not in the running order would never run. But Cuebot does not throw anything away. Instead:
 
 - The step after the wire, **and every step after it** in the same line, move into a new group called
   **Disconnected steps**. That group is **switched off**, so none of them run. The group takes the place of the first
   disconnected step on the screen; it and the wire into it are faded.
 - Everything before the wire keeps running as before. Both boxes stay on the canvas.
+
+**Example:** your action runs **A**, then **B**, then **C**. Disconnect the wire between A and B. Now A still runs.
+B and C sit in the switched-off **Disconnected steps** group, and do nothing until you connect them again.
 
 To connect them again: drag a step out of the group onto a **+** port (or drag from a port onto it), or switch the
 group on (select it, then ++ctrl+o++). ++ctrl+z++ undoes the disconnect at once.

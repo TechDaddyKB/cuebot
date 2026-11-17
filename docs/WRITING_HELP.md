@@ -100,5 +100,28 @@ CUEBOT_WRITE_SCREENSHOTS=1 dotnet test tests/Cuebot.UiTests -c Release --no-buil
 
 A new page gets its picture automatically (`page-<title>.png`). To show a tab or a dialog, add it to the test. The
 generated reference pages (triggers, sub-actions, C#, script functions, REST, MCP) point at these pictures from
-`ActionHelpTests.cs` and `DeveloperReferenceTests.cs`. The phone app pictures in `website/docs/assets/phone` come from
-the companion apps' own screenshot runs.
+`ActionHelpTests.cs` and `DeveloperReferenceTests.cs`.
+
+The run also writes many cropped cards (`card-*.png`) no page uses yet. Commit only the pictures a page links to, and
+only those that really changed: a re-render differs by a few pixels even when nothing changed, so compare first (for
+example `magick compare -metric AE -fuzz 3% old.png new.png null:`; a few thousand pixels is usually just the menu).
+
+The Chat page's moderation pictures (`chat-*.png`) come from the chat UI tests in `tests/Cuebot.UiTests/Chat`, which save
+them to `tests/Cuebot.UiTests/screenshots`; copy the ones a guide uses.
+
+**Phone app** (`website/docs/assets/phone`): take them on a real phone or tablet over USB, against the demo Cuebot in
+`tests/Cuebot.UiTests/CompanionLiveDemo.cs`, so no real names, chat or addresses show:
+
+```bash
+CUEBOT_COMPANION_DEMO_LINK=/tmp/demo.link dotnet test tests/Cuebot.UiTests -c Release --no-build --filter FullyQualifiedName~CompanionLiveDemo &
+adb reverse tcp:17475 tcp:17475 && adb reverse tcp:17474 tcp:17474
+adb shell am start -a android.intent.action.VIEW -d "\"$(cat /tmp/demo.link)\"" digital.techdaddy.cuebot.companion   # tap Pair
+adb exec-out screencap -p > android-chat.png
+```
+
+Afterwards remove **Demo Cuebot** in the app's **Settings** (the phone's own Cuebot becomes active again), undo any
+setting you changed for a picture, run `adb reverse --remove-all`, and delete the link file to stop the demo. Do not
+use pictures of the Settings top: it lists the phone's other paired Cuebots with their addresses.
+
+**Mod portal** (`portal-*.png`): `portal/shots.mjs` drives headless Chromium against a demo (see the top of that file);
+`node portal/shots.mjs "$(cat link)" out chat` takes the Chat page against `PortalOverlaysLiveDemo`, which keeps chatting.

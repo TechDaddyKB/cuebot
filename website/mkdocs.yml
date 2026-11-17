@@ -40,6 +40,9 @@ theme:
     - content.action.edit
     - toc.follow
 
+extra_css:
+  - stylesheets/extra.css
+
 markdown_extensions:
   - admonition
   - attr_list
@@ -104,6 +107,7 @@ nav:
           - guides/start/index.md
           - Installing Cuebot: guides/start/installing.md
           - Updating Cuebot: guides/start/updating.md
+          - What's new: guides/start/whats-new.md
           - Your first five minutes: guides/start/first-five-minutes.md
           - Moving from Streamer.bot: guides/start/moving-from-streamer-bot.md
           - Every page in Cuebot: guides/start/every-page.md

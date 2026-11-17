@@ -51,10 +51,13 @@ Two actions react to it. Often it is the example **!hello** action in the **Exam
 Install `espeak-ng`, and one of `pw-play` (PipeWire), `paplay` or `aplay`. See [Linux](linux.md#sound-and-speech).
 
 **Text-to-speech or a sound plays on the wrong device, or not at all, on Windows.**
-The log says the output device is busy, for example `Unable to init device Chat (GoXLR). Result: Busy`. Another app is
-using that device on its own (exclusive mode), so Cuebot plays on your default device instead. In Windows, open
-**Sound settings > More sound settings > Playback**, open the device's **Properties > Advanced** and untick **Allow
-applications to take exclusive control of this device**, or close the app that uses it.
+The log says the output device is busy, for example `Unable to init device Chat (GoXLR). Result: Busy`. That means
+another app keeps that device to itself (exclusive mode). So Cuebot plays on your default device instead, rather than
+not at all. To get your chosen device back, close the app that uses it, or:
+
+1. In Windows, open **Sound settings > More sound settings > Playback**.
+2. Open the device's **Properties > Advanced**.
+3. Untick **Allow applications to take exclusive control of this device**.
 
 **The window does not show up on Linux.**
 Start Cuebot from a terminal to see what it says, or try `--backend=x11`. See [Linux](linux.md).
@@ -88,9 +91,10 @@ recent log.
 ![The What went wrong? card with Title, What were you doing and the other boxes](../../assets/screens/card-what-went-wrong.png)
 
 1. Type a short **Title**, like "Follow alert does not show".
-2. Say what you were doing when it happened and what you saw instead. Copy any error message word for word: the log
-   often can't show what was on your screen, such as a message in the Assistant chat. Cuebot won't send a report
-   that has only a title, unless a crash is attached.
+2. Say what you were doing when it happened, and what you saw instead. Copy any error message word for word: the log
+   often can't show what was on your screen, such as a message in the Assistant chat. Example: "I asked the
+   Assistant to make a !lurk command. It showed:" and then the error, copied exactly. Cuebot won't send a report that has only a
+   title, unless a crash is attached.
 3. Under **Include**, leave the boxes as they are, unless you have a reason to change them.
 4. Read the **Preview** on the right. That is exactly what will be sent. You can change or delete anything in it.
 5. Click **Send report**. You do not need a GitHub account. **Open the issue** then shows your report in the browser.
