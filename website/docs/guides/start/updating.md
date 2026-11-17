@@ -27,8 +27,8 @@ In the left rail click **Settings**, then the **Support** page, then the **Updat
 - "Check for updates when Cuebot starts (at most once a day)" is ticked from the start. Untick it if you would rather
   check yourself.
 - **Check now** looks right away.
-- **Channel** is **Stable** at first. Set it to **Prerelease** to also hear about test versions. While Cuebot is in
-  testing, every release is a test version, so pick **Prerelease** for now.
+- **Channel** is **Stable** at first, which tells you about full releases like 1.0. Set it to **Prerelease** to also
+  hear about test versions before they're ready, if you like trying new things early.
 - When there is a new version, **Open release page** takes you to its download.
 
 Cuebot only checks GitHub for a newer release. It never downloads or installs anything by itself.

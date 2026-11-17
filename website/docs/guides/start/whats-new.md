@@ -1,8 +1,21 @@
 # What's new
 
-What changed in each test version of Cuebot, newest first. Each line links to the guide that explains it.
+What changed in each version of Cuebot, newest first. Each line links to the guide that explains it.
 
 To get the newest version, see [Updating Cuebot](updating.md).
+
+## 1.0.0
+
+Cuebot's first full release. It's no longer marked **Pre-release**, so the **Stable** update channel finds it. If you
+switched to **Prerelease** during testing, you can switch back (see [Updating Cuebot](updating.md)).
+
+- **See and fix what added time.** Subathon timers and goals have a new **History** tab. It lists every change
+  with who, where it came from and how much it added, for today, this week, this month or this year. Take a change
+  back (a chargeback, a test that slipped in), fix its amount, add a note, or export it all as a spreadsheet. See
+  [History](../services/subathon-timers.md#history-see-and-fix-what-added-time).
+- **Each service's money can count differently.** Throne buys you gifts instead of paying you, and merch shops pay
+  you only part of a sale. Under **Money by service**, give each service its own value for each 1 of money, or 0 so
+  it doesn't count. See [Money by service](../services/subathon-timers.md#money-by-service).
 
 ## 0.1.0-rc.22
 

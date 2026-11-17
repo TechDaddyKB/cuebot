@@ -5,8 +5,9 @@ download. You do not need to install anything else first.
 
 ## Pick your download
 
-Go to the [releases page](https://github.com/TechDaddyKB/cuebot/releases) and open the newest release. While Cuebot is
-in testing, releases are marked **Pre-release**. Under **Assets**, pick the file for your computer:
+Go to the [releases page](https://github.com/TechDaddyKB/cuebot/releases) and open the newest release (it's marked
+**Latest**). Releases marked **Pre-release** are test versions; skip those unless you want to try new things early.
+Under **Assets**, pick the file for your computer:
 
 | Your computer | File to download |
 | --- | --- |

@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/TechDaddyKB/cuebot/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/TechDaddyKB/cuebot?include_prereleases&label=release"></a>
+  <a href="https://github.com/TechDaddyKB/cuebot/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/TechDaddyKB/cuebot?label=release"></a>
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/github/license/TechDaddyKB/cuebot"></a>
   <a href="https://techdaddykb.github.io/cuebot/"><img alt="Docs" src="https://img.shields.io/badge/docs-techdaddykb.github.io-blue"></a>
 </p>
@@ -22,8 +22,8 @@ Cuebot runs on your computer. You build **actions** ("switch to the BRB scene, p
 choose what **triggers** them: a chat command, a follow, a raid, a channel-point redemption, a donation, a key press,
 a Stream Deck button or a timer. Text-to-speech, chat moderation and your stream gear live in the same app.
 
-> **Cuebot is in testing (version 0.1, release candidates).** It works, but expect rough edges. Please
-> [report what you find](https://github.com/TechDaddyKB/cuebot/issues/new/choose).
+> **Cuebot 1.0 is here: the first full release.** If something doesn't work the way the guides say, please
+> [tell us](https://github.com/TechDaddyKB/cuebot/issues/new/choose).
 
 ## What it does
 
@@ -77,7 +77,7 @@ Get the latest build from the [releases page](https://github.com/TechDaddyKB/cue
 | macOS 15+, Apple silicon or Intel (experimental) | `Cuebot-macos-<arm64\|x64>.dmg` | Drag Cuebot to Applications. |
 
 Nothing else needs to be installed: each download includes everything it needs. The Mac build is new and not yet signed by Apple: macOS asks before the first start. Arch Linux packages (`cuebot`,
-`cuebot-bin`) will be on the AUR with the first stable release.
+`cuebot-bin`) are built for every full release and will be published on the AUR.
 
 The [installation guide](https://techdaddykb.github.io/cuebot/guides/start/installing/) covers Windows SmartScreen, Linux
 desktop integration and updating.

@@ -10,9 +10,8 @@ It works with **Twitch, YouTube, Kick and Rumble**, and runs on **Windows, Linux
 
 ![Building an action in Cuebot](assets/actions.png)
 
-!!! warning "Cuebot is still being tested"
-    Cuebot is at version 0.1, in **release candidates** (test versions before the first full release). It works, but
-    you may find rough edges. If something does not work the way these pages say, please
+!!! tip "Cuebot 1.0 is here"
+    Version 1.0 is Cuebot's first full release. If something doesn't work the way these pages say, please
     [tell us about it](https://github.com/TechDaddyKB/cuebot/issues/new/choose).
 
 ## Who it is for
@@ -34,13 +33,12 @@ You do not need to be good with computers. Every page here explains one thing at
 5. [Variables, the %words%](guides/actions/variables.md): put the viewer's name and other values into your messages.
 6. [Words you will see](guides/start/glossary.md): a small dictionary for when a word is new.
 
-Updating from an earlier test version? See [What's new](guides/start/whats-new.md).
+Updating from an earlier version? See [What's new](guides/start/whats-new.md).
 
 ## Download
 
-Get Cuebot from the [releases page on GitHub](https://github.com/TechDaddyKB/cuebot/releases). While Cuebot is in
-testing, every download is marked **Pre-release**. The [installation guide](guides/start/installing.md) tells you which
-file to pick.
+Get Cuebot from the [releases page on GitHub](https://github.com/TechDaddyKB/cuebot/releases). The newest full release
+is marked **Latest**. The [installation guide](guides/start/installing.md) tells you which file to pick.
 
 ## What else is here
 
