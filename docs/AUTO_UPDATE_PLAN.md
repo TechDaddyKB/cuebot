@@ -92,7 +92,7 @@
 
 ### Release pipeline
 - `.github/workflows/release.yml` runs on `v*` tags: build, Linux tarballs, the Android APK (signed by
-  `clients/android/ci/release.sh`; `versionCode` is the workflow run number), then `gh release create` with all assets.
+  `clients/android/ci/release.sh`; `versionCode` is the workflow run number plus 100), then `gh release create` with all assets.
   A tag with a hyphen is a GitHub pre-release and skips the AUR.
 - `.github/workflows/android.yml` runs the Android tests and, by hand, a signed release build to prove the secrets work.
 - `.github/workflows/ios.yml` runs CuebotKit's tests; TestFlight uploads are planned (`docs/IOS_COMPANION_PLAN.md`
@@ -477,7 +477,8 @@ round: users would have to uninstall and pair again. When enrolling in Play App 
 key (the one in `ANDROID_KEYSTORE_BASE64`) instead of letting Google create one. This has to be decided **before the
 first Play upload**, which the portal-setup session is close to; see section 11.
 
-`versionCode` is the release workflow's run number (`release.sh`), which only grows, so Play accepts every build.
+`versionCode` is the release workflow's run number plus 100 (`release.sh`), which only grows, so Play accepts every
+build. The offset keeps clear of versionCodes 26 and 27, which Play already holds for v1.0.0.
 Google requires new personal developer accounts to run a closed test with a minimum number of testers for two weeks
 before production; plan the first Play release around that.
 

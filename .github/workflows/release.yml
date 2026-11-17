@@ -68,7 +68,8 @@ jobs:
 
   # Cuebot Companion for Android: the release APK (attached to the release) and AAB (kept as an artifact for later),
   # signed with the release key when the secrets are set (clients/android/ci/release.sh). versionCode is this
-  # workflow's run number, which only goes up.
+  # workflow's run number plus 100, which only goes up: Google Play already holds versionCodes 26 and 27 (v1.0.0, the
+  # second one uploaded by hand after the app signing key change), and Play never accepts a versionCode twice.
   android:
     runs-on: ubuntu-latest
     env:
@@ -83,7 +84,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v6
-      - run: clients/android/ci/release.sh "${GITHUB_REF_NAME#v}" "${{ github.run_number }}"
+      - run: clients/android/ci/release.sh "${GITHUB_REF_NAME#v}" "$((${{ github.run_number }} + 100))"
       - uses: actions/upload-artifact@v7
         with:
           name: android
