@@ -385,6 +385,7 @@ public sealed class ModerationDepthTests : IDisposable
         // A chat mode switched on the website.
         Deliver("channel.moderate", Moderate("slow", """{"wait_time_seconds":10}"""));
         Assert.Equal(("mode", "Slow mode on (10)"), (modLog.Recent()[0].Action, modLog.Recent()[0].Reason));
+        modLog.Dispose();   // Windows cannot delete the database while it is open
         Directory.Delete(dir, true);
     }
 }

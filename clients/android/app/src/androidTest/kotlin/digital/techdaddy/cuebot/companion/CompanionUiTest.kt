@@ -10,6 +10,9 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
@@ -187,8 +190,8 @@ class CompanionUiTest {
         compose.waitUntil(5_000) { count("POST /api/v1/chat/send") == 1 }
         assertTrue(requests.last { it.url.encodedPath == "/api/v1/chat/send" }.body!!.utf8().contains("\"as\":\"bot\""))
 
-        // Moderate: warn is greyed with its reason; a 10 minute timeout goes to Cuebot.
-        compose.onNodeWithTag("chat-line-m1").performClick()
+        // Moderate (by the line's click action: the keyboard from sending moves the list): warn is greyed with its reason; a 10 minute timeout goes to Cuebot.
+        compose.onNodeWithTag("chat-line-m1").performSemanticsAction(SemanticsActions.OnClick)
         compose.waitUntilExactlyOneExists(hasTestTag("mod-dialog"), 5_000)
         compose.onNodeWithTag("mod-warn").assertIsNotEnabled()
         compose.onNodeWithText("Soft warnings are turned off.").assertExists()
@@ -197,8 +200,10 @@ class CompanionUiTest {
         compose.waitUntilExactlyOneExists(hasText("Timed out for 10 min"), 5_000)
 
         // Ban asks first.
-        compose.onNodeWithTag("chat-line-m1").performClick()
-        compose.onNodeWithTag("mod-ban").performClick()
+        compose.onNodeWithTag("chat-line-m1").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitUntilExactlyOneExists(hasTestTag("mod-ban"), 5_000)
+        compose.onNodeWithTag("mod-ban").performScrollTo().performClick()
+        compose.waitUntilExactlyOneExists(hasTestTag("mod-ban-confirm"), 5_000)
         compose.onNodeWithText("Ban Ann?").assertExists()
         compose.onNodeWithTag("mod-ban-confirm").performClick()
         compose.waitUntil(5_000) { count("POST /api/v1/chat/moderate") == 2 }
