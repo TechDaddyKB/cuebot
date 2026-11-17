@@ -41,8 +41,8 @@ final class ProfileSwitchTests: XCTestCase {
         XCTAssertTrue(force.waitForExistence(timeout: wait))
         force.buttons["profile-switch-force"].firstMatch.tap()
 
-        XCTAssertTrue(app.descendants(matching: .any)["profile-switching"].waitForExistence(timeout: wait))
-        XCTAssertTrue(app.staticTexts["Switching to Night Owl…"].exists)
+        // The banner shows for as long as the fake Cuebot is down; wait for its text directly, not after a second lookup.
+        XCTAssertTrue(app.staticTexts["Switching to Night Owl…"].waitForExistence(timeout: wait))
 
         let switched = NSPredicate(format: "label CONTAINS %@", "Night Owl")
         expectation(for: switched, evaluatedWith: app.buttons["profile-row"])
@@ -163,7 +163,7 @@ final class FakeProfilesCuebot: @unchecked Sendable {
             }
             reply(connection, 200, #"{"result":"switching"}"#)
             open = String(id)
-            downUntil = Date().addingTimeInterval(2)
+            downUntil = Date().addingTimeInterval(5)   // long enough for a slow simulator to see the "Switching…" banner
             streams.forEach { $0.cancel() }
             streams = []
         case ("GET", "/api/v1/decks"), ("GET", "/api/v1/actions"):

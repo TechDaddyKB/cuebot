@@ -14,6 +14,14 @@ final class LaunchTests: XCTestCase {
     /// CI simulators are slow: generous waits everywhere.
     private let wait: TimeInterval = 30
 
+    /// A segment's selected state follows a tap a moment later on slow simulators: wait for it rather than checking once.
+    @MainActor
+    private func waitUntil(_ element: XCUIElement, isSelected selected: Bool, file: StaticString = #filePath, line: UInt = #line) {
+        let done = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isSelected == %@", NSNumber(value: selected)), object: element)
+        XCTAssertEqual(XCTWaiter.wait(for: [done], timeout: wait), .completed,
+                       "\(element) isSelected never became \(selected)", file: file, line: line)
+    }
+
     @MainActor
     private func launchUnpaired(tab: String? = nil) -> XCUIApplication {
         let app = XCUIApplication()
@@ -59,15 +67,15 @@ final class LaunchTests: XCTestCase {
         let dark = app.buttons["Dark"]
         XCTAssertTrue(dark.waitForExistence(timeout: wait))
         dark.tap()
-        XCTAssertTrue(dark.isSelected)
+        waitUntil(dark, isSelected: true)
         // The choice is kept: it survives a relaunch.
         app.terminate()
         app.launchArguments = ["-tab", "settings"]
         app.launch()
         XCTAssertTrue(app.buttons["Dark"].waitForExistence(timeout: wait))
-        XCTAssertTrue(app.buttons["Dark"].isSelected)
+        waitUntil(app.buttons["Dark"], isSelected: true)
         app.buttons["System"].tap()
-        XCTAssertTrue(app.buttons["System"].isSelected)
-        XCTAssertFalse(app.buttons["Dark"].isSelected)
+        waitUntil(app.buttons["System"], isSelected: true)
+        waitUntil(app.buttons["Dark"], isSelected: false)
     }
 }
