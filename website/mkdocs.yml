@@ -140,6 +140,7 @@ nav:
           - Quotes: guides/chat/quotes.md
           - Credits: guides/chat/credits.md
           - Top spenders: guides/chat/top-spenders.md
+          - Stream data: guides/chat/stream-data.md
           - Users and groups: guides/chat/users-and-groups.md
           - Moderating your chat: guides/chat/moderation.md
           - Linked accounts and linked bans: guides/chat/identity-links.md

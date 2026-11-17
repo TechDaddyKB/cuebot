@@ -253,7 +253,7 @@ public sealed class McpCatalog(ApiOperations ops, ServerServices services)
         | Connections | list_connections, connect_service (uses the sign-in saved in Cuebot) |
         | Hotkeys, decks | save_hotkey; get_deck / save_deck |
         | Feature settings | get_feature_settings / update_feature_settings (points, media, polls, viewers) |
-        | Stream totals and goals | get_stream_totals, set_stream_totals |
+        | Stream totals and goals | get_stream_totals, set_stream_totals; list_stream_events, update_stream_event, delete_stream_events (fix or remove test events) |
         | Trying things | emulate_event (sample follow, sub, cheer, raid, tip...), test_action, get_history |
         | Sharing automations | export_bundle, preview_import, apply_import |
 

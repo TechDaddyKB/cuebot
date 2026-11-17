@@ -30,7 +30,7 @@ public sealed class McpCoverageTests : IAsyncLifetime
         "list_gallery", "import_gallery_item", "list_streamelements_overlays", "import_streamelements_overlay",
         "list_connections", "connect_service", "get_speech_settings", "update_speech_settings", "list_speech_voices", "save_voice_alias",
         "delete_voice_alias", "speak", "set_viewer_voice", "get_feature_settings", "update_feature_settings", "get_stream_totals",
-        "set_stream_totals", "list_hotkeys", "save_hotkey", "delete_hotkey", "list_decks", "get_deck", "save_deck", "delete_deck",
+        "set_stream_totals", "list_stream_events", "update_stream_event", "delete_stream_events", "list_hotkeys", "save_hotkey", "delete_hotkey", "list_decks", "get_deck", "save_deck", "delete_deck",
     ];
 
     private ApiHost _host = null!;
@@ -418,6 +418,28 @@ public sealed class McpCoverageTests : IAsyncLifetime
         await Ok("set_stream_totals", Args(("command", "setGoal"), ("type", "follower"), ("amount", 100)));
         Assert.NotNull((await Ok("get_stream_totals", []))["session"]);
         await Confirmed("set_stream_totals", Args(("command", "reset")));
+
+        // Stored events behind the totals: list, edit, remove; overrides and settings.
+        var tipNow = DateTimeOffset.UtcNow;
+        Bot.SessionData.Record(new Cuebot.Core.Overlays.Events.OverlayAlert("tip-latest", new JsonObject { ["name"] = "Alice", ["amount"] = 5 }), "twitch", tipNow);
+        Bot.SessionData.Record(new Cuebot.Core.Overlays.Events.OverlayAlert("tip-latest", new JsonObject { ["name"] = "Sample", ["amount"] = 500 }) { IsTest = true },
+            "StreamElements", tipNow);
+        var stored = await Ok("list_stream_events", Args(("type", "tip")));
+        Assert.Equal(2, stored["events"]!.AsArray().Count);
+        Assert.Equal(1, stored["info"]!["testEvents"]!.GetValue<int>());
+        var aliceId = S(stored["events"]!.AsArray().Single(e => S(e!["name"]) == "Alice")!["id"]);
+        var edited = await Ok("update_stream_event", Args(("id", aliceId), ("amount", 7)));
+        Assert.Equal(7.0, edited["amount"]!.GetValue<double>());
+        await Fails("update_stream_event", Args(("id", "missing"), ("amount", 1)));
+        var removed = await Confirmed("delete_stream_events", Args(("testOnly", true)));
+        Assert.Equal(1, removed["removed"]!.GetValue<int>());
+        Assert.Single((await Ok("list_stream_events", []))["events"]!.AsArray());
+        Assert.Equal("Alice", S((await Ok("get_stream_totals", []))["session"]!["tip-alltime-top-donation"]!["name"]));
+        await Ok("set_stream_totals", Args(("command", "setResetMode"), ("mode", "manual")));
+        Assert.Equal("manual", S((await Ok("get_stream_totals", []))["info"]!["resetMode"]));
+        await Confirmed("set_stream_totals", Args(("command", "setTopDonation"), ("type", "tip"), ("period", "alltime"), ("name", "")));
+        await Confirmed("set_stream_totals", Args(("command", "set"), ("type", "tip"), ("period", "total"), ("count", 1), ("amount", 7)));
+        await Ok("set_stream_totals", Args(("command", "setCountTestEvents"), ("enabled", false)));
 
         // Hotkeys run actions; decks hold buttons.
         Bot.AddAction("Scene: BRB");

@@ -209,27 +209,148 @@ public sealed partial class ApiOperations
 
     // ---- Stream totals ---------------------------------------------------------------------------------------------
 
-    /// <summary>This stream's totals (follows, subs, tips... counts and amounts, goals) used by labels and goal widgets.</summary>
-    public JsonObject StreamTotals() => new()
+    /// <summary>This stream's totals (follows, subs, tips... counts and amounts, goals) used by labels and goal widgets, and how they reset.</summary>
+    public JsonObject StreamTotals()
     {
-        ["session"] = (services.SessionData ?? throw ApiException.Unavailable("Stream totals are not available")).Snapshot(),
-    };
+        var session = SessionData;
+        return new JsonObject { ["session"] = session.Snapshot(), ["info"] = session.Info() };
+    }
+
+    private Cuebot.Core.Overlays.Session.SessionDataStore SessionData =>
+        services.SessionData ?? throw ApiException.Unavailable("Stream totals are not available");
 
     /// <summary><c>reset</c> this stream's totals, or <c>setGoal</c> for a type (follower, subscriber, tip, cheer...).</summary>
-    public JsonObject StreamTotalsCommand(string command, string? type, double? amount)
+    public JsonObject StreamTotalsCommand(string command, string? type, double? amount) =>
+        StreamTotalsCommand(command, new JsonObject { ["type"] = type, ["amount"] = amount });
+
+    /// <summary>
+    /// Changes the stream totals: <c>reset</c>, <c>setGoal</c> (type, amount), <c>set</c> (type, period session|week|month|total,
+    /// count, amount), <c>setLatest</c> (type, name, amount; empty name clears), <c>setTopDonation</c> (type, period
+    /// session|weekly|monthly|alltime, name, amount; empty name clears), <c>setDonator</c> (type, period, name, amount; 0
+    /// removes), <c>removeRecent</c> (type or empty for the list of every type, index 0 = newest), <c>setResetMode</c>
+    /// (mode afterOffline|manual), <c>setCountTestEvents</c> (enabled).
+    /// </summary>
+    public JsonObject StreamTotalsCommand(string command, JsonObject a)
     {
-        var session = services.SessionData ?? throw ApiException.Unavailable("Stream totals are not available");
-        switch (command)
+        var session = SessionData;
+        string Type() => TotalsText(a["type"]) is { Length: > 0 } t ? t : throw ApiException.BadRequest("type is required");
+        string Period() => TotalsText(a["period"]) is { Length: > 0 } p ? p : throw ApiException.BadRequest("period is required");
+        double? Num(string key) => a[key] is JsonValue v && v.TryGetValue<double>(out var d) ? d
+            : a[key] is JsonValue s && s.TryGetValue<string>(out var str) && double.TryParse(str, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
+        try
         {
-            case "reset": session.ResetSession(); break;
-            case "setGoal":
-                session.SetGoal(string.IsNullOrWhiteSpace(type) ? throw ApiException.BadRequest("type is required") : type.Trim(),
-                    amount ?? throw ApiException.BadRequest("amount is required"));
-                break;
-            default: throw ApiException.BadRequest($"Unknown command '{command}' (reset or setGoal)");
+            switch (command)
+            {
+                case "reset": session.ResetSession(); break;
+                case "setGoal": session.SetGoal(Type(), Num("amount") ?? throw ApiException.BadRequest("amount is required")); break;
+                case "set":
+                    if (Num("count") is null && Num("amount") is null) throw ApiException.BadRequest("count or amount is required");
+                    session.SetTally(Type(), Period(), Num("count") is { } c ? (long)c : null, Num("amount"));
+                    break;
+                case "setLatest": session.SetLatest(Type(), TotalsText(a["name"]), Num("amount") ?? 0); break;
+                case "setTopDonation": session.SetTopDonation(Type(), Period(), TotalsText(a["name"]), Num("amount") ?? 0); break;
+                case "setDonator":
+                    session.SetDonator(Type(), Period(), TotalsText(a["name"]) ?? "", Num("amount") ?? throw ApiException.BadRequest("amount is required"));
+                    break;
+                case "removeRecent":
+                    if (!session.RemoveRecent(TotalsText(a["type"]), (int)(Num("index") ?? throw ApiException.BadRequest("index is required"))))
+                        throw ApiException.NotFound("No recent entry at that position");
+                    break;
+                case "setResetMode":
+                    session.SetResetMode(Cuebot.Core.Overlays.Session.SessionDataStore.ParseResetMode(TotalsText(a["mode"]) ?? ""));
+                    break;
+                case "setCountTestEvents":
+                    session.SetCountTestEvents(a["enabled"] is JsonValue e && e.TryGetValue<bool>(out var on)
+                        ? on : throw ApiException.BadRequest("enabled (true or false) is required"));
+                    break;
+                default:
+                    throw ApiException.BadRequest($"Unknown command '{command}' (reset, setGoal, set, setLatest, setTopDonation, setDonator, "
+                        + "removeRecent, setResetMode or setCountTestEvents)");
+            }
+        }
+        catch (ArgumentException ex)
+        {
+            throw ApiException.BadRequest(ex.Message);
         }
         return StreamTotals();
     }
+
+    private static Cuebot.Core.Overlays.Session.StreamEventFilter StreamEventFilter(JsonObject a)
+    {
+        DateTimeOffset? Date(string key) => TotalsText(a[key]) is { Length: > 0 } t
+            ? DateTimeOffset.TryParse(t, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeLocal, out var d)
+                ? d : throw ApiException.BadRequest($"{key} is not a date and time (e.g. 2026-11-17T18:00)")
+            : null;
+        return new(TotalsText(a["type"]), TotalsText(a["platform"]), Date("from"), Date("to"),
+            a["testOnly"] is JsonValue v && v.TryGetValue<bool>(out var test) && test, TotalsText(a["name"]));
+    }
+
+    private JsonObject StreamEventJson(Cuebot.Core.Overlays.Session.StoredStreamEvent e) => new()
+    {
+        ["id"] = e.Id,
+        ["type"] = e.Type,
+        ["name"] = e.Name,
+        ["amount"] = e.Amount,
+        ["count"] = e.Count,
+        ["platform"] = e.Service,
+        ["time"] = e.Time.ToString("o", System.Globalization.CultureInfo.InvariantCulture),
+        ["isTest"] = e.IsTest,
+        ["inTotals"] = e.InTotals,
+        ["thisStream"] = SessionData.IsThisStream(e),
+        ["message"] = e.Event["message"]?.DeepClone(),
+        ["currency"] = e.Event["currency"]?.DeepClone(),
+    };
+
+    /// <summary>Stored events behind the totals, newest first (filters: type, platform, name, from, to, testOnly, limit).</summary>
+    public JsonObject StreamEvents(JsonObject filter)
+    {
+        var limit = filter["limit"] is JsonValue l && l.TryGetValue<int>(out var n) ? n : 100;
+        var events = SessionData.Events(StreamEventFilter(filter), limit);
+        return new JsonObject
+        {
+            ["events"] = new JsonArray([.. events.Select(e => (JsonNode)StreamEventJson(e))]),
+            ["info"] = SessionData.Info(),
+        };
+    }
+
+    /// <summary>Removes one stored event (<c>id</c>) or every one matching the filter; the totals are recalculated.</summary>
+    public JsonObject DeleteStreamEvents(JsonObject a)
+    {
+        int removed;
+        if (TotalsText(a["id"]) is { Length: > 0 } id)
+        {
+            removed = SessionData.RemoveEvent(id) ? 1 : throw ApiException.NotFound($"No stored event '{id}'");
+        }
+        else
+        {
+            var filter = StreamEventFilter(a);
+            if (filter is { Type: null or "", Service: null or "", Name: null or "", From: null, To: null, TestOnly: false } && a["all"]?.GetValue<bool>() != true)
+                throw ApiException.BadRequest("Give an id, a filter (type, platform, name, from, to, testOnly), or all: true");
+            removed = SessionData.RemoveEvents(filter);
+        }
+        return new JsonObject { ["removed"] = removed, ["info"] = SessionData.Info() };
+    }
+
+    /// <summary>Changes a stored event's name, amount or test mark; the totals follow.</summary>
+    public JsonObject UpdateStreamEvent(string id, JsonObject a)
+    {
+        var edit = new Cuebot.Core.Overlays.Session.StreamEventEdit(TotalsText(a["name"]),
+            a["amount"] is JsonValue v && v.TryGetValue<double>(out var amount) ? amount : null,
+            a["isTest"] is JsonValue t && t.TryGetValue<bool>(out var test) ? test : null);
+        try
+        {
+            var e = SessionData.EditEvent(id, edit) ?? throw ApiException.NotFound($"No stored event '{id}'");
+            return StreamEventJson(e);
+        }
+        catch (ArgumentException ex)
+        {
+            throw ApiException.BadRequest(ex.Message);
+        }
+    }
+
+    private static string? TotalsText(JsonNode? node) =>
+        node is JsonValue v && v.TryGetValue<string>(out var s) && s.Trim().Length > 0 ? s.Trim() : null;
 
     // ---- Hotkeys ---------------------------------------------------------------------------------------------------
 

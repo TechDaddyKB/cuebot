@@ -70,6 +70,8 @@ The Emulate buttons send pretend events to the preview, but they do not change y
 not change when you click **Follow**. To check your settings, change **When there is nothing yet** and look at the
 preview, or wait for a real follow. The preview shows your real totals.
 
+A wrong value, or a test event that still shows? Fix it on the [Stream data](../../chat/stream-data.md) page.
+
 ## Ideas
 
 | You want | Set |

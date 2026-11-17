@@ -39,6 +39,14 @@ public static class OverlayFeatures
             sp.GetRequiredService<EventBus>(), sp.GetRequiredService<OverlayFeed>(), sp.GetRequiredService<OverlayEventBridge>(),
             sources: sp.GetServices<ISessionDataSource>()));
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<SessionDataStore>());
+        services.AddSingleton<ISubActionHandler, StreamTotalsGetSubAction>();
+        services.AddSingleton<ISubActionHandler, StreamTotalsResetSubAction>();
+        services.AddSingleton<ISubActionHandler, StreamTotalsSetGoalSubAction>();
+        services.AddSingleton<ISubActionHandler, StreamTotalsSetSubAction>();
+        services.AddSingleton<ISubActionHandler, StreamTotalsSetLatestSubAction>();
+        services.AddSingleton<ISubActionHandler, StreamTotalsSetTopDonationSubAction>();
+        services.AddSingleton<ISubActionHandler, StreamTotalsRemoveEventsSubAction>();
+        services.AddSingleton<ISubActionHandler, StreamTotalsResetModeSubAction>();
         return services;
     }
 }

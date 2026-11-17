@@ -134,6 +134,8 @@ public static class StepRiskCatalog
         ["polls.*"] = L2, ["goals.*"] = L2, ["goals.get"] = L1, ["subathon.*"] = L2, ["subathon.get"] = L1,
         ["credits.*"] = L2, ["credits.get"] = L1, ["giveaways.*"] = L2, ["media.*"] = L2, ["spotify.*"] = L2,
         ["spending.*"] = L2, ["spending.getTop"] = L1, ["spending.newStream"] = L3,
+        // Stream totals: reading is harmless; resetting or removing stored events changes what overlays show.
+        ["streamTotals.*"] = L2, ["streamTotals.get"] = L1, ["streamTotals.reset"] = L3, ["streamTotals.removeEvents"] = L3,
         ["kofi.*"] = L2, ["kofi.getGoal"] = L1, ["kofi.getCommissions"] = L1,
         ["patreon.*"] = L2, ["patreon.getPatron"] = L1, ["patreon.getCampaign"] = L1,
         // Shopify: only reads the store; the counter and goal are Cuebot's own (like the Ko-fi goal).

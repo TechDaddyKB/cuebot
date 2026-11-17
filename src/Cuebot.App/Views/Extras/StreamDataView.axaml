@@ -1,0 +1,120 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels.Extras"
+             xmlns:views="using:Cuebot.App.Views.Extras"
+             x:Class="Cuebot.App.Views.Extras.StreamDataView"
+             x:DataType="vm:StreamDataViewModel">
+  <DockPanel Margin="24,24,24,16">
+    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+      <TextBlock Classes="h1" Text="Stream Data" />
+      <TextBlock Classes="muted" TextWrapping="Wrap"
+                 Text="The events and totals behind your labels, goal bars, event lists and custom widgets: latest follower, recent tips, counts and amounts for this stream, week, month and all time, and top donations. Fix or remove an event and everything it counted in is recalculated. Test and emulated events count for this stream only (so you can try overlays) and are cleared when your next stream starts." />
+    </StackPanel>
+
+    <!-- Right: settings and overrides -->
+    <Border DockPanel.Dock="Right" Classes="card" Width="360" Margin="12,0,0,0" VerticalAlignment="Top">
+      <ScrollViewer MaxHeight="820">
+        <StackPanel Spacing="8" Margin="0,0,16,0">
+          <TextBlock Classes="h2" Text="When this stream's totals reset" />
+          <ComboBox ItemsSource="{x:Static vm:StreamDataViewModel.ResetModes}" SelectedItem="{Binding ResetMode}" HorizontalAlignment="Stretch"
+                    AutomationProperties.Name="Reset mode" />
+          <TextBlock Classes="muted" Text="{Binding ResetText}" TextWrapping="Wrap" />
+          <Button Content="{Binding ConfirmReset, Converter={x:Static views:StreamDataView.ResetText}}" Command="{Binding ResetNowCommand}"
+                  ToolTip.Tip="This stream's counts, amounts and leaderboards go back to zero. Week, month and all-time totals stay." />
+          <CheckBox Content="Count test events in week, month and all-time totals" IsChecked="{Binding CountTestEvents}"
+                    ToolTip.Tip="Off: test and emulated events only count for this stream and never become a top donation. Applies to new events." />
+
+          <TextBlock Classes="h2" Text="Change a total by hand" Margin="0,12,0,0" />
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="For totals Cuebot counted before it kept the event list, or to correct anything. Pick a type, check the values, then change them." />
+          <Grid ColumnDefinitions="90,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+            <TextBlock Grid.Row="0" Text="Type" VerticalAlignment="Center" />
+            <AutoCompleteBox Grid.Row="0" Grid.Column="1" Text="{Binding OverrideType}" ItemsSource="{Binding TypeChoices}" FilterMode="Contains"
+                             Watermark="follower, tip, cheer..." />
+            <TextBlock Grid.Row="1" Text="Total for" VerticalAlignment="Center" />
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{x:Static vm:StreamDataViewModel.TallyPeriods}" SelectedItem="{Binding OverridePeriod}"
+                      HorizontalAlignment="Stretch" />
+            <TextBlock Grid.Row="2" Text="Count" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding OverrideCount}" Minimum="0" Increment="1" FormatString="0" Watermark="keep" />
+            <TextBlock Grid.Row="3" Text="Amount" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding OverrideAmount}" Minimum="0" Increment="1" FormatString="0.##" Watermark="keep" />
+            <TextBlock Grid.Row="4" Text="Name" VerticalAlignment="Center" />
+            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding OverrideName}" Watermark="for latest, top donation, donator" />
+            <TextBlock Grid.Row="5" Text="Board" VerticalAlignment="Center" />
+            <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{x:Static vm:StreamDataViewModel.BoardPeriods}" SelectedItem="{Binding OverrideBoardPeriod}"
+                      HorizontalAlignment="Stretch" ToolTip.Tip="Which top donation and top donator to change" />
+          </Grid>
+          <TextBlock Classes="muted" Text="{Binding CurrentValues}" TextWrapping="Wrap" />
+          <WrapPanel Orientation="Horizontal">
+            <Button Content="Set total" Command="{Binding SetTotalCommand}" Margin="0,0,6,6"
+                    ToolTip.Tip="Sets the count and/or amount for the period you picked" />
+            <Button Content="Set latest" Command="{Binding SetLatestCommand}" Margin="0,0,6,6" ToolTip.Tip="Name and amount become the latest entry" />
+            <Button Content="Clear latest" Command="{Binding ClearLatestCommand}" Margin="0,0,6,6" />
+            <Button Content="Set top donation" Command="{Binding SetTopDonationCommand}" Margin="0,0,6,6"
+                    ToolTip.Tip="Name and amount become the top donation on the board you picked" />
+            <Button Content="Clear top donation" Command="{Binding ClearTopDonationCommand}" Margin="0,0,6,6" />
+            <Button Content="Set donator total" Command="{Binding SetDonatorCommand}" Margin="0,0,6,6"
+                    ToolTip.Tip="Sets what this person gave on the board you picked (0 takes them off). The top donator is whoever gave most." />
+          </WrapPanel>
+
+          <TextBlock Classes="h2" Text="Backup" Margin="0,12,0,0" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Export…" Click="OnExport" ToolTip.Tip="Saves every total and stored event to a file, for example before you tidy up" />
+            <Button Content="Import…" Click="OnImport" ToolTip.Tip="Replaces everything with a file you exported" />
+          </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <!-- Filters -->
+    <WrapPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+      <ComboBox ItemsSource="{Binding TypeChoices}" SelectedItem="{Binding TypeFilter}" Width="150" Margin="0,0,8,6" AutomationProperties.Name="Type" />
+      <ComboBox ItemsSource="{Binding PlatformChoices}" SelectedItem="{Binding PlatformFilter}" Width="150" Margin="0,0,8,6" AutomationProperties.Name="Platform" />
+      <TextBox Text="{Binding NameFilter}" Watermark="Name" Width="140" Margin="0,0,8,6" />
+      <TextBox Text="{Binding FromFilter}" Watermark="From (2026-11-17)" Width="150" Margin="0,0,8,6" />
+      <TextBox Text="{Binding ToFilter}" Watermark="To" Width="150" Margin="0,0,8,6" />
+      <CheckBox Content="Test events only" IsChecked="{Binding TestOnly}" VerticalAlignment="Center" Margin="0,0,8,6" />
+    </WrapPanel>
+    <WrapPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+      <Button Content="{Binding ConfirmRemoveTests, Converter={x:Static views:StreamDataView.RemoveTestsText}}" Command="{Binding RemoveTestEventsCommand}"
+              Margin="0,0,8,6" ToolTip.Tip="Removes every stored test and emulated event and recalculates the totals" />
+      <Button Content="{Binding ConfirmRemoveShown, Converter={x:Static views:StreamDataView.RemoveShownText}}" Command="{Binding RemoveShownCommand}"
+              Margin="0,0,8,6" ToolTip.Tip="Removes every event the list shows with your filters, for example between two dates" />
+    </WrapPanel>
+
+    <!-- Selected event -->
+    <Border DockPanel.Dock="Bottom" Classes="card" Margin="0,8,0,0" IsVisible="{Binding HasSelection}">
+      <WrapPanel Orientation="Horizontal">
+        <TextBlock Text="Name" VerticalAlignment="Center" Margin="0,0,6,6" />
+        <TextBox Text="{Binding EditName}" Width="180" Margin="0,0,12,6" />
+        <TextBlock Text="Amount" VerticalAlignment="Center" Margin="0,0,6,6" />
+        <NumericUpDown Value="{Binding EditAmount}" Minimum="0" Increment="1" FormatString="0.##" Width="130" Margin="0,0,12,6" />
+        <CheckBox Content="Test event" IsChecked="{Binding EditIsTest}" VerticalAlignment="Center" Margin="0,0,12,6" />
+        <Button Content="Save" Command="{Binding SaveEditCommand}" Classes="accent" Margin="0,0,8,6" />
+        <Button Content="Remove this event" Command="{Binding RemoveSelectedCommand}" Margin="0,0,8,6" />
+      </WrapPanel>
+    </Border>
+    <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Classes="muted" Margin="0,6,0,0" TextWrapping="Wrap"
+               IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Summary}" Classes="muted" Margin="0,0,0,8" TextWrapping="Wrap" />
+    <Grid>
+      <ListBox ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}" AutomationProperties.Name="Stored events">
+        <ListBox.ItemTemplate>
+          <DataTemplate DataType="vm:StreamEventRowViewModel">
+            <Grid ColumnDefinitions="130,100,*,110,100" RowDefinitions="Auto,Auto">
+              <TextBlock Grid.RowSpan="2" Classes="muted" Text="{Binding Time}" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Grid.RowSpan="2" Text="{Binding Type}" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2" Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+              <TextBlock Grid.Column="2" Grid.Row="1" Classes="muted" Text="{Binding Badges}" TextTrimming="CharacterEllipsis" />
+              <TextBlock Grid.Column="3" Grid.RowSpan="2" Classes="muted" Text="{Binding Platform}" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="4" Grid.RowSpan="2" Text="{Binding Amount}" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <TextBlock Classes="muted" IsVisible="{Binding IsEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
+                 Text="No stored events match. Events are kept as they happen, from this version on." />
+    </Grid>
+  </DockPanel>
+</UserControl>

@@ -75,6 +75,8 @@ The Emulate buttons do not change your stream totals, so the bar does not move w
 bar looks, put a big number in **Already counted before**, look at the preview, then set it back before you click
 **Save**.
 
+A wrong value, or a test event that still shows? Fix it on the [Stream data](../../chat/stream-data.md) page.
+
 ## Ideas
 
 **A sub goal that starts over each stream:** **Counts** Subscribers, **Counting** This stream, **Goal** `20`, **Title**
