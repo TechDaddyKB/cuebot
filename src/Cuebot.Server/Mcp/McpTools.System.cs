@@ -54,14 +54,68 @@ public static partial class McpTools
             (a, _) => Done(ops.UpdateFeatureSettings(ReqStr(a, "feature"), a["changes"] as JsonObject ?? throw Missing("changes")))),
 
         new("get_stream_totals", "Get stream totals",
-            "This stream's totals (follows, subs, tips, bits... counts and amounts) and goals, as labels and goal widgets show them.",
+            "This stream's totals (follows, subs, tips, bits... counts and amounts per stream, week, month and all time, latest "
+            + "entries, recent lists, top donations and donators) and goals, as labels and goal widgets show them; info says when "
+            + "this stream started, how the totals reset and how many events are stored.",
             Schema([]), ReadOnlyHints, (_, _) => Done(ops.StreamTotals())),
-        new("set_stream_totals", "Reset totals or set a goal", "reset this stream's totals, or setGoal for a type (follower, subscriber, tip, cheer...).",
-            Schema(["command"], ("command", Enum("reset", "setGoal")), ("type", Str("For setGoal: follower, subscriber, tip, cheer...")), ("amount", Num("For setGoal: the goal")),
+        new("set_stream_totals", "Change stream totals",
+            "reset this stream's totals; setGoal (type, amount); set a count or amount by hand (type, period session|week|month|total, "
+            + "count, amount); setLatest (type, name, amount; empty name clears the latest entry); setTopDonation (type, period "
+            + "session|weekly|monthly|alltime, name, amount; empty name clears it); setDonator (type, period, name, amount; 0 removes "
+            + "them from the top donator board); removeRecent (type, or empty for the list of every type; index 0 = newest); "
+            + "setResetMode (mode afterOffline or manual); setCountTestEvents (enabled: whether test and emulated events count in "
+            + "week, month and all-time totals). To take a single event back out, use delete_stream_events instead: the totals "
+            + "are then recalculated.",
+            Schema(["command"],
+                ("command", Enum("reset", "setGoal", "set", "setLatest", "setTopDonation", "setDonator", "removeRecent", "setResetMode",
+                    "setCountTestEvents")),
+                ("type", Str("follower, subscriber, tip, cheer, raid, superchat, kicks...")),
+                ("period", Str("set: session, week, month or total; setTopDonation/setDonator: session, weekly, monthly or alltime")),
+                ("count", Num("For set")), ("amount", Num("For setGoal, set, setLatest, setTopDonation, setDonator")),
+                ("name", Str("For setLatest, setTopDonation, setDonator")), ("index", Int("For removeRecent")),
+                ("mode", Enum("afterOffline", "manual")), ("enabled", Bool("For setCountTestEvents")),
                 Confirm()), new McpToolHints(ReadOnly: false, Destructive: true),
-            (a, _) => Done(ops.StreamTotalsCommand(ReqStr(a, "command"), OptStr(a, "type"), OptNum(a, "amount"))))
+            (a, _) => Done(ops.StreamTotalsCommand(ReqStr(a, "command"), a)))
         {
-            Confirmation = a => ReqStr(a, "command") == "reset" ? "Reset this stream's totals (follows, subs, tips...)" : null,
+            Confirmation = a => ReqStr(a, "command") switch
+            {
+                "reset" => "Reset this stream's totals (follows, subs, tips...)",
+                "set" => $"Set the {OptStr(a, "type")} total for {OptStr(a, "period")} by hand",
+                "setLatest" => string.IsNullOrWhiteSpace(OptStr(a, "name")) ? $"Clear the latest {OptStr(a, "type")}" : $"Replace the latest {OptStr(a, "type")}",
+                "setTopDonation" => string.IsNullOrWhiteSpace(OptStr(a, "name"))
+                    ? $"Clear the {OptStr(a, "period")} top {OptStr(a, "type")}" : $"Replace the {OptStr(a, "period")} top {OptStr(a, "type")}",
+                "setDonator" => $"Change {OptStr(a, "name")}'s {OptStr(a, "period")} {OptStr(a, "type")} total",
+                "removeRecent" => "Remove an entry from a recent list",
+                _ => null,
+            },
+        },
+        new("list_stream_events", "List stored stream events",
+            "The events behind the stream totals, newest first: id, type, name, amount, platform, time, whether it is a test, "
+            + "whether it counts in the week/month/all-time totals and in this stream. Filters: type, platform, name, from, to "
+            + "(ISO dates), testOnly, limit (default 100). Events from before Cuebot kept this list are not in it; change those "
+            + "totals with set_stream_totals.",
+            Schema([], ("type", Str("follower, subscriber, tip, cheer...")), ("platform", Str("twitch, kick, youtube, StreamElements...")),
+                ("name", Str("Part of a name")), ("from", Str("ISO date and time")), ("to", Str("ISO date and time")),
+                ("testOnly", Bool("Only test and emulated events")), ("limit", Int("At most this many (default 100)"))),
+            ReadOnlyHints, (a, _) => Done(ops.StreamEvents(a))),
+        new("update_stream_event", "Edit a stored stream event",
+            "Change a stored event's name, amount or test mark (id from list_stream_events); every total, latest entry, recent "
+            + "list and leaderboard it counted in is recalculated.",
+            Schema(["id"], ("id", Str("The event's id")), ("name", Str("New name")), ("amount", Num("New amount")),
+                ("isTest", Bool("Mark it as a test event (left out of lasting totals) or as real"))),
+            WriteHints, (a, _) => Done(ops.UpdateStreamEvent(ReqStr(a, "id"), a))),
+        new("delete_stream_events", "Remove stored stream events",
+            "Take events out of the stream totals and recalculate everything they counted in: one by id, or every one matching "
+            + "the filter (testOnly: true removes all test and emulated events; from/to remove those between two dates). "
+            + "all: true with no filter removes every stored event.",
+            Schema([], ("id", Str("One event's id")), ("type", Str("follower, subscriber, tip, cheer...")), ("platform", Str("Platform")),
+                ("name", Str("Part of a name")), ("from", Str("ISO date and time")), ("to", Str("ISO date and time")),
+                ("testOnly", Bool("Only test and emulated events")), ("all", Bool("Every stored event (only with no other filter)")), Confirm()),
+            DestructiveHints, (a, _) => Done(ops.DeleteStreamEvents(a)))
+        {
+            Confirmation = a => OptStr(a, "id") is { Length: > 0 } id
+                ? $"Remove the stored event {id} from the stream totals"
+                : OptBool(a, "testOnly") == true ? "Remove every test event from the stream totals" : "Remove the matching events from the stream totals",
         },
 
         new("request_feature", "Request a feature",

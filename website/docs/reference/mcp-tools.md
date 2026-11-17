@@ -7,7 +7,7 @@ An AI app connected to Cuebot's **MCP server** can use these tools. You do not c
 
 **Asks first** means the tool can delete or change something big, or send a message. While **Confirm destructive tools** is ticked on **Apps > Servers**, Cuebot asks you (or makes the AI ask) before it does it. **Always** means it asks even when that box is not ticked, because it publishes something (a feature request on GitHub).
 
-There are 122 tools.
+There are 125 tools.
 
 | Tool | What it does | Only reads | Asks first |
 | --- | --- | --- | --- |
@@ -40,6 +40,7 @@ There are 122 tools.
 | [`delete_queue`](#delete-queue) | Delete action queue |  | yes |
 | [`delete_quote`](#delete-quote) | Delete a quote |  | yes |
 | [`delete_store_item`](#delete-store-item) | Delete a store item |  | yes |
+| [`delete_stream_events`](#delete-stream-events) | Remove stored stream events |  | yes |
 | [`delete_timer`](#delete-timer) | Delete timer |  | yes |
 | [`delete_viewer_variable`](#delete-viewer-variable) | Delete a viewer's variable |  | yes |
 | [`delete_voice_alias`](#delete-voice-alias) | Delete a voice alias |  | yes |
@@ -89,6 +90,7 @@ There are 122 tools.
 | [`list_quotes`](#list-quotes) | List quotes | yes |  |
 | [`list_script_functions`](#list-script-functions) | List script functions | yes |  |
 | [`list_speech_voices`](#list-speech-voices) | List speech voices | yes |  |
+| [`list_stream_events`](#list-stream-events) | List stored stream events | yes |  |
 | [`list_streamelements_overlays`](#list-streamelements-overlays) | List StreamElements overlays | yes |  |
 | [`list_subaction_types`](#list-subaction-types) | List sub-action types | yes |  |
 | [`list_timers`](#list-timers) | List timers | yes |  |
@@ -111,7 +113,7 @@ There are 122 tools.
 | [`set_action_enabled`](#set-action-enabled) | Enable or disable action |  |  |
 | [`set_global`](#set-global) | Set global variable |  |  |
 | [`set_group_member`](#set-group-member) | Add or remove a group member |  |  |
-| [`set_stream_totals`](#set-stream-totals) | Reset totals or set a goal |  | yes |
+| [`set_stream_totals`](#set-stream-totals) | Change stream totals |  | yes |
 | [`set_timer_state`](#set-timer-state) | Set timer state |  |  |
 | [`set_viewer_variable`](#set-viewer-variable) | Set a viewer's variable |  |  |
 | [`set_viewer_voice`](#set-viewer-voice) | Give a viewer a voice |  |  |
@@ -130,6 +132,7 @@ There are 122 tools.
 | [`update_quote`](#update-quote) | Update a quote |  |  |
 | [`update_speech_settings`](#update-speech-settings) | Change speech settings |  |  |
 | [`update_store_item`](#update-store-item) | Update a store item |  |  |
+| [`update_stream_event`](#update-stream-event) | Edit a stored stream event |  |  |
 | [`update_timer`](#update-timer) | Update timer |  |  |
 | [`update_widget_code`](#update-widget-code) | Change widget code |  |  |
 | [`update_widget_settings`](#update-widget-settings) | Change widget settings |  |  |
@@ -408,6 +411,22 @@ There are 122 tools.
 | `item` (required) | text | Item id or name |
 | `confirmationToken` | text | Only when a previous call answered confirmationRequired: the token it returned, after the user agreed |
 
+## delete_stream_events
+
+**Remove stored stream events.** Take events out of the stream totals and recalculate everything they counted in: one by id, or every one matching the filter (testOnly: true removes all test and emulated events; from/to remove those between two dates). all: true with no filter removes every stored event.
+
+| Input | Type | What it is |
+| --- | --- | --- |
+| `id` | text | One event's id |
+| `type` | text | follower, subscriber, tip, cheer... |
+| `platform` | text | Platform |
+| `name` | text | Part of a name |
+| `from` | text | ISO date and time |
+| `to` | text | ISO date and time |
+| `testOnly` | true/false | Only test and emulated events |
+| `all` | true/false | Every stored event (only with no other filter) |
+| `confirmationToken` | text | Only when a previous call answered confirmationRequired: the token it returned, after the user agreed |
+
 ## delete_timer
 
 **Delete timer.** Delete a timer permanently.
@@ -659,7 +678,7 @@ It takes no inputs.
 
 ## get_stream_totals
 
-**Get stream totals.** This stream's totals (follows, subs, tips, bits... counts and amounts) and goals, as labels and goal widgets show them.
+**Get stream totals.** This stream's totals (follows, subs, tips, bits... counts and amounts per stream, week, month and all time, latest entries, recent lists, top donations and donators) and goals, as labels and goal widgets show them; info says when this stream started, how the totals reset and how many events are stored.
 
 It takes no inputs.
 
@@ -812,6 +831,20 @@ It takes no inputs.
 | Input | Type | What it is |
 | --- | --- | --- |
 | `engine` | text | Only this engine id |
+
+## list_stream_events
+
+**List stored stream events.** The events behind the stream totals, newest first: id, type, name, amount, platform, time, whether it is a test, whether it counts in the week/month/all-time totals and in this stream. Filters: type, platform, name, from, to (ISO dates), testOnly, limit (default 100). Events from before Cuebot kept this list are not in it; change those totals with set_stream_totals.
+
+| Input | Type | What it is |
+| --- | --- | --- |
+| `type` | text | follower, subscriber, tip, cheer... |
+| `platform` | text | twitch, kick, youtube, StreamElements... |
+| `name` | text | Part of a name |
+| `from` | text | ISO date and time |
+| `to` | text | ISO date and time |
+| `testOnly` | true/false | Only test and emulated events |
+| `limit` | whole number | At most this many (default 100) |
 
 ## list_streamelements_overlays
 
@@ -1011,13 +1044,19 @@ It takes no inputs.
 
 ## set_stream_totals
 
-**Reset totals or set a goal.** reset this stream's totals, or setGoal for a type (follower, subscriber, tip, cheer...).
+**Change stream totals.** reset this stream's totals; setGoal (type, amount); set a count or amount by hand (type, period session|week|month|total, count, amount); setLatest (type, name, amount; empty name clears the latest entry); setTopDonation (type, period session|weekly|monthly|alltime, name, amount; empty name clears it); setDonator (type, period, name, amount; 0 removes them from the top donator board); removeRecent (type, or empty for the list of every type; index 0 = newest); setResetMode (mode afterOffline or manual); setCountTestEvents (enabled: whether test and emulated events count in week, month and all-time totals). To take a single event back out, use delete_stream_events instead: the totals are then recalculated.
 
 | Input | Type | What it is |
 | --- | --- | --- |
-| `command` (required) | one of `reset`, `setGoal` |  |
-| `type` | text | For setGoal: follower, subscriber, tip, cheer... |
-| `amount` | number | For setGoal: the goal |
+| `command` (required) | one of `reset`, `setGoal`, `set`, `setLatest`, `setTopDonation`, `setDonator`, `removeRecent`, `setResetMode`, `setCountTestEvents` |  |
+| `type` | text | follower, subscriber, tip, cheer, raid, superchat, kicks... |
+| `period` | text | set: session, week, month or total; setTopDonation/setDonator: session, weekly, monthly or alltime |
+| `count` | number | For set |
+| `amount` | number | For setGoal, set, setLatest, setTopDonation, setDonator |
+| `name` | text | For setLatest, setTopDonation, setDonator |
+| `index` | whole number | For removeRecent |
+| `mode` | one of `afterOffline`, `manual` |  |
+| `enabled` | true/false | For setCountTestEvents |
 | `confirmationToken` | text | Only when a previous call answered confirmationRequired: the token it returned, after the user agreed |
 
 ## set_timer_state
@@ -1207,6 +1246,17 @@ It takes no inputs.
 | --- | --- | --- |
 | `item` (required) | text | Item id or name |
 | `changes` (required) | object | Fields as in add_store_item |
+
+## update_stream_event
+
+**Edit a stored stream event.** Change a stored event's name, amount or test mark (id from list_stream_events); every total, latest entry, recent list and leaderboard it counted in is recalculated.
+
+| Input | Type | What it is |
+| --- | --- | --- |
+| `id` (required) | text | The event's id |
+| `name` | text | New name |
+| `amount` | number | New amount |
+| `isTest` | true/false | Mark it as a test event (left out of lasting totals) or as real |
 
 ## update_timer
 

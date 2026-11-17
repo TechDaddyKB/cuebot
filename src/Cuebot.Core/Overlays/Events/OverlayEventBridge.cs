@@ -79,6 +79,7 @@ public sealed class OverlayEventBridge : IDisposable
         foreach (var adapter in _adapters)
         {
             if (adapter.ToAlert(e) is not { } alert) continue;
+            if (Commands.ChatArgs.GetBool(e.Args, "isTest")) alert = alert with { IsTest = true };
             // Which platform it came from, like chat messages' "service" (alert box variations can match on it).
             alert.Event["service"] = adapter.Service;
             // Missed while disconnected, delivered late or a backlog: data widgets count it, alert boxes skip it by default.

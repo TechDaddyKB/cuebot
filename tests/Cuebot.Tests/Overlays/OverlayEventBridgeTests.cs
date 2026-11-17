@@ -216,6 +216,17 @@ public sealed class OverlayEventBridgeTests : IDisposable
         Assert.Equal((0, 3), (Assert.Single(ranges).Start, ranges[0].End));
     }
 
+    [Fact]
+    public void Test_and_emulated_events_are_marked_for_the_stream_totals()
+    {
+        using var bridge = Bridge();
+        var alerts = new List<OverlayAlert>();
+        bridge.AlertSent += (alert, _, _) => alerts.Add(alert);
+        _bus.Publish(new BotEvent("fake.follow", new Dictionary<string, object?> { ["user"] = "Real" }));
+        _bus.Publish(new BotEvent("fake.follow", new Dictionary<string, object?> { ["user"] = "Sample", ["isTest"] = true, ["isEmulated"] = true }));
+        Assert.Equal([false, true], alerts.Select(a => a.IsTest));
+    }
+
     private sealed class FakeAdapter : IOverlayEventAdapter
     {
         public bool Throw { get; set; }

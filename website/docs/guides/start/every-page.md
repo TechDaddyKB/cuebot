@@ -68,6 +68,7 @@ brackets.
 | **Quotes** | Quotes saved from your streams. | [Quotes](../chat/quotes.md) |
 | **Credits** | End-of-stream credits. | [Credits](../chat/credits.md) |
 | **Top Spenders** | Who spent the most money this stream, today, this week, month, year or all time. | [Top spenders](../chat/top-spenders.md) |
+| **Stream Data** | The events and totals behind labels, goal bars and event lists: fix or remove events, clear test events, set totals by hand. | [Stream data](../chat/stream-data.md) |
 | **Subathon & Goals** | Subathon timers that events add time to, and points goals with steps. Tabs **Timers** and **Goals**. | [Subathon timers](../services/subathon-timers.md), [Goals](../services/goals.md) |
 
 <div class="grid" markdown>
@@ -89,6 +90,8 @@ brackets.
 ![Credits](../../assets/screens/page-credits.png)
 
 ![Top Spenders](../../assets/screens/page-top-spenders.png)
+
+![Stream Data](../../assets/screens/page-stream-data.png)
 
 ![Subathon & Goals](../../assets/screens/page-subathon-goals.png)
 

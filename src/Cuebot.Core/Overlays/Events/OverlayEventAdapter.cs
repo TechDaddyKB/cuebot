@@ -9,7 +9,11 @@ namespace Cuebot.Core.Overlays.Events;
 /// How many the alert adds to session counts: 1 for most; for a gift bundle whose recipients arrive as their own alerts,
 /// 0 (they are counted one by one); for a bundle without recipient alerts, the number of gifts.
 /// </param>
-public sealed record OverlayAlert(string Listener, JsonObject Event, int Count = 1);
+public sealed record OverlayAlert(string Listener, JsonObject Event, int Count = 1)
+{
+    /// <summary>A test or emulated event (the bot event's <c>isTest</c>): stream totals keep it out of lasting totals by default.</summary>
+    public bool IsTest { get; init; }
+}
 
 /// <summary>A chat badge as StreamElements widgets read it (<c>badges[]</c> of a "message" event).</summary>
 public sealed record OverlayBadge(string Type, string Version, string Url, string Description);

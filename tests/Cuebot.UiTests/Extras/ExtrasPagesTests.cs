@@ -536,6 +536,75 @@ public sealed class ExtrasPagesTests : IAsyncDisposable
     }
 
     [AvaloniaFact]
+    public void Stream_data_page_lists_edits_and_removes_stored_events()
+    {
+        using var store = new Cuebot.Core.Overlays.Session.SessionDataStore(null, Get<Cuebot.Core.Logging.AppLog>(), Bus,
+            new Cuebot.Core.Overlays.OverlayFeed(Get<Cuebot.Core.Logging.AppLog>()), null);
+        var now = DateTimeOffset.UtcNow;
+        void Tip(string name, double amount, bool test = false, string listener = "tip-latest", string service = "StreamElements") =>
+            store.Record(new Cuebot.Core.Overlays.Events.OverlayAlert(listener, new System.Text.Json.Nodes.JsonObject
+                { ["name"] = name, ["amount"] = amount }) { IsTest = test }, service, now);
+        Tip("Alice", 5);
+        Tip("Bob", 20);
+        Tip("Sample", 500, test: true);
+        Tip("Cheerer", 100, listener: "cheer-latest", service: "twitch");
+
+        var vm = new StreamDataViewModel(store);
+        var window = Open(new StreamDataView(), vm);
+        Pump();
+        Assert.Equal(4, vm.Rows.Count);
+        Assert.Contains("1 of them test events", vm.Summary);
+        Assert.Equal("Test · This stream only", vm.Rows.Single(r => r.Name == "Sample").Badges);
+        Assert.Contains("15 minutes after", vm.ResetText);
+        vm.Selected = vm.Rows.Single(r => r.Name == "Bob");
+        vm.OverrideBoardPeriod = "All time";
+        Assert.Contains("Top donation (all time): Bob (20)", vm.CurrentValues);
+        SaveBothThemes(window, "stream-data");
+
+        vm.TypeFilter = "tip";
+        Assert.Equal(3, vm.Rows.Count);
+        vm.TypeFilter = StreamDataViewModel.Everything;
+
+        // Removing all test events needs a second click.
+        vm.RemoveTestEventsCommand.Execute(null);
+        Assert.Equal(4, vm.Rows.Count);
+        vm.RemoveTestEventsCommand.Execute(null);
+        Pump();
+        Assert.Equal(3, vm.Rows.Count);
+        Assert.Equal("Cheerer", store.Snapshot()["cheer-latest"]!["name"]!.GetValue<string>());
+
+        // Edit Bob's tip down: the top donation moves to Alice.
+        vm.Selected = vm.Rows.Single(r => r.Name == "Bob");
+        vm.EditAmount = 2;
+        vm.SaveEditCommand.Execute(null);
+        Pump();
+        Assert.Equal("Alice", store.Snapshot()["tip-alltime-top-donation"]!["name"]!.GetValue<string>());
+        Assert.Equal(7.0, Cuebot.Core.Overlays.Events.OverlayAlerts.NumberOf(store.Snapshot()["tip-total"]!["amount"]));
+
+        // Overrides and the reset setting.
+        vm.OverrideType = "tip";
+        vm.ClearLatestCommand.Execute(null);
+        Assert.Equal("", store.Snapshot()["tip-latest"]!["name"]!.GetValue<string>());
+        vm.ResetMode = StreamDataViewModel.ResetModes[1];
+        Assert.Equal(Cuebot.Core.Overlays.Session.SessionResetMode.Manual, store.ResetMode);
+        Pump();
+        Assert.Contains("only start again when you reset", vm.ResetText);
+
+        // Backup round trip.
+        var backup = vm.Export();
+        vm.Selected = vm.Rows.Single(r => r.Name == "Alice");
+        vm.RemoveSelectedCommand.Execute(null);
+        Pump();
+        Assert.Equal(2, vm.Rows.Count);
+        vm.Import(backup, "backup.json");
+        Pump();
+        Assert.Equal(3, vm.Rows.Count);
+        Assert.Contains("Restored", vm.Status);
+        AssertNoBindingErrors();
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Top_spenders_page_lists_spenders_per_period_and_platform_and_saves_settings()
     {
         var rates = new FixedRates();

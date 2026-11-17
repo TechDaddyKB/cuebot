@@ -1,0 +1,86 @@
+{
+  "subActions": {
+    "streamTotals.get": {
+      "description": "Gets one of your stream totals (a count, an amount, the latest entry and the top donation), for a !subs or !tips command.",
+      "fields": {
+        "type": "What kind of event: follower, subscriber, tip, cheer, raid, superchat, kicks and so on.",
+        "period": "This stream, this week, this month or all time."
+      },
+      "variables": {
+        "totalType": "The type you picked",
+        "totalPeriod": "The period you picked (session, week, month or total)",
+        "totalCount": "How many events",
+        "totalAmount": "The amount added up (for follows and subs, the same as the count)",
+        "totalGoal": "The type's goal (0 when there is none)",
+        "latestName": "Who was the latest",
+        "latestAmount": "The latest amount",
+        "topDonationName": "Who gave the biggest single amount in that period",
+        "topDonationAmount": "That amount",
+        "topDonatorName": "Who gave the most in all in that period",
+        "topDonatorAmount": "How much they gave in all"
+      }
+    },
+    "streamTotals.reset": {
+      "description": "Starts this stream's totals again from zero. Week, month and all-time totals are kept.",
+      "fields": {},
+      "variables": {}
+    },
+    "streamTotals.setGoal": {
+      "description": "Sets the goal a goal bar shows for one type, like 100 followers.",
+      "fields": {
+        "type": "What kind of event: follower, subscriber, tip, cheer and so on.",
+        "amount": "The goal. 0 clears it."
+      },
+      "variables": {}
+    },
+    "streamTotals.set": {
+      "description": "Changes a total by hand, for example to fix a count after a test or to carry over a total from another bot.",
+      "fields": {
+        "type": "What kind of event: follower, subscriber, tip, cheer and so on.",
+        "period": "This stream, this week, this month or all time.",
+        "count": "The new count. Leave it empty to keep it.",
+        "amount": "The new amount. Leave it empty to keep it. For follows and subs the amount follows the count."
+      },
+      "variables": {}
+    },
+    "streamTotals.setLatest": {
+      "description": "Changes or clears the latest entry of one type (what a 'latest tip' label shows).",
+      "fields": {
+        "type": "What kind of event: follower, subscriber, tip, cheer and so on.",
+        "name": "The name to show. Leave it empty to clear the latest entry.",
+        "amount": "The amount to show."
+      },
+      "variables": {}
+    },
+    "streamTotals.setTopDonation": {
+      "description": "Changes or clears the top donation (the biggest single amount) of one type for a period.",
+      "fields": {
+        "type": "tip, cheer, superchat, kicks, jewels, merch and so on.",
+        "period": "This stream, this week, this month or all time.",
+        "name": "Who gave it. Leave it empty to clear the top donation.",
+        "amount": "How much."
+      },
+      "variables": {}
+    },
+    "streamTotals.removeEvents": {
+      "description": "Takes stored events out of the totals and recalculates everything they counted in. By default it removes test and emulated events, for example after setting up overlays.",
+      "fields": {
+        "testOnly": "Ticked: only test and emulated events.",
+        "type": "Only this type. Leave it empty for every type.",
+        "platform": "Only events from this platform or service. Leave it empty for all.",
+        "from": "Only events from this date and time on, like 2026-11-17 18:00. Leave it empty for the oldest.",
+        "to": "Only events up to this date and time. Leave it empty for now."
+      },
+      "variables": {
+        "removedEvents": "How many events were removed"
+      }
+    },
+    "streamTotals.resetMode": {
+      "description": "Chooses when this stream's totals start again: 15 minutes after your last platform goes offline, or only by hand.",
+      "fields": {
+        "mode": "15 minutes after going offline, or Only by hand."
+      },
+      "variables": {}
+    }
+  }
+}
