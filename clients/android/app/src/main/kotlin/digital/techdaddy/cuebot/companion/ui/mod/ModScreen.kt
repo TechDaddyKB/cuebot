@@ -1,5 +1,6 @@
 package digital.techdaddy.cuebot.companion.ui.mod
 
+import digital.techdaddy.cuebot.companion.ui.MenuButton
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.ClipboardManager
@@ -120,7 +121,7 @@ private fun Home(vm: ModViewModel, approvals: ApprovalsViewModel) {
     val rowColors = ListItemDefaults.colors(containerColor = colors.card)
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("Mods") }, colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.ground))
+        TopAppBar(title = { Text("Mods") }, navigationIcon = { MenuButton() }, colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.ground))
         LazyColumn(Modifier.fillMaxSize().testTag("mods")) {
             notice?.let { n -> item { Note(n) { vm.notice.value = null } } }
 

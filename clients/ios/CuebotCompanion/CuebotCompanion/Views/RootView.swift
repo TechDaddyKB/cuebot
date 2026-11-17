@@ -11,31 +11,63 @@ struct RootView: View {
     @Environment(QuickActionsStore.self) private var quickActions
     @Environment(\.scenePhase) private var scenePhase
     @State private var tab = UITestSupport.initialTab ?? .deck
+    @State private var menu = SideMenu()
+    @AppStorage(SideMenu.pinnedKey) private var keepMenuOpen = false
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
-    enum Tab: Hashable { case deck, dashboard, chat, mods, settings }
+    enum Tab: Hashable, CaseIterable {
+        case deck, dashboard, chat, mods, settings
+
+        var title: String {
+            switch self {
+            case .deck: "Deck"
+            case .dashboard: "Dashboard"
+            case .chat: "Chat"
+            case .mods: "Mods"
+            case .settings: "Settings"
+            }
+        }
+
+        var symbol: String {
+            switch self {
+            case .deck: "square.grid.3x3.fill"
+            case .dashboard: "gauge.with.dots.needle.50percent"
+            case .chat: "bubble.left.and.bubble.right"
+            case .mods: "person.2"
+            case .settings: "gearshape"
+            }
+        }
+    }
+
+    /// "Keep menu open" pins the menu beside the page where there is room for it (iPad); phones use the hamburger.
+    private var pinned: Bool { keepMenuOpen && sizeClass == .regular && !menu.hidden }
 
     var body: some View {
-        TabView(selection: $tab) {
-            DeckTab()
-                .tabItem { Label("Deck", systemImage: "square.grid.3x3.fill") }
-                .tag(Tab.deck)
-            DashboardTab()
-                .toolbarBackground(Color.cuebotGround, for: .tabBar)
-                .tabItem { Label("Dashboard", systemImage: "gauge.with.dots.needle.50percent") }
-                .tag(Tab.dashboard)
-            ChatTab()
-                .toolbarBackground(Color.cuebotGround, for: .tabBar)
-                .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right") }
-                .tag(Tab.chat)
-            ModsTab()
-                .toolbarBackground(Color.cuebotGround, for: .tabBar)
-                .tabItem { Label("Mods", systemImage: "person.2") }
-                .tag(Tab.mods)
-            SettingsTab()
-                .toolbarBackground(Color.cuebotGround, for: .tabBar)
-                .tabItem { Label("Settings", systemImage: "gearshape") }
-                .tag(Tab.settings)
+        HStack(spacing: 0) {
+            if pinned {
+                SideMenuList(selection: $tab).frame(width: 260)
+                Divider().ignoresSafeArea()
+            }
+            section
+                .environment(\.sideMenuPinned, pinned)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .overlay(alignment: .leading) {
+            if menu.isOpen && !pinned && !menu.hidden {
+                ZStack(alignment: .leading) {
+                    Color.black.opacity(0.35).ignoresSafeArea()
+                        .onTapGesture { menu.close() }
+                        .accessibilityLabel("Close menu")
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityAction { menu.close() }
+                    SideMenuList(selection: $tab)
+                        .frame(width: 280)
+                        .transition(.move(edge: .leading))
+                }
+                .accessibilityAction(.escape) { menu.close() }
+            }
+        }
+        .environment(menu)
         // Again after a profile switch: the deck and dashboard belong to the profile that is open.
         .task(id: [paired.revision, profiles.switchCount]) {
             await connection.connect()
@@ -61,6 +93,19 @@ struct RootView: View {
             default:
                 break
             }
+        }
+    }
+}
+
+extension RootView {
+    /// The section on screen. Only that one is built: the stores keep each section's data while it is away.
+    @ViewBuilder fileprivate var section: some View {
+        switch tab {
+        case .deck: DeckTab()
+        case .dashboard: DashboardTab()
+        case .chat: ChatTab()
+        case .mods: ModsTab()
+        case .settings: SettingsTab()
         }
     }
 }

@@ -1,5 +1,6 @@
 package digital.techdaddy.cuebot.companion.ui.deck
 
+import digital.techdaddy.cuebot.companion.ui.MenuButton
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -97,7 +98,12 @@ fun DeckScreen(vm: DeckViewModel, container: AppContainer, streamMode: Boolean, 
             if (!streamMode) {
                 TopAppBar(
                     title = { Text(view?.name?.takeIf { it.isNotEmpty() } ?: "Deck", maxLines = 1) },
-                    navigationIcon = { if (state.decks.size > 1) DeckMenu(state, vm) },
+                    navigationIcon = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            MenuButton()
+                            if (state.decks.size > 1) DeckMenu(state, vm)
+                        }
+                    },
                     actions = {
                         IconButton(onClick = { onStreamMode(true) }, enabled = view != null, modifier = Modifier.testTag("stream-mode")) {
                             Icon(Icons.Filled.Fullscreen, contentDescription = "Stream mode")

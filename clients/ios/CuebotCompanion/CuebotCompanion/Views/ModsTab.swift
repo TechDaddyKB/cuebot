@@ -90,6 +90,7 @@ private struct ModsHome: View {
         }
         .scrollContentBackground(.hidden)
         .navigationTitle("Mods")
+        .sideMenuButton()
         .toolbarBackground(Color.cuebotGround, for: .navigationBar)
         .sheet(isPresented: $joining) { JoinSheet() }
         .alert("Rename", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {

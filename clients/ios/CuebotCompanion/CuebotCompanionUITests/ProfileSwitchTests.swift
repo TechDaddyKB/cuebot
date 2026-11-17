@@ -76,6 +76,7 @@ final class FakeProfilesCuebot: @unchecked Sendable {
     private let live: [String]
     private let profiles: [(id: String, name: String, color: String)]
     private let unavailable: Bool
+    private let feed: String
     private var _activations: [String] = []
     private var _profileFetches = 0
     private var _dashboardFetches: [String: Int] = [:]
@@ -85,8 +86,9 @@ final class FakeProfilesCuebot: @unchecked Sendable {
     var profileFetches: Int { queue.sync { _profileFetches } }
     func dashboardFetches(for profile: String) -> Int { queue.sync { _dashboardFetches[profile] ?? 0 } }
 
-    init(live: [String] = [], profileCount: Int = 2, unavailable: Bool = false) throws {
+    init(live: [String] = [], profileCount: Int = 2, unavailable: Bool = false, feed: String = "[]") throws {
         self.live = live
+        self.feed = feed
         self.unavailable = unavailable
         profiles = Array([("main", "Main", "#22C55E"), ("night", "Night Owl", "#8B5CF6")].prefix(profileCount))
         let parameters = NWParameters.tcp
@@ -146,7 +148,7 @@ final class FakeProfilesCuebot: @unchecked Sendable {
             reply(connection, 200, #"{"app":{"instanceId":"i-\#(open)"},"connections":[]}"#)
         case ("GET", "/api/v1/dashboard"):
             _dashboardFetches[open, default: 0] += 1
-            reply(connection, 200, #"{"instanceId":"i-\#(open)","revision":1,"connections":[]}"#)
+            reply(connection, 200, #"{"instanceId":"i-\#(open)","revision":1,"connections":[],"feed":\#(feed)}"#)
         case ("GET", "/api/v1/profiles"):
             _profileFetches += 1
             if unavailable { reply(connection, 503, #"{"error":"Profiles are not available"}"#); return }

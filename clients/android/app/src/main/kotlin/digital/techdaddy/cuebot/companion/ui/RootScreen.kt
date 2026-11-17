@@ -6,6 +6,23 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.PermanentDrawerSheet
+import androidx.compose.material3.PermanentNavigationDrawer
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -43,8 +60,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -124,37 +139,48 @@ fun RootScreen(container: AppContainer, startTab: Tab, pendingLink: String?, onL
         onLinkHandled()
     }
 
-    Scaffold(
-        containerColor = colors.ground,
-        contentColor = colors.text,
-        bottomBar = {
-            if (!streamMode) {
-                NavigationBar(containerColor = colors.card) {
-                    val waiting = approvals.state.collectAsStateWithLifecycle().value.pending.size
-                    Tab.entries.forEach { t ->
-                        NavigationBarItem(
-                            selected = tab == t,
-                            onClick = { tab = t },
-                            icon = {
-                                if (t == Tab.Mods && waiting > 0) BadgedBox(badge = { Badge { Text("$waiting") } }) { Icon(t.icon, contentDescription = "$waiting waiting") }
-                                else Icon(t.icon, contentDescription = null)
-                            },
-                            label = { Text(t.label) },
-                            modifier = Modifier.testTag("tab-${t.name.lowercase()}"),
-                        )
+    // The side menu (issue #45): a hamburger opens it and choosing a section closes it; "Keep menu open" in Settings
+    // pins it beside the content on wide screens. Stream mode hides it with everything else.
+    val values by container.store.values.collectAsStateWithLifecycle()
+    val waiting = approvals.state.collectAsStateWithLifecycle().value.pending.size
+    val board by dashboard.state.collectAsStateWithLifecycle()
+    val drawer = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    BackHandler(enabled = drawer.isOpen) { scope.launch { drawer.close() } }
+
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.ground)) {
+        val pinned = !streamMode && values[MENU_PINNED_KEY] == "true" && maxWidth >= PINNED_MENU_MIN_WIDTH
+        val choose: (Tab) -> Unit = { t ->
+            tab = t
+            scope.launch { drawer.close() }
+        }
+        val openMenu: (() -> Unit)? = if (pinned || streamMode) null else ({ scope.launch { drawer.open() } })
+        val body: @Composable () -> Unit = {
+            CompositionLocalProvider(LocalOpenMenu provides openMenu, LocalMenuBadge provides waiting) {
+                Scaffold(containerColor = colors.ground, contentColor = colors.text) { padding ->
+                    Box(Modifier.fillMaxSize().padding(bottom = if (streamMode) 0.dp else padding.calculateBottomPadding())) {
+                        when (tab) {
+                            Tab.Deck -> DeckScreen(deck, container, streamMode, onStreamMode = { streamMode = it }, goToSettings = { tab = Tab.Settings })
+                            Tab.Dashboard -> DashboardScreen(dashboard, container, goToSettings = { tab = Tab.Settings })
+                            Tab.Chat -> ChatScreen(chat, container, board.dashboard?.feed ?: emptyList(), goToSettings = { tab = Tab.Settings })
+                            Tab.Mods -> ModScreen(mods, approvals)
+                            Tab.Settings -> SettingsScreen(settings)
+                        }
                     }
                 }
             }
-        },
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(bottom = if (streamMode) 0.dp else padding.calculateBottomPadding())) {
-            when (tab) {
-                Tab.Deck -> DeckScreen(deck, container, streamMode, onStreamMode = { streamMode = it }, goToSettings = { tab = Tab.Settings })
-                Tab.Dashboard -> DashboardScreen(dashboard, container, goToSettings = { tab = Tab.Settings })
-                Tab.Chat -> ChatScreen(chat, container, goToSettings = { tab = Tab.Settings })
-                Tab.Mods -> ModScreen(mods, approvals)
-                Tab.Settings -> SettingsScreen(settings)
-            }
+        }
+        if (pinned) {
+            PermanentNavigationDrawer(drawerContent = {
+                PermanentDrawerSheet(Modifier.width(240.dp), drawerContainerColor = colors.card) { MenuItems(tab, waiting, choose) }
+            }) { body() }
+        } else {
+            ModalNavigationDrawer(
+                drawerState = drawer,
+                // Swiping only closes it: the deck and the mod portal use horizontal swipes themselves.
+                gesturesEnabled = drawer.isOpen,
+                drawerContent = { ModalDrawerSheet(drawerContainerColor = colors.card) { MenuItems(tab, waiting, choose) } },
+            ) { body() }
         }
     }
 
@@ -176,6 +202,48 @@ fun RootScreen(container: AppContainer, startTab: Tab, pendingLink: String?, onL
                 title = { Text("Could not pair") },
                 text = { Text((error as? PairingLink.Failure)?.let(SettingsViewModel::describe) ?: "That is not a Cuebot pairing code.") },
                 confirmButton = { TextButton(onClick = onLinkHandled) { Text("OK") } },
+            )
+        }
+    }
+}
+
+/** The setting (a "true" string in the app's settings) that keeps the side menu open on wide screens. */
+const val MENU_PINNED_KEY = "menu.pinned"
+
+/** From this width "Keep menu open" pins the menu; narrower screens always use the hamburger. */
+val PINNED_MENU_MIN_WIDTH = 600.dp
+
+/** Opens the side menu; null where there is no hamburger (the menu is pinned open, or stream mode). */
+val LocalOpenMenu = compositionLocalOf<(() -> Unit)?> { null }
+
+/** How many mod changes wait for the streamer's OK: a dot on the hamburger, a count beside Mods. */
+val LocalMenuBadge = compositionLocalOf { 0 }
+
+/** The hamburger for a section's top bar; nothing where the menu is pinned open. */
+@Composable
+fun MenuButton() {
+    val open = LocalOpenMenu.current ?: return
+    val waiting = LocalMenuBadge.current
+    IconButton(onClick = open, modifier = Modifier.testTag("menu-button")) {
+        if (waiting > 0) BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.Menu, contentDescription = "Menu, $waiting waiting") }
+        else Icon(Icons.Filled.Menu, contentDescription = "Menu")
+    }
+}
+
+/** The sections, as the side menu lists them. Each keeps the test tag the bottom bar used ("tab-deck"...). */
+@Composable
+private fun MenuItems(selected: Tab, waiting: Int, choose: (Tab) -> Unit) {
+    Column(Modifier.fillMaxHeight().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp).testTag("side-menu")) {
+        Text("Cuebot Companion", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp))
+        Tab.entries.forEach { t ->
+            NavigationDrawerItem(
+                label = { Text(t.label) },
+                icon = { Icon(t.icon, contentDescription = null) },
+                selected = selected == t,
+                onClick = { choose(t) },
+                badge = if (t == Tab.Mods && waiting > 0) ({ Badge { Text("$waiting") } }) else null,
+                modifier = Modifier.padding(vertical = 2.dp).testTag("tab-${t.name.lowercase()}"),
             )
         }
     }

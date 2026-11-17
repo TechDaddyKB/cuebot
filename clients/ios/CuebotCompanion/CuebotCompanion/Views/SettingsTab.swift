@@ -9,6 +9,9 @@ struct SettingsTab: View {
     @State private var renaming: PairedCuebot?
     @State private var newName = ""
     @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system.rawValue
+    @AppStorage(EventsCardSettings.visibleKey) private var eventsVisible = true
+    @AppStorage(EventsCardSettings.groupsKey) private var eventGroups = EventsCardSettings.defaultGroups
+    @AppStorage(SideMenu.pinnedKey) private var keepMenuOpen = false
 
     var body: some View {
         NavigationStack {
@@ -48,6 +51,25 @@ struct SettingsTab: View {
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier("appearance-picker")
                 }
+                Section {
+                    Toggle("Show the events card", isOn: $eventsVisible).accessibilityIdentifier("events-visible")
+                    if eventsVisible {
+                        ForEach(FeedGroup.allCases) { group in
+                            Toggle(group.label, isOn: shows(group)).accessibilityIdentifier("events-group-\(group.rawValue)")
+                        }
+                    }
+                } header: {
+                    Text("Chat page")
+                } footer: {
+                    Text("Recent follows, subs, tips and raids from every platform, beside chat on wide screens and above it on phones. On this device only.")
+                }
+                Section {
+                    Toggle("Keep menu open", isOn: $keepMenuOpen).accessibilityIdentifier("menu-pinned")
+                } header: {
+                    Text("Menu")
+                } footer: {
+                    Text("On iPad the side menu stays beside the page. iPhone always opens it with the menu button.")
+                }
                 Section("About") {
                     LabeledContent("App", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
                     if let status = connection.status {
@@ -63,6 +85,7 @@ struct SettingsTab: View {
             .background(Color.cuebotGround)
             .toolbarBackground(Color.cuebotGround, for: .navigationBar)
             .navigationTitle("Settings")
+            .sideMenuButton()
             .sheet(isPresented: $pairing) { PairingView() }
             .alert("Rename", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
                 TextField("Name", text: $newName)
@@ -70,6 +93,20 @@ struct SettingsTab: View {
                 Button("Cancel", role: .cancel) {}
             }
         }
+    }
+}
+
+extension SettingsTab {
+    /// One events card switch, kept as a list of shown groups.
+    fileprivate func shows(_ group: FeedGroup) -> Binding<Bool> {
+        Binding(
+            get: { FeedGroup.parse(eventGroups).contains(group) },
+            set: { on in
+                var groups = FeedGroup.parse(eventGroups)
+                if on { groups.insert(group) } else { groups.remove(group) }
+                eventGroups = FeedGroup.encode(groups)
+            }
+        )
     }
 }
 

@@ -4,15 +4,14 @@ import XCTest
 final class LaunchTests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
-    /// A tab: in the tab bar on iPhone, in the floating tab bar (plain buttons) on iPad.
-    @MainActor
-    private func tab(_ app: XCUIApplication, _ name: String) -> XCUIElement {
-        let inTabBar = app.tabBars.buttons[name]
-        return inTabBar.exists ? inTabBar : app.buttons.matching(identifier: name).firstMatch
-    }
-
     /// CI simulators are slow: generous waits everywhere.
     private let wait: TimeInterval = 30
+
+    /// A section in the side menu, opened with the hamburger first unless the menu is already open (or pinned).
+    @MainActor
+    private func tab(_ app: XCUIApplication, _ name: String) -> XCUIElement {
+        SideMenuHelper.section(app, name, wait: wait)
+    }
 
     /// A segment's selected state follows a tap a moment later on slow simulators: wait for it rather than checking once.
     @MainActor
@@ -39,6 +38,8 @@ final class LaunchTests: XCTestCase {
         // Mods works without a paired Cuebot: a mod joins other streamers' portals by invite.
         tab(app, "Mods").tap()
         XCTAssertTrue(app.buttons["join-invite"].waitForExistence(timeout: wait))
+        // Choosing a section closes the menu, so the page gets the whole screen.
+        XCTAssertTrue(SideMenuHelper.waitUntilGone(app.buttons.matching(identifier: "Dashboard").firstMatch, timeout: wait))
         tab(app, "Settings").tap()
         XCTAssertTrue(app.buttons["pair-button"].waitForExistence(timeout: wait))
     }
@@ -77,5 +78,25 @@ final class LaunchTests: XCTestCase {
         app.buttons["System"].tap()
         waitUntil(app.buttons["System"], isSelected: true)
         waitUntil(app.buttons["Dark"], isSelected: false)
+    }
+}
+
+/// The side menu that replaced the tab bar: sections are buttons named after them ("Deck", "Dashboard"...).
+enum SideMenuHelper {
+    @MainActor
+    static func section(_ app: XCUIApplication, _ name: String, wait: TimeInterval) -> XCUIElement {
+        let item = app.buttons.matching(identifier: name).firstMatch
+        if !item.exists {
+            let menu = app.buttons["menu-button"].firstMatch
+            if menu.waitForExistence(timeout: wait) { menu.tap() }
+            _ = item.waitForExistence(timeout: wait)
+        }
+        return item
+    }
+
+    @MainActor
+    static func waitUntilGone(_ element: XCUIElement, timeout: TimeInterval) -> Bool {
+        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: element)
+        return XCTWaiter.wait(for: [gone], timeout: timeout) == .completed
     }
 }

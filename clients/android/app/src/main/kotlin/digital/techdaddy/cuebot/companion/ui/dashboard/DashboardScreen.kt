@@ -1,5 +1,6 @@
 package digital.techdaddy.cuebot.companion.ui.dashboard
 
+import digital.techdaddy.cuebot.companion.ui.MenuButton
 import android.text.format.DateUtils
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -130,6 +131,7 @@ fun DashboardScreen(vm: DashboardViewModel, container: AppContainer, goToSetting
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text("Dashboard") },
+            navigationIcon = { MenuButton() },
             actions = {
                 IconButton(onClick = { editing = true }, modifier = Modifier.testTag("edit-quick-actions")) {
                     Icon(Icons.Filled.Bolt, contentDescription = "Quick actions")
@@ -607,7 +609,7 @@ private fun FeedCard(feed: List<FeedItem>) {
     }
 }
 
-private fun relativeTime(text: String): String? = runCatching {
+internal fun relativeTime(text: String): String? = runCatching {
     val millis = OffsetDateTime.parse(text).toInstant().toEpochMilli()
     DateUtils.getRelativeTimeSpanString(millis, System.currentTimeMillis(), DateUtils.SECOND_IN_MILLIS).toString()
 }.getOrNull()

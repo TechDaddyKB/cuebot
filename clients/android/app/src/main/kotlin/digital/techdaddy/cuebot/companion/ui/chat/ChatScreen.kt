@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -64,10 +65,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import digital.techdaddy.cuebot.companion.AppContainer
 import digital.techdaddy.cuebot.companion.ui.ConnectionGate
+import digital.techdaddy.cuebot.companion.ui.MenuButton
 import digital.techdaddy.cuebot.companion.ui.ReconnectingBar
 import digital.techdaddy.cuebot.companion.ui.Unavailable
 import digital.techdaddy.cuebot.companion.ui.theme.LocalCuebotColors
 import digital.techdaddy.cuebot.core.ChatLine
+import digital.techdaddy.cuebot.core.EventsCardSettings
+import digital.techdaddy.cuebot.core.FeedItem
 import digital.techdaddy.cuebot.core.ModAction
 import digital.techdaddy.cuebot.core.PlatformCapabilities
 import digital.techdaddy.cuebot.core.SendAs
@@ -76,13 +80,38 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(vm: ChatViewModel, container: AppContainer, goToSettings: () -> Unit) {
+fun ChatScreen(vm: ChatViewModel, container: AppContainer, events: List<FeedItem>, goToSettings: () -> Unit) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val values by container.store.values.collectAsStateWithLifecycle()
+    val card = EventsCardSettings.from(values)
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("Chat") }, colors = TopAppBarDefaults.topAppBarColors(containerColor = LocalCuebotColors.current.ground))
-        ConnectionGate(container, goToSettings) { Content(vm, state) }
+        TopAppBar(
+            title = { Text("Chat") },
+            navigationIcon = { MenuButton() },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = LocalCuebotColors.current.ground),
+        )
+        ConnectionGate(container, goToSettings) {
+            // The events card (issue #45): beside chat on wide screens, a strip above it on narrow ones; hidden in Settings.
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                val shown = card.filter(events)
+                when {
+                    !card.visible -> Content(vm, state)
+                    maxWidth >= WIDE_CHAT -> Row(Modifier.fillMaxSize()) {
+                        Box(Modifier.weight(1f)) { Content(vm, state) }
+                        EventsPanel(shown)
+                    }
+                    else -> Column(Modifier.fillMaxSize()) {
+                        EventsStrip(shown, card.expanded) { container.store.put(EventsCardSettings.EXPANDED_KEY, (!card.expanded).toString()) }
+                        Box(Modifier.weight(1f)) { Content(vm, state) }
+                    }
+                }
+            }
+        }
     }
 }
+
+/** From this width the events card sits beside chat instead of above it (tablets, phones in landscape). */
+private val WIDE_CHAT = 600.dp
 
 @Composable
 private fun Content(vm: ChatViewModel, state: ChatViewModel.UiState) {

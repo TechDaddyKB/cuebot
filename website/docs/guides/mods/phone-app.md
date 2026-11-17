@@ -16,15 +16,25 @@ someone else's stream.
 
 </div>
 
-It has five tabs:
+It has five sections. Tap the menu button (☰, top left) to open the side menu and pick one; the menu closes again so
+the page gets the whole screen. On a tablet you can keep the menu open beside the page: see [The menu](#the-menu).
 
-| Tab | What it is for |
+| Section | What it is for |
 | --- | --- |
 | **Deck** | The buttons of your [decks](../apps/decks.md). Tap one and Cuebot runs it, just like a Stream Deck. **Choose deck** switches decks, and the arrows at the bottom switch pages. |
 | **Dashboard** | What is connected, your **Quick actions**, your [subathon timers](../services/subathon-timers.md) and [goals](../services/goals.md) with their buttons, **Top spenders** for **This stream** and more, totals, and the **Activity** list of follows, subs, tips and raids. |
-| **Chat** | Chat from every connected platform in one list. Write as yourself or as your bot, and delete, time out, ban, unban or warn. See [Chat on your phone](#chat-on-your-phone). |
-| **Mods** | Your mods' changes that wait for your OK, and, if you are a mod for someone, their [mod portal](mod-portal.md). A number on the tab (Android) shows how many changes wait. |
-| **Settings** | The Cuebots you paired, light or dark look, and **Troubleshooting**. |
+| **Chat** | Chat from every connected platform in one list, with the latest stream events next to it. Write as yourself or as your bot, and delete, time out, ban, unban or warn. See [Chat on your phone](#chat-on-your-phone). |
+| **Mods** | Your mods' changes that wait for your OK, and, if you are a mod for someone, their [mod portal](mod-portal.md). A number next to **Mods** in the menu shows how many changes wait. |
+| **Settings** | The Cuebots you paired, light or dark look, the events card on the Chat page, the menu, and **Troubleshooting**. |
+
+### The menu
+
+The menu button (☰) sits at the top left of every section. When changes from your mods are waiting, Android puts a
+dot on it.
+
+On a tablet (or an iPad), go to **Settings** and switch on **Keep menu open** under **Menu**: the menu then stays
+beside the page and the menu button goes away. Phones always use the menu button, even with this switched on.
+**Stream mode** on the Deck hides the menu too.
 
 ## Get the app
 
@@ -72,7 +82,7 @@ You can pair more than one Cuebot, like a gaming PC and a streaming PC. Tap one 
 
 ## Using it on stream
 
-- **Stream mode** (on the Deck tab) shows only the buttons, full screen, and keeps the screen from turning off. Handy
+- **Stream mode** (on the Deck) shows only the buttons, full screen, and keeps the screen from turning off. Handy
   for a phone on a stand next to your keyboard.
 - **Subathon and goal buttons** on the Dashboard work like the ones in Cuebot: **Start**, **Pause** or **Resume** the
   timer, add a minute or five (**+1 min**, **+5 min**), and under ⋮ add or take away any number of minutes or change
@@ -114,6 +124,26 @@ what happened.
 
 Everything you do here is done as you, the streamer, and goes in Cuebot's mod log, like on the Chat page in Cuebot.
 
+### Events next to chat
+
+The **Events** card on the Chat tab shows the latest stream events from every platform, newest first: follows, subs
+and memberships, bits, Kicks, Super Chats, rants, tips and raids. Each line has the platform, who it was, what kind of
+event it was and the amount. It is the same list as **Activity** on the Dashboard, and it updates live.
+
+- On a tablet, or a phone turned sideways, the card sits **beside** chat.
+- On a phone held upright it is a strip **above** chat that shows the newest event. Tap the strip to open the list,
+  and tap it again to close it.
+
+In **Settings**, under **Chat page**:
+
+| Setting | What it does |
+| --- | --- |
+| **Show the events card** | Switch it off to hide the card and use the whole page for chat. |
+| **Follows**, **Subs and memberships**, **Tips, bits, Kicks, Super Chats and rants**, **Raids** | Which events the card shows. All on at the start. |
+| **Channel point redemptions**, **Everything else** | Off at the start. Switch them on to see redemptions, or going live and offline, too. |
+
+These settings are kept on each phone or tablet separately.
+
 !!! note "Mods use the mod portal"
     The Chat tab is for your own paired phone. Your mods moderate from the [mod portal](mod-portal.md) (in the
     browser, or in this app under **Mods**), with only what their role allows.
@@ -144,7 +174,7 @@ Your mods can change things through the [mod portal](mod-portal.md). If their ch
 
 ![The Mods tab: changes waiting for your OK, with Approve and Reject, and the streamers you mod for](../../assets/phone/android-mods.png)
 
-1. Open the **Mods** tab. On Android, a number on the tab shows how many changes are waiting.
+1. Open **Mods** from the menu. A number next to **Mods** in the menu shows how many changes are waiting.
 2. Under **Waiting for your OK**, each change says what the mod wants to change and when they asked.
 3. Tap **Approve** to make a change live, or **Reject** to drop it.
 

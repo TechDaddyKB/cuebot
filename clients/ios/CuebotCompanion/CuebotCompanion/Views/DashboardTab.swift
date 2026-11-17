@@ -20,6 +20,7 @@ struct DashboardTab: View {
                 if let profile = profiles.switchingTo { ProfileSwitchingBar(profile: profile) }
             }
             .navigationTitle("Dashboard")
+            .sideMenuButton()
             .toolbarBackground(Color.cuebotGround, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -422,7 +423,7 @@ struct FeedCard: View {
         }
     }
 
-    private static func date(_ text: String) -> Date? {
+    static func date(_ text: String) -> Date? {
         let iso = ISO8601DateFormatter()
         iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let date = iso.date(from: text) { return date }

@@ -5,7 +5,10 @@ import digital.techdaddy.cuebot.companion.FakeCuebot.Companion.sse
 import digital.techdaddy.cuebot.companion.ui.dashboard.DashboardViewModel
 import digital.techdaddy.cuebot.companion.ui.settings.SettingsViewModel
 import digital.techdaddy.cuebot.companion.ui.theme.Appearance
+import digital.techdaddy.cuebot.companion.ui.MENU_PINNED_KEY
 import digital.techdaddy.cuebot.core.ActionSummary
+import digital.techdaddy.cuebot.core.EventsCardSettings
+import digital.techdaddy.cuebot.core.FeedGroup
 import digital.techdaddy.cuebot.core.ProfileSwitch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -155,5 +158,22 @@ class SettingsViewModelTest {
         vm.setAppearance(Appearance.Dark)
         assertEquals("dark", cuebot.store[Appearance.STORAGE_KEY])
         assertEquals(Appearance.Dark, vm.appearance(cuebot.store.values.value))
+    }
+
+    @Test fun remembersTheEventsCardAndTheMenuPerDevice() {
+        val values = { cuebot.store.values.value }
+        assertTrue(vm.eventsCard(values()).visible)
+        assertEquals(FeedGroup.defaults, vm.eventsCard(values()).groups)
+        vm.setEventGroup(FeedGroup.Redemptions, true)
+        vm.setEventGroup(FeedGroup.Follows, false)
+        assertEquals(FeedGroup.defaults + FeedGroup.Redemptions - FeedGroup.Follows, vm.eventsCard(values()).groups)
+        vm.setEventsCardVisible(false)
+        assertEquals("false", cuebot.store[EventsCardSettings.VISIBLE_KEY])
+        assertEquals(false, vm.eventsCard(values()).visible)
+
+        assertEquals(false, vm.menuPinned(values()))
+        vm.setMenuPinned(true)
+        assertEquals("true", cuebot.store[MENU_PINNED_KEY])
+        assertTrue(vm.menuPinned(values()))
     }
 }

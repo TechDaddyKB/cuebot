@@ -5,20 +5,48 @@ import SwiftUI
 /// Bot", Bot only where a bot account is signed in), and per message the moderation tools each platform allows.
 struct ChatTab: View {
     @Environment(ChatStore.self) private var store
+    @Environment(DashboardStore.self) private var dashboard
     @State private var acting: ChatLine?
+    @AppStorage(EventsCardSettings.visibleKey) private var eventsVisible = true
+    @AppStorage(EventsCardSettings.groupsKey) private var eventGroups = EventsCardSettings.defaultGroups
+    @AppStorage(EventsCardSettings.expandedKey) private var eventsExpanded = false
 
     var body: some View {
         NavigationStack {
             ConnectionGate {
-                content
+                withEvents
             }
             .navigationTitle("Chat")
             .navigationBarTitleDisplayMode(.inline)
+            .sideMenuButton()
             .toolbarBackground(Color.cuebotGround, for: .navigationBar)
         }
         .sheet(item: $acting) { line in
             ModerationSheet(line: line, capabilities: store.capabilities(for: line.platform))
                 .presentationDetents([.medium, .large])
+        }
+    }
+
+    /// The events card (issue #45, from the Dashboard's live feed): beside chat on wide screens, a strip above it on
+    /// narrow ones; Settings hides it or chooses which events it shows.
+    @ViewBuilder private var withEvents: some View {
+        if eventsVisible {
+            let events = FeedGroup.filter(dashboard.dashboard?.feed ?? [], groups: FeedGroup.parse(eventGroups))
+            GeometryReader { geometry in
+                if geometry.size.width >= EventsCardSettings.wideWidth {
+                    HStack(spacing: 0) {
+                        content
+                        EventsPanel(events: events)
+                    }
+                } else {
+                    VStack(spacing: 0) {
+                        EventsStrip(events: events, expanded: $eventsExpanded)
+                        content
+                    }
+                }
+            }
+        } else {
+            content
         }
     }
 

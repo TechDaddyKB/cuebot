@@ -3,6 +3,8 @@ package digital.techdaddy.cuebot.companion
 import android.Manifest
 import android.os.Build
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -20,7 +22,9 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
+import digital.techdaddy.cuebot.companion.ui.MENU_PINNED_KEY
 import digital.techdaddy.cuebot.core.CuebotEndpoint
+import digital.techdaddy.cuebot.core.EventsCardSettings
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -101,11 +105,13 @@ class CompanionUiTest {
         }
         server.start()
         unpairAll()
+        resetSettings()
     }
 
     @After fun tearDown() {
         scenario?.close()
         unpairAll()
+        resetSettings()
         server.close()
     }
 
@@ -114,6 +120,23 @@ class CompanionUiTest {
     private fun launch() { scenario = ActivityScenario.launch(MainActivity::class.java) }
 
     private fun pairWithServer() = container.paired.pair(CuebotEndpoint("UI test", server.hostName, server.port, server.port, "api-token", "dk"))
+
+    /** Opens a section from the side menu: the hamburger first, unless the menu is already open (or pinned). */
+    private fun openTab(name: String) {
+        compose.waitUntilExactlyOneExists(hasTestTag("tab-$name"), 10_000)
+        val item = compose.onNodeWithTag("tab-$name")
+        if (!item.isShown()) {
+            compose.waitUntilExactlyOneExists(hasTestTag("menu-button"), 10_000)
+            compose.onNodeWithTag("menu-button").performClick()
+            compose.waitUntil(5_000) { item.isShown() }
+        }
+        item.performClick()
+    }
+
+    private fun SemanticsNodeInteraction.isShown() = runCatching { assertIsDisplayed() }.isSuccess
+
+    private fun resetSettings() = listOf(EventsCardSettings.VISIBLE_KEY, EventsCardSettings.GROUPS_KEY, EventsCardSettings.EXPANDED_KEY, MENU_PINNED_KEY)
+        .forEach { container.store.put(it, null) }
 
     private fun count(key: String) = requests.count { "${it.method} ${it.url.encodedPath}" == key }
 
@@ -134,7 +157,7 @@ class CompanionUiTest {
         compose.waitUntil(5_000) { container.paired.state.value.all.size == 1 }
         assertEquals(server.hostName, container.paired.state.value.active?.host)
         // Paired: the deck loads from the stand-in.
-        compose.onNodeWithTag("tab-deck").performClick()
+        openTab("deck")
         compose.waitUntilExactlyOneExists(hasTestTag("deck-button-i1"), 10_000)
     }
 
@@ -155,8 +178,7 @@ class CompanionUiTest {
     @Test fun dashboardShowsCardsAndControlsWork() {
         pairWithServer()
         launch()
-        compose.waitUntilExactlyOneExists(hasTestTag("tab-dashboard"), 10_000)
-        compose.onNodeWithTag("tab-dashboard").performClick()
+        openTab("dashboard")
         compose.waitUntilExactlyOneExists(hasTestTag("subathon-main"), 10_000)
         compose.onNodeWithText("1:00:00").assertExists()
         compose.onNodeWithTag("add-5-min").performClick()
@@ -173,10 +195,18 @@ class CompanionUiTest {
     @Test fun chatShowsMessagesSendsAsTheBotAndModerates() {
         pairWithServer()
         launch()
-        compose.waitUntilExactlyOneExists(hasTestTag("tab-chat"), 10_000)
-        compose.onNodeWithTag("tab-chat").performClick()
+        openTab("chat")
         compose.waitUntilExactlyOneExists(hasTestTag("chat-line-m1"), 10_000)
         compose.onNodeWithText("(deleted)", substring = true).assertExists()
+
+        // The events card: a strip above chat on a phone, the newest event in one line; a tap opens the list.
+        compose.waitUntilExactlyOneExists(hasText("ann cheered 500 bits"), 10_000)
+        compose.onNodeWithTag("events-toggle").performClick()
+        compose.waitUntilExactlyOneExists(hasTestTag("event-0"), 5_000)
+        compose.onNodeWithText("Twitch · Cheer · test", useUnmergedTree = true).assertExists()
+        compose.waitUntil(2_000) { container.store[EventsCardSettings.EXPANDED_KEY] == "true" }
+        compose.onNodeWithTag("events-toggle").performClick()
+        compose.waitUntilDoesNotExist(hasTestTag("event-0"), 5_000)
 
         // Bot only where a bot account is signed in: Twitch here, not Kick.
         compose.onNodeWithTag("chat-send-to").performClick()
@@ -212,10 +242,11 @@ class CompanionUiTest {
     @Test fun settingsListsTheCuebotAndChangesAppearance() {
         pairWithServer()
         launch()
-        compose.waitUntilExactlyOneExists(hasTestTag("tab-settings"), 10_000)
-        compose.onNodeWithTag("tab-settings").performClick()
+        openTab("settings")
         compose.onNodeWithText("UI test").assertExists()
-        compose.waitUntilExactlyOneExists(hasText("9.9.9"), 5_000)
+        // About is below the Chat page and Menu settings: scroll to it (the version shows once Cuebot answered).
+        compose.waitUntil(5_000) { runCatching { compose.onNodeWithTag("settings").performScrollToNode(hasText("9.9.9")) }.isSuccess }
+        compose.onNodeWithTag("settings").performScrollToNode(hasTestTag("appearance-picker"))
         compose.onNodeWithTag("appearance-dark").performClick()
         compose.waitUntil(2_000) { container.store["appearance"] == "dark" }
         compose.onNodeWithTag("appearance-system").performClick()
@@ -234,8 +265,7 @@ class CompanionUiTest {
     @Test fun modsTabApprovesChangesAndOffersToJoin() {
         pairWithServer()
         launch()
-        compose.waitUntilExactlyOneExists(hasTestTag("tab-mods"), 10_000)
-        compose.onNodeWithTag("tab-mods").performClick()
+        openTab("mods")
         compose.waitUntilExactlyOneExists(hasText("Sam changed the command '!hello'"), 10_000)
         compose.onNodeWithTag("approve-c1").performClick()
         compose.waitUntilExactlyOneExists(hasText("Approved: it is live now."), 5_000)
@@ -243,5 +273,37 @@ class CompanionUiTest {
 
         compose.onNodeWithTag("join-button").performClick()
         compose.onNodeWithTag("invite-paste").assertExists()
+    }
+
+    @Test fun theMenuClosesAfterChoosingAndTheEventsCardCanBeHidden() {
+        pairWithServer()
+        launch()
+        openTab("chat")
+        compose.waitUntilExactlyOneExists(hasTestTag("events-card"), 10_000)
+        // Choosing a section closes the menu, so the page gets the whole screen.
+        compose.waitUntil(5_000) { !compose.onNodeWithTag("tab-chat").isShown() }
+
+        openTab("settings")
+        compose.onNodeWithTag("settings").performScrollToNode(hasTestTag("events-group-tips"))
+        compose.onNodeWithTag("events-group-tips").performClick()
+        compose.waitUntil(2_000) { container.store[EventsCardSettings.GROUPS_KEY] == "follows,subs,raids" }
+        openTab("chat")
+        compose.waitUntilExactlyOneExists(hasText("None yet"), 10_000)
+
+        openTab("settings")
+        compose.onNodeWithTag("settings").performScrollToNode(hasTestTag("events-visible"))
+        compose.onNodeWithTag("events-visible").performClick()
+        compose.waitUntil(2_000) { container.store[EventsCardSettings.VISIBLE_KEY] == "false" }
+        openTab("chat")
+        compose.waitUntilExactlyOneExists(hasTestTag("chat-line-m1"), 10_000)
+        compose.onNodeWithTag("events-card").assertDoesNotExist()
+
+        // "Keep menu open" is a wide-screen setting: on a phone the hamburger stays.
+        openTab("settings")
+        compose.onNodeWithTag("settings").performScrollToNode(hasTestTag("menu-pinned"))
+        compose.onNodeWithTag("menu-pinned").performClick()
+        compose.waitUntil(2_000) { container.store[MENU_PINNED_KEY] == "true" }
+        openTab("deck")
+        compose.waitUntilExactlyOneExists(hasTestTag("deck-button-i1"), 10_000)
     }
 }

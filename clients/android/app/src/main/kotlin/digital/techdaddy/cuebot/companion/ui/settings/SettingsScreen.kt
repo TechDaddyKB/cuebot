@@ -1,5 +1,6 @@
 package digital.techdaddy.cuebot.companion.ui.settings
 
+import digital.techdaddy.cuebot.companion.ui.MenuButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +22,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import digital.techdaddy.cuebot.core.FeedGroup
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
@@ -62,7 +68,7 @@ fun SettingsScreen(vm: SettingsViewModel) {
     val rowColors = ListItemDefaults.colors(containerColor = colors.card)
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("Settings") }, colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.ground))
+        TopAppBar(title = { Text("Settings") }, navigationIcon = { MenuButton() }, colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.ground))
         LazyColumn(Modifier.fillMaxSize().testTag("settings")) {
             item { Header("Paired Cuebots") }
             items(cuebots.all, key = { it.id }) { entry ->
@@ -115,6 +121,22 @@ fun SettingsScreen(vm: SettingsViewModel) {
                 }
             }
 
+            item { Header("Chat page") }
+            item {
+                val card = vm.eventsCard(settings)
+                Column(Modifier.testTag("events-settings")) {
+                    SwitchRow("Show the events card", card.visible, "events-visible", rowColors) { vm.setEventsCardVisible(it) }
+                    if (card.visible) FeedGroup.entries.forEach { g ->
+                        SwitchRow(g.label, g in card.groups, "events-group-${g.key}", rowColors) { vm.setEventGroup(g, it) }
+                    }
+                }
+            }
+            item { Footer("Recent follows, subs, tips and raids from every platform, beside chat on wide screens and above it on phones. On this phone only.") }
+
+            item { Header("Menu") }
+            item { SwitchRow("Keep menu open", vm.menuPinned(settings), "menu-pinned", rowColors) { vm.setMenuPinned(it) } }
+            item { Footer("On tablets and wide screens the side menu stays beside the page. Phones always open it with the menu button.") }
+
             item { Header("About") }
             item { ListItem(headlineContent = { Text("App") }, trailingContent = { Text(BuildConfig.VERSION_NAME) }, colors = rowColors) }
             (status as? ConnectionStatus.Online)?.status?.app?.let { app ->
@@ -154,4 +176,14 @@ private fun Header(text: String) {
 @Composable
 private fun Footer(text: String) {
     Text(text, color = LocalCuebotColors.current.muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+}
+
+@Composable
+private fun SwitchRow(text: String, checked: Boolean, tag: String, colors: ListItemColors, change: (Boolean) -> Unit) {
+    ListItem(
+        headlineContent = { Text(text) },
+        trailingContent = { Switch(checked = checked, onCheckedChange = null) },
+        colors = colors,
+        modifier = Modifier.toggleable(value = checked, role = Role.Switch, onValueChange = change).testTag(tag),
+    )
 }

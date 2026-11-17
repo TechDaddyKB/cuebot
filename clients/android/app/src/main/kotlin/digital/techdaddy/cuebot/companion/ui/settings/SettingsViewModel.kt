@@ -5,12 +5,15 @@ import digital.techdaddy.cuebot.companion.data.Connection
 import digital.techdaddy.cuebot.companion.data.ConnectionStatus
 import digital.techdaddy.cuebot.companion.data.KeyValueStore
 import digital.techdaddy.cuebot.companion.data.PairedCuebots
+import digital.techdaddy.cuebot.companion.ui.MENU_PINNED_KEY
 import digital.techdaddy.cuebot.companion.ui.theme.Appearance
+import digital.techdaddy.cuebot.core.EventsCardSettings
+import digital.techdaddy.cuebot.core.FeedGroup
 import digital.techdaddy.cuebot.core.CuebotEndpoint
 import digital.techdaddy.cuebot.core.PairingLink
 import kotlinx.coroutines.flow.StateFlow
 
-/** The Settings tab: paired Cuebots, pairing, Appearance and About. */
+/** The Settings tab: paired Cuebots, pairing, Appearance, the Chat page's events card, the side menu and About. */
 class SettingsViewModel(
     private val paired: PairedCuebots,
     private val connection: Connection,
@@ -22,6 +25,18 @@ class SettingsViewModel(
 
     fun appearance(values: Map<String, String>) = Appearance.of(values[Appearance.STORAGE_KEY])
     fun setAppearance(appearance: Appearance) = store.put(Appearance.STORAGE_KEY, appearance.key)
+
+    // The Chat page's events card and the side menu: per device, in the app's settings.
+
+    fun eventsCard(values: Map<String, String>) = EventsCardSettings.from(values)
+    fun setEventsCardVisible(visible: Boolean) = store.put(EventsCardSettings.VISIBLE_KEY, visible.toString())
+    fun setEventGroup(group: FeedGroup, shown: Boolean) {
+        val groups = eventsCard(store.values.value).groups
+        store.put(EventsCardSettings.GROUPS_KEY, FeedGroup.encode(if (shown) groups + group else groups - group))
+    }
+
+    fun menuPinned(values: Map<String, String>) = values[MENU_PINNED_KEY] == "true"
+    fun setMenuPinned(pinned: Boolean) = store.put(MENU_PINNED_KEY, pinned.toString())
 
     fun activate(id: String) = paired.activate(id)
     fun rename(id: String, name: String) = paired.rename(id, name)

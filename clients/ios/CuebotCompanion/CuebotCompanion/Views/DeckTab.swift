@@ -5,6 +5,7 @@ struct DeckTab: View {
     @Environment(DeckStore.self) private var deck
     @Environment(ConnectionStore.self) private var connection
     @State private var streamMode = false
+    @Environment(SideMenu.self) private var menu
     @Environment(\.colorScheme) private var systemScheme
 
     /// Light or dark to match the deck's own background, so titles and bars stay readable on it.
@@ -20,6 +21,7 @@ struct DeckTab: View {
             }
             .navigationTitle(deck.view?.name.isEmpty == false ? deck.view!.name : "Deck")
             .navigationBarTitleDisplayMode(.inline)
+            .sideMenuButton()
             .toolbar { if !streamMode { toolbar } }
             .toolbar(streamMode ? .hidden : .automatic, for: .navigationBar, .tabBar)
             .toolbarColorScheme(deckScheme, for: .navigationBar, .tabBar)
@@ -27,7 +29,10 @@ struct DeckTab: View {
         .environment(\.colorScheme, deckScheme ?? systemScheme)
         .statusBarHidden(streamMode)
         .persistentSystemOverlays(streamMode ? .hidden : .automatic)
-        .onChange(of: streamMode) { _, on in UIApplication.shared.isIdleTimerDisabled = on }
+        .onChange(of: streamMode) { _, on in
+            UIApplication.shared.isIdleTimerDisabled = on
+            menu.hidden = on   // stream mode hides the side menu too, pinned or not
+        }
     }
 
     @ViewBuilder private var content: some View {
