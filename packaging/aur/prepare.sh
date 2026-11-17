@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Produces publish-ready AUR packages for a release: pins version + checksums and writes .SRCINFO.
-# Run on Arch (needs makepkg). Output: artifacts/aur/<pkgname>/{PKGBUILD,.SRCINFO}
+# Run on Arch (needs makepkg). Output: artifacts/aur/<pkgname>/{PKGBUILD,.SRCINFO,LICENSE}
 #   packaging/aur/prepare.sh <version> <source.tar.gz> <linux-x64.tar.gz> [linux-arm64.tar.gz]
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -24,5 +24,7 @@ fi
 
 for pkg in cuebot cuebot-bin; do
   (cd "$out/$pkg" && makepkg --printsrcinfo > .SRCINFO)
+  # The AUR asks for a license for the package sources themselves (0BSD, as Arch recommends).
+  cp "$root/packaging/aur/LICENSE" "$out/$pkg/LICENSE"
 done
 echo "AUR packages ready in $out"

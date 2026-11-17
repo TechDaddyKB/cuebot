@@ -9,7 +9,7 @@ url="https://github.com/TechDaddyKB/cuebot"
 license=('MIT')
 depends=('dotnet-runtime>=10.0' 'aspnet-runtime>=10.0' 'fontconfig' 'gcc-libs' 'hicolor-icon-theme' 'libglvnd' 'libice' 'libsm' 'libx11'
          'libxcursor' 'libxext' 'libxi' 'libxkbcommon' 'libxrandr' 'wayland')
-makedepends=('dotnet-sdk>=10.0' 'aspnet-targeting-pack>=10.0')
+makedepends=('dotnet-sdk>=10.0' 'aspnet-targeting-pack>=10.0' 'patchelf')
 optdepends=('espeak-ng: offline text-to-speech voices'
             'ffmpeg: checking the files mods upload through the mod portal'
             'pipewire-audio: audio playback through pw-play'
@@ -46,6 +46,8 @@ package() {
   cd "$pkgname-$pkgver"
   install -d "$pkgdir/usr/lib/$pkgname"
   cp -a out/. "$pkgdir/usr/lib/$pkgname/"
+  # whisper.net's native libraries carry its CI build folder as RUNPATH; point them at their own folder instead.
+  find "$pkgdir/usr/lib/$pkgname/runtimes" -name '*whisper*.so' -exec patchelf --set-rpath '$ORIGIN' {} +
 
   install -Dm755 /dev/stdin "$pkgdir/usr/bin/$pkgname" <<'EOF'
 #!/bin/sh

@@ -155,12 +155,13 @@ jobs:
         run: |
           install -dm700 ~/.ssh
           printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur && chmod 600 ~/.ssh/aur
-          ssh-keyscan -t ed25519 aur.archlinux.org >> ~/.ssh/known_hosts
+          # Pinned: SHA256:RFzBCUItH9LZS0cKB5UE6ceAYhBD5C8GeOBip8Z11+4, as published on https://aur.archlinux.org/
+          echo 'aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN' >> ~/.ssh/known_hosts
           export GIT_SSH_COMMAND="ssh -i ~/.ssh/aur"
           for pkg in cuebot cuebot-bin; do
             git clone "ssh://aur@aur.archlinux.org/$pkg.git" "aur-$pkg"
-            cp "artifacts/aur/$pkg/PKGBUILD" "artifacts/aur/$pkg/.SRCINFO" "aur-$pkg/"
-            git -C "aur-$pkg" -c user.name="TechDaddyKB" -c user.email="camarokris@gmail.com" add PKGBUILD .SRCINFO
+            cp "artifacts/aur/$pkg/PKGBUILD" "artifacts/aur/$pkg/.SRCINFO" "artifacts/aur/$pkg/LICENSE" "aur-$pkg/"
+            git -C "aur-$pkg" -c user.name="TechDaddyKB" -c user.email="camarokris@gmail.com" add PKGBUILD .SRCINFO LICENSE
             git -C "aur-$pkg" -c user.name="TechDaddyKB" -c user.email="camarokris@gmail.com" commit -m "Update to ${GITHUB_REF_NAME#v}" || true
             git -C "aur-$pkg" push origin HEAD:master
           done

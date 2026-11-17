@@ -18,6 +18,7 @@ optdepends=('espeak-ng: offline text-to-speech voices'
             'game-devices-udev: hidraw access for PlayStation/Switch controller lights and rumble')
 provides=('cuebot')
 conflicts=('cuebot')
+makedepends=('patchelf')
 options=('!strip' '!debug')
 source_x86_64=("Cuebot-$pkgver-linux-x64.tar.gz::$url/releases/download/v$pkgver/Cuebot-$pkgver-linux-x64.tar.gz")
 source_aarch64=("Cuebot-$pkgver-linux-arm64.tar.gz::$url/releases/download/v$pkgver/Cuebot-$pkgver-linux-arm64.tar.gz")
@@ -35,6 +36,8 @@ package() {
   install -d "$pkgdir/usr/lib/$_pkgname"
   cp -a lib/. "$pkgdir/usr/lib/$_pkgname/"
   chmod 755 "$pkgdir/usr/lib/$_pkgname/Cuebot"
+  # whisper.net's native libraries carry its CI build folder as RUNPATH; point them at their own folder instead.
+  find "$pkgdir/usr/lib/$_pkgname/runtimes" -name '*whisper*.so' -exec patchelf --set-rpath '$ORIGIN' {} +
   install -d "$pkgdir/usr/bin"
   ln -s "/usr/lib/$_pkgname/Cuebot" "$pkgdir/usr/bin/$_pkgname"
 
