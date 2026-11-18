@@ -88,10 +88,24 @@ object PortalSignIn {
     /** The address to send the mod to; throws when Cuebot named a page that is not a known provider's. */
     fun authorizeUrl(provider: PortalProvider, pending: PendingSignIn): String {
         val url = provider.authorize.toHttpUrlOrNull()
-        if (url == null || url.scheme != "https" || url.host !in PROVIDER_HOSTS) throw IllegalArgumentException("Unexpected sign-in address for ${provider.name}.")
+        if (url == null || url.scheme != "https" || (url.host !in PROVIDER_HOSTS && !onOwnRelay(url, pending.target))) {
+            throw IllegalArgumentException("Unexpected sign-in address for ${provider.name}.")
+        }
         val b = url.newBuilder().setQueryParameter("state", pending.state)
         if (provider.pkce) b.setQueryParameter("code_challenge", challenge(pending.verifier)).setQueryParameter("code_challenge_method", "S256")
         return b.build().toString()
+    }
+
+    /**
+     * A sign-in page on the invite's own host, when that host is the relay itself (a test or demo relay such as the
+     * Companion test server, never relay.<domain> behind portal.<domain>). The mod already trusts that host with the
+     * whole link; this only lets it skip a real provider.
+     */
+    private fun onOwnRelay(url: okhttp3.HttpUrl, target: PortalTarget): Boolean {
+        val own = target.relayOrigin.removePrefix("wss://")
+        if (own == target.relayOrigin || own.startsWith("relay.")) return false
+        val host = if (url.port == 443) url.host else "${url.host}:${url.port}"
+        return host == own
     }
 
     sealed interface Return {

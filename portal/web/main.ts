@@ -115,7 +115,7 @@ async function chooseProvider(target: Target): Promise<void> {
 async function startSignIn(target: Target, provider: Provider): Promise<void> {
   const pending: PendingSignIn = { ...target, provider: provider.id, state: random(), verifier: random(48) };
   try {
-    const url = await authorizeUrl(provider, pending);
+    const url = await authorizeUrl(provider, pending, location);
     sessionStorage.setItem(PENDING, JSON.stringify(pending));
     location.assign(url);
   } catch (e) {

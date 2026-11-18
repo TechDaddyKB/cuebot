@@ -51,6 +51,17 @@ class PortalFlowTest {
         assertEquals("E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM", PortalSignIn.challenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"))
     }
 
+    @Test fun `a relay on the invite's own host may serve its own sign-in page, a portal domain's relay may not`() {
+        val demo = google.copy(authorize = "https://cuebot-test.example.net/demo-signin?client_id=demo")
+        val own = PortalSignIn.start(PortalTarget.parse("https://cuebot-test.example.net/#i=$secret&r=$relay&k=$key")!!, demo)
+        assertEquals("cuebot-test.example.net", PortalSignIn.authorizeUrl(demo, own).toHttpUrl().host)
+        assertThrows(IllegalArgumentException::class.java) { PortalSignIn.authorizeUrl(demo.copy(authorize = "https://other.example.net/demo-signin"), own) }
+        assertThrows(IllegalArgumentException::class.java) { PortalSignIn.authorizeUrl(demo.copy(authorize = "https://cuebot-test.example.net:8443/demo-signin"), own) }
+        val real = PortalSignIn.start(PortalTarget.parse("https://portal.example.net/#i=$secret&r=$relay&k=$key")!!, demo)
+        assertThrows(IllegalArgumentException::class.java) { PortalSignIn.authorizeUrl(demo.copy(authorize = "https://relay.example.net/demo-signin"), real) }
+        assertThrows(IllegalArgumentException::class.java) { PortalSignIn.authorizeUrl(demo.copy(authorize = "https://portal.example.net/demo-signin"), real) }
+    }
+
     @Test fun `the return hand-over is checked against the sign-in this app started`() {
         val pending = PendingSignIn(PortalTarget(relay, key, "wss://relay.example"), "google", "app.abc", "v")
         assertEquals(PortalSignIn.Return.Code("4/0Ab_x"), PortalSignIn.readReturn("cuebot-portal://signin?code=4%2F0Ab_x&state=app.abc", pending))

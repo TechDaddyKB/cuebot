@@ -83,10 +83,22 @@ public enum PortalSignIn {
 
     public struct NotAllowed: Error, Sendable { public let message: String }
 
+    /// A sign-in page on the invite's own host, when that host is the relay itself (a test or demo relay such as the
+    /// Companion test server, never relay.<domain> behind portal.<domain>). The mod already trusts that host with the
+    /// whole link; this only lets it skip a real provider.
+    static func onOwnRelay(_ url: URLComponents, _ target: PortalTarget) -> Bool {
+        guard target.relayOrigin.hasPrefix("wss://") else { return false }
+        let own = String(target.relayOrigin.dropFirst("wss://".count))
+        guard !own.hasPrefix("relay."), let host = url.host else { return false }
+        let full = url.port.map { $0 == 443 ? host : "\(host):\($0)" } ?? host
+        return full == own
+    }
+
     /// The address to send the mod to; throws when Cuebot named a page that is not a known provider's.
     public static func authorizeURL(_ provider: PortalProvider, _ pending: PendingSignIn) throws(NotAllowed) -> URL {
         guard var url = URLComponents(string: provider.authorize), url.scheme == "https", let host = url.host,
-              providerHosts.contains(host) else { throw NotAllowed(message: "Unexpected sign-in address for \(provider.name).") }
+              providerHosts.contains(host) || onOwnRelay(url, pending.target)
+        else { throw NotAllowed(message: "Unexpected sign-in address for \(provider.name).") }
         var items = (url.queryItems ?? []).filter { !["state", "code_challenge", "code_challenge_method"].contains($0.name) }
         items.append(URLQueryItem(name: "state", value: pending.state))
         if provider.pkce {

@@ -103,6 +103,10 @@ Mod browser ──GET──▶ portal.techdaddydigital.com   (loader page and th
   sessionStorage and sends the mod to the provider. `redirect_uri` is `https://portal.techdaddydigital.com/auth/return`
   for every provider. Back on the return page the loader checks `state`, removes the code from the address bar,
   reconnects and sends code, verifier, invite and its device key to Cuebot (`signin`, over the encrypted link).
+- The loader and the apps open only the providers' own pages (accounts.google.com, id.twitch.tv, discord.com), with
+  one exception: when the invite is on a relay's own host rather than `portal.<domain>` (a test relay such as the
+  Companion test server), a sign-in page on that same host is allowed too. That host already carries the whole link,
+  so this only lets a demo skip a real provider; the real relay behind `portal.<domain>` never gets it.
 - Cuebot (`PortalIdentityExchange`) exchanges the code, reads the provider's permanent user ID, then revokes the
   token: the portal keeps no provider token. Twitch: the token must belong to Cuebot's app (`/oauth2/validate`).
 - PKCE: Google and Discord. Twitch has no PKCE; the code still needs the client secret, and the return page is on our

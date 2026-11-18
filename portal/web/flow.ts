@@ -52,9 +52,12 @@ export async function challenge(verifier: string): Promise<string> {
 const PROVIDER_HOSTS = new Set(["accounts.google.com", "id.twitch.tv", "discord.com"]);
 
 /** The address to send the mod to; throws when Cuebot named a page that is not a known provider's. */
-export async function authorizeUrl(provider: Provider, pending: PendingSignIn): Promise<string> {
+export async function authorizeUrl(provider: Provider, pending: PendingSignIn, page?: { host: string; hostname: string }): Promise<string> {
   const url = new URL(provider.authorize);
-  if (url.protocol !== "https:" || !PROVIDER_HOSTS.has(url.hostname)) throw new Error(`Unexpected sign-in address for ${provider.name}.`);
+  // Also a sign-in page on this page's own host when that host is the relay itself (a test or demo relay such as the
+  // Companion test server, never portal.<domain>): it already serves this page, so it only skips a real provider.
+  const ownRelay = !!page && !page.hostname.startsWith("portal.") && url.host === page.host;
+  if (url.protocol !== "https:" || (!PROVIDER_HOSTS.has(url.hostname) && !ownRelay)) throw new Error(`Unexpected sign-in address for ${provider.name}.`);
   url.searchParams.set("state", pending.state);
   if (provider.pkce) {
     url.searchParams.set("code_challenge", await challenge(pending.verifier));

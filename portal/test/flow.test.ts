@@ -43,6 +43,16 @@ describe("sign-in addresses", () => {
     await expect(authorizeUrl({ ...google, authorize: "https://evil.example/auth" }, pending)).rejects.toThrow();
     await expect(authorizeUrl({ ...google, authorize: "http://accounts.google.com/auth" }, pending)).rejects.toThrow();
   });
+
+  it("lets a relay on the page's own host serve its own sign-in page, never a portal domain", async () => {
+    const demo = { ...google, authorize: "https://cuebot-test.example.net/demo-signin?client_id=demo" };
+    const own = { host: "cuebot-test.example.net", hostname: "cuebot-test.example.net" };
+    expect(new URL(await authorizeUrl(demo, pending, own)).host).toBe("cuebot-test.example.net");
+    await expect(authorizeUrl(demo, pending)).rejects.toThrow();
+    await expect(authorizeUrl({ ...demo, authorize: "https://other.example.net/demo-signin" }, pending, own)).rejects.toThrow();
+    const portal = { host: "portal.example.net", hostname: "portal.example.net" };
+    await expect(authorizeUrl({ ...demo, authorize: "https://portal.example.net/demo-signin" }, pending, portal)).rejects.toThrow();
+  });
 });
 
 describe("the return page", () => {

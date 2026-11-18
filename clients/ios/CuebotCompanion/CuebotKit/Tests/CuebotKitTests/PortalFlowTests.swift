@@ -54,6 +54,23 @@ struct PortalFlowTests {
         #expect(PortalSignIn.challenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk") == "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")
     }
 
+    @Test func aRelayOnTheInvitesOwnHostMayServeItsOwnSignInPage() throws {
+        var demo = google
+        demo.authorize = "https://cuebot-test.example.net/demo-signin?client_id=demo"
+        let own = PortalSignIn.start(try #require(PortalTarget.parse("https://cuebot-test.example.net/#i=\(secret)&r=\(relay)&k=\(key)")), demo)
+        #expect(try PortalSignIn.authorizeURL(demo, own).host == "cuebot-test.example.net")
+        var other = demo
+        other.authorize = "https://other.example.net/demo-signin"
+        #expect(throws: PortalSignIn.NotAllowed.self) { try PortalSignIn.authorizeURL(other, own) }
+        other.authorize = "https://cuebot-test.example.net:8443/demo-signin"
+        #expect(throws: PortalSignIn.NotAllowed.self) { try PortalSignIn.authorizeURL(other, own) }
+        let real = PortalSignIn.start(try #require(PortalTarget.parse("https://portal.example.net/#i=\(secret)&r=\(relay)&k=\(key)")), demo)
+        other.authorize = "https://relay.example.net/demo-signin"
+        #expect(throws: PortalSignIn.NotAllowed.self) { try PortalSignIn.authorizeURL(other, real) }
+        other.authorize = "https://portal.example.net/demo-signin"
+        #expect(throws: PortalSignIn.NotAllowed.self) { try PortalSignIn.authorizeURL(other, real) }
+    }
+
     @Test func theReturnHandOverIsCheckedAgainstTheSignInThisAppStarted() {
         let pending = PendingSignIn(target: PortalTarget(relay: relay, fingerprint: key, relayOrigin: "wss://relay.example"), provider: "google", state: "app.abc", verifier: "v")
         func read(_ link: String, _ p: PendingSignIn? = nil) -> PortalSignIn.Return { PortalSignIn.readReturn(URL(string: link)!, pending: p) }
