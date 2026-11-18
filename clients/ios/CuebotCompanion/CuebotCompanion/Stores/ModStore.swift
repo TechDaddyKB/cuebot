@@ -9,9 +9,14 @@ import SwiftUI   // WebAuthenticationSession
 /// ModViewModel and the web loader (portal/web/main.ts).
 @MainActor @Observable
 final class ModStore {
-    /// Signed in: the portal UI the streamer's Cuebot sent (`js` nil when that Cuebot is too old to send one).
-    final class OpenPortal: Identifiable, Sendable {
-        let membership: Membership, link: PortalLink, me: PortalAnswer, js: String?, css: String?
+    /// Signed in: the portal UI the streamer's Cuebot sent (`js` nil when that Cuebot is too old to send one). When the
+    /// link drops, the app reconnects by itself and swaps in the new `link`; the portal stays on screen meanwhile, with
+    /// `reconnecting` set.
+    @MainActor @Observable
+    final class OpenPortal: Identifiable {
+        let membership: Membership, me: PortalAnswer, js: String?, css: String?
+        fileprivate(set) var link: PortalLink
+        fileprivate(set) var reconnecting = false
 
         init(membership: Membership, link: PortalLink, me: PortalAnswer, js: String?, css: String?) {
             self.membership = membership
@@ -19,6 +24,16 @@ final class ModStore {
             self.me = me
             self.js = js
             self.css = css
+        }
+
+        /// One request on the current link; while reconnecting, it waits for the new link first (up to 30 seconds).
+        func request(_ op: String, _ body: PortalAnswer = [:]) async -> PortalAnswer {
+            var waited = 0
+            while reconnecting && waited < 300 {
+                try? await Task.sleep(for: .milliseconds(100))
+                waited += 1
+            }
+            return await link.request(op, body)
         }
     }
 
@@ -43,9 +58,15 @@ final class ModStore {
     var notice: String?
     private var browserTask: Task<Void, Never>?
 
-    init(memberships: ModMemberships, open: @escaping (PortalTarget) async throws(LinkClosed) -> PortalLink = { target throws(LinkClosed) in try await PortalLink.open(target) }) {
+    /// The waits between tries to get a dropped portal link back, before the mod is told it is lost.
+    private let reconnectDelays: [Duration]
+
+    init(memberships: ModMemberships,
+         open: @escaping (PortalTarget) async throws(LinkClosed) -> PortalLink = { target throws(LinkClosed) in try await PortalLink.open(target) },
+         reconnectDelays: [Duration] = [.milliseconds(500), .seconds(1), .seconds(2), .seconds(4), .seconds(8), .seconds(15), .seconds(15)]) {
         self.memberships = memberships
         self.open = open
+        self.reconnectDelays = reconnectDelays
     }
 
     /// Opens an invite (or portal) link; the reason when it is not one.
@@ -173,13 +194,51 @@ final class ModStore {
         memberships.save(membership)
         let ui = await link.request("ui")
         let portal = OpenPortal(membership: membership, link: link, me: me, js: ui.ok ? ui.text("js") : nil, css: ui.ok ? ui.text("css") : nil)
-        link.onClosed { [weak self] reason in
-            Task { @MainActor in
-                guard let self, case .portal(let open) = self.state, open === portal else { return }
-                self.state = .problem(reason, retry: { [weak self] in self?.resume(membership) })
-            }
-        }
+        watch(link, of: portal, alias: alias)
         state = .portal(portal)
+    }
+
+    private func isOpen(_ portal: OpenPortal) -> Bool {
+        if case .portal(let open) = state { return open === portal }
+        return false
+    }
+
+    private func watch(_ link: PortalLink, of portal: OpenPortal, alias: String) {
+        link.onClosed { [weak self] reason in
+            Task { @MainActor in await self?.reconnect(portal, alias: alias, reason: reason) }
+        }
+    }
+
+    /// The link dropped (a network change, the phone waking up, a relay restart): reconnect and resume with this
+    /// device's key, keeping the portal and its page on screen. Requests made meanwhile wait for the new link. Only when
+    /// every try fails, or Cuebot wants a new sign-in, does the mod see a problem.
+    private func reconnect(_ portal: OpenPortal, alias: String, reason: String) async {
+        guard isOpen(portal), !portal.reconnecting else { return }
+        portal.reconnecting = true
+        let membership = portal.membership
+        let retry: () -> Void = { [weak self] in self?.resume(membership) }
+        for wait in reconnectDelays {
+            try? await Task.sleep(for: wait)
+            guard isOpen(portal) else { return }
+            guard let key = DeviceKeys.open(alias) else { break }
+            guard let link = try? await open(membership.target) else { continue }
+            guard let device = try? link.deviceProof(key) else { link.close(); break }
+            let answer = await link.request("resume", ["device": device])
+            guard isOpen(portal) else { link.close(); return }
+            if answer.ok {
+                portal.link = link
+                watch(link, of: portal, alias: alias)
+                portal.reconnecting = false
+                return
+            }
+            link.close()
+            // An answer without "req" is the link's own (it dropped again): try again. Cuebot's answers carry "req".
+            if answer["req"] == nil { continue }
+            if case .bool(true)? = answer["signIn"] { return chooseProvider(membership.target) }
+            state = .problem(answer.error ?? reason, retry: retry)
+            return
+        }
+        if isOpen(portal) { state = .problem(reason, retry: retry) }
     }
 
     /// Signs this phone out of the open portal and forgets the membership and its key.

@@ -117,7 +117,7 @@ fun PortalWebView(portal: ModState.Portal, onSignOut: () -> Unit, onFailed: (Str
                         val op = (m["op"] as? JsonPrimitive)?.content ?: return@addWebMessageListener
                         val body = m["body"] as? JsonObject ?: JsonObject(emptyMap())
                         scope.launch {
-                            val answer = runCatching { portal.link.request(op, body) }.getOrElse { e ->
+                            val answer = runCatching { portal.request(op, body) }.getOrElse { e ->
                                 buildJsonObject { put("ok", false); put("error", e.message ?: "The connection to the streamer's Cuebot was lost.") }
                             }
                             reply.postMessage(buildJsonObject { put("type", "answer"); put("id", id); put("answer", answer) }.toString())

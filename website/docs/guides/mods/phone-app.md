@@ -235,6 +235,10 @@ it (⋮ on Android, swipe on iPhone). **Sign out on this phone** (⋮ in the por
 
 You don't need to pair the app with a Cuebot of your own for this; the portal goes through the streamer's Cuebot over the internet, encrypted end to end.
 
+If the connection drops (switching between Wi-Fi and mobile data, the phone waking up), the portal stays on screen
+with **Reconnecting to the streamer's Cuebot…** at the top and picks up where you were by itself. Only if the
+streamer's Cuebot can't be reached for about a minute does the app say the connection was lost, with **Try again**.
+
 While the portal is open, the app also tells you when Cuebot asks for a yes that your role may give, like switching
 the stream category to the game being played. Answer on the portal's **Home** page, under **Needs a yes**.
 

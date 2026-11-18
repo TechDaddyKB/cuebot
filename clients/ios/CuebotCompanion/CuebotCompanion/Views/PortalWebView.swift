@@ -5,7 +5,7 @@ import WebKit
 
 /// The portal UI the streamer's Cuebot sent, in a web view that loads only the app's own page (PortalPage, served as
 /// cuebot-app://portal/) and reaches nothing on the network: a content rule blocks every http, https and WebSocket load,
-/// and the UI's requests come to the app as messages and go over the encrypted link (`ModStore.OpenPortal.link`). The
+/// and the UI's requests come to the app as messages and go over the encrypted link (`ModStore.OpenPortal.request`). The
 /// UI itself runs from blob: URLs, as in the web loader.
 struct PortalWebView: UIViewRepresentable {
     let portal: ModStore.OpenPortal
@@ -104,9 +104,9 @@ struct PortalWebView: UIViewRepresentable {
                 guard let id = m["id"], let op = m.text("op") else { return }
                 var body: PortalAnswer = [:]
                 if case .object(let b)? = m["body"] { body = b }
-                let link = parent.portal.link
-                Task {
-                    let answer = await link.request(op, body)
+                let portal = parent.portal
+                Task { @MainActor in
+                    let answer = await portal.request(op, body)
                     post(["type": .string("answer"), "id": id, "answer": .object(answer)])
                 }
             case "signOut": parent.onSignOut()

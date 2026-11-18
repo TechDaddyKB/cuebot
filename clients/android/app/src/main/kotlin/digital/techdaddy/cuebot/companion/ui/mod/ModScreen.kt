@@ -12,6 +12,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -341,6 +342,15 @@ private fun PortalScreen(vm: ModViewModel, portal: ModState.Portal) {
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.ground),
         )
+        val reconnecting by portal.reconnecting.collectAsStateWithLifecycle()
+        if (reconnecting) {
+            Row(Modifier.fillMaxWidth().background(colors.card).padding(horizontal = 16.dp, vertical = 8.dp).testTag("portal-reconnecting"),
+                verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                Spacer(Modifier.size(10.dp))
+                Text("Reconnecting to the streamer's Cuebot…", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
         val problem = failed ?: when {
             portal.js == null || portal.css == null -> "The streamer's Cuebot needs an update for the full mod portal. This phone stays signed in until then."
             !portalWebViewSupported() -> "This phone's Android System WebView is too old for the mod portal. Update it from the Play Store."

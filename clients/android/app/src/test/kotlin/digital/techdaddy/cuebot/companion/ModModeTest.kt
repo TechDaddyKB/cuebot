@@ -52,6 +52,13 @@ class FakePortalCuebot {
     /** Device keys Cuebot knows, as base64url, and whether `resume` should ask for a new sign-in. */
     val devices = CopyOnWriteArrayList<String>()
     @Volatile var signInAgain = false
+    private val sockets = CopyOnWriteArrayList<WebSocket>()
+
+    /** Drops every open connection, as the relay does when its side of the path goes away. */
+    fun dropAll() {
+        sockets.forEach { it.close(1011, "gone") }
+        sockets.clear()
+    }
 
     val origin get() = "ws://${server.hostName}:${server.port}"
     fun invite(secret: String = "s".repeat(43)) = "https://portal.example.com/#i=$secret&r=$relay&k=$fingerprint"
@@ -67,6 +74,8 @@ class FakePortalCuebot {
         private var session: PortalSession? = null
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) { webSocket.close(1000, null) }
+
+        override fun onOpen(webSocket: WebSocket, response: okhttp3.Response) { sockets += webSocket }
 
         override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
             val s = session ?: return handshake(webSocket, bytes.toByteArray())
@@ -123,7 +132,9 @@ class ModViewModelTest {
 
     @After fun stop() = portal.server.close()
 
-    private fun viewModel() = app.viewModel { ModViewModel(memberships, open = { PortalLink.open(it.copy(relayOrigin = portal.origin)) }) }
+    private fun viewModel() = app.viewModel {
+        ModViewModel(memberships, open = { PortalLink.open(it.copy(relayOrigin = portal.origin)) }, reconnectDelays = listOf(50, 100, 200))
+    }
 
     private fun ModViewModel.join(): String = runBlocking {
         assertNull(openInvite(portal.invite()))
@@ -180,6 +191,34 @@ class ModViewModelTest {
         vm.resume(m)
         eventually("asked to sign in") { vm.state.value is ModState.Providers }
         assertTrue(!(vm.state.value as ModState.Providers).joining)
+    }
+
+    @Test fun `a dropped link reconnects by itself and keeps the portal open`() = runBlocking {
+        val vm = viewModel()
+        vm.finishSignIn("cuebot-portal://signin?code=test&state=${stateOf(vm.join())}")
+        eventually("portal") { vm.state.value is ModState.Portal }
+        val open = vm.state.value as ModState.Portal
+        val first = open.link
+
+        portal.dropAll()
+        eventually("reconnected") { open.link !== first && !open.reconnecting.value }
+        // The same portal (the same WebView and page) is still on screen, on a new link resumed with the same key.
+        assertTrue(vm.state.value === open)
+        assertEquals(1, portal.requests.count { it.string("op") == "resume" })
+        assertEquals(true, open.request("ping").let { it["ok"]?.toString() == "true" })
+
+        // When Cuebot cannot be reached at all, the mod is told after the last try.
+        portal.server.close()
+        eventually("lost") { vm.state.value is ModState.Problem }
+    }
+
+    @Test fun `a dropped link whose device is no longer known asks to sign in again`() {
+        val vm = viewModel()
+        vm.finishSignIn("cuebot-portal://signin?code=test&state=${stateOf(vm.join())}")
+        eventually("portal") { vm.state.value is ModState.Portal }
+        portal.signInAgain = true
+        portal.dropAll()
+        eventually("asked to sign in") { vm.state.value is ModState.Providers }
     }
 
     @Test fun `an answer for another sign-in, a refused code or a cancel does not sign in`() {

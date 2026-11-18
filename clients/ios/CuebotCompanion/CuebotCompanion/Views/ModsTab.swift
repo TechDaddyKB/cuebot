@@ -283,6 +283,18 @@ private struct PortalScreen: View {
                     .accessibilityIdentifier("portal-web")
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if portal.reconnecting {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("Reconnecting to the streamer's Cuebot…").font(.subheadline)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16).padding(.vertical, 8)
+                .background(Color.cuebotCard)
+                .accessibilityIdentifier("portal-reconnecting")
+            }
+        }
         .navigationTitle(portal.membership.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Color.cuebotGround, for: .navigationBar)

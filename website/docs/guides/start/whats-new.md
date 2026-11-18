@@ -9,6 +9,9 @@ To get the newest version, see [Updating Cuebot](updating.md).
 - **Phone app chat on tablets.** A tablet held upright now shows the events card as a strip above chat, so chat
   gets the full width and **Send as** no longer wraps. Turning the device keeps the chat on the newest message.
   See [Events next to chat](../mods/phone-app.md#events-next-to-chat).
+- **The mod portal reconnects by itself.** In the phone apps, a dropped connection no longer closes the portal: it
+  shows **Reconnecting…** and carries on on the same page. See
+  [For mods](../mods/phone-app.md#for-mods).
 - **Test sign-in for app testers.** The phone apps and the browser mod portal accept a test server's own sign-in
   page, so testers on the Cuebot Companion test server can join as a mod without a Google, Twitch or Discord
   account. Real invites still only use Google, Twitch and Discord.

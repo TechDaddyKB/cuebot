@@ -19,8 +19,10 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -44,8 +46,26 @@ sealed interface ModState {
 
     data class Problem(val text: String, val retry: (() -> Unit)? = null) : ModState
 
-    /** Signed in: the portal UI the streamer's Cuebot sent ([js] null when that Cuebot is too old to send one). */
-    class Portal(val membership: Membership, val link: PortalLink, val me: JsonObject, val js: String?, val css: String?) : ModState
+    /**
+     * Signed in: the portal UI the streamer's Cuebot sent ([js] null when that Cuebot is too old to send one). When the
+     * link drops, the app reconnects by itself and swaps in the new [link]; the portal stays on screen meanwhile, with
+     * [reconnecting] set.
+     */
+    class Portal(val membership: Membership, link: PortalLink, val me: JsonObject, val js: String?, val css: String?) : ModState {
+        @Volatile var link: PortalLink = link
+            internal set
+        val reconnecting = MutableStateFlow(false)
+
+        /** One request on the current link; while reconnecting, it waits for the new link first (up to a while). */
+        suspend fun request(op: String, body: JsonObject = JsonObject(emptyMap())): JsonObject {
+            if (reconnecting.value) withTimeoutOrNull(RECONNECT_WAIT_MS) { reconnecting.first { !it } }
+            return link.request(op, body)
+        }
+
+        companion object {
+            const val RECONNECT_WAIT_MS = 30_000L
+        }
+    }
 }
 
 class ModViewModel(
@@ -57,6 +77,8 @@ class ModViewModel(
     /** Shows a notification for a request waiting for a yes. */
     alert: (Alert) -> Unit = {},
     private val requestInterval: Long = 10_000,
+    /** The waits between tries to get a dropped portal link back, before the mod is told it is lost. */
+    private val reconnectDelays: List<Long> = listOf(500, 1_000, 2_000, 4_000, 8_000, 15_000, 15_000),
 ) : ViewModel() {
     private val alerts = AlertMemory(alert)
     private val _state = MutableStateFlow<ModState>(ModState.Home)
@@ -171,9 +193,49 @@ class ModViewModel(
         memberships.save(membership)
         val ui = link.request("ui")
         val portal = ModState.Portal(membership, link, me, ui.string("js")?.takeIf { ui.ok }, ui.string("css")?.takeIf { ui.ok })
-        link.onClosed { reason -> if (_state.value === portal) _state.value = ModState.Problem(reason) { resume(membership) } }
+        watchLink(portal, link, alias)
         _state.value = portal
         watchRequests(portal)
+    }
+
+    private fun watchLink(portal: ModState.Portal, link: PortalLink, alias: String) {
+        link.onClosed { reason -> viewModelScope.launch { reconnect(portal, alias, reason) } }
+    }
+
+    /**
+     * The link dropped (a network change, the phone waking up, a relay restart): reconnect and resume with this
+     * device's key, keeping the portal and its page on screen. Requests made meanwhile wait for the new link. Only
+     * when every try fails, or Cuebot wants a new sign-in, does the mod see a problem.
+     */
+    private suspend fun reconnect(portal: ModState.Portal, alias: String, reason: String) {
+        if (_state.value !== portal || portal.reconnecting.value) return
+        portal.reconnecting.value = true
+        val target = portal.membership.target
+        for (wait in reconnectDelays) {
+            delay(wait)
+            if (_state.value !== portal) return
+            val key = memberships.keys.open(alias) ?: break
+            val link = runCatching { open(target) }.getOrNull() ?: continue
+            val answer = withTimeoutOrNull(RESUME_TIMEOUT_MS) { link.request("resume", buildJsonObject { put("device", link.deviceProof(key)) }) }
+            when {
+                // No answer, or one without "req" (the link's own: it dropped again): try again. Cuebot's answers carry "req".
+                answer == null || answer["req"] == null -> { link.close(); continue }
+                _state.value !== portal -> { link.close(); return }
+                answer.ok -> {
+                    portal.link = link
+                    watchLink(portal, link, alias)
+                    portal.reconnecting.value = false
+                    return
+                }
+                (answer["signIn"] as? JsonPrimitive)?.content == "true" -> { link.close(); chooseProvider(target); return }
+                else -> {
+                    link.close()
+                    _state.value = ModState.Problem(answer.error ?: reason) { resume(portal.membership) }
+                    return
+                }
+            }
+        }
+        if (_state.value === portal) _state.value = ModState.Problem(reason) { resume(portal.membership) }
     }
 
     /**
@@ -185,7 +247,7 @@ class ModViewModel(
         viewModelScope.launch {
             while (_state.value === portal) {
                 if (foreground.value) {
-                    val answer = runCatching { portal.link.request("requests.list") }.getOrNull()
+                    val answer = runCatching { portal.request("requests.list") }.getOrNull()
                     val list = (answer?.takeIf { it.ok }?.get("requests") as? JsonArray)?.mapNotNull { it as? JsonObject } ?: emptyList()
                     alerts.update(list, { it.string("id") ?: "" }) { r ->
                         val detail = r.string("detail").orEmpty()
@@ -203,7 +265,7 @@ class ModViewModel(
     fun signOut() {
         val portal = _state.value as? ModState.Portal ?: return
         viewModelScope.launch {
-            runCatching { portal.link.request("signout") }
+            runCatching { portal.request("signout") }
             portal.link.close()
             memberships.forget(portal.membership.relay)
             notice.value = "Signed out of ${portal.membership.name} on this phone."
@@ -242,5 +304,6 @@ class ModViewModel(
     companion object {
         /** How this phone appears in the streamer's list of the member's devices. */
         const val DEVICE_NAME = "Cuebot app on Android"
+        private const val RESUME_TIMEOUT_MS = 15_000L
     }
 }
