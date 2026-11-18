@@ -29,6 +29,8 @@
   }
 }
 
+/* The page colour fills the whole view, also below a short page (the host page under it has its own colour). */
+html:has(body.portal) { background: var(--bg); min-height: 100%; }
 body.portal { max-width: none; margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
 body.portal main { display: block; }
 * { box-sizing: border-box; }
@@ -109,6 +111,7 @@ input[type="range"] { padding: 0; border: 0; background: none; accent-color: var
 .rows li { display: flex; align-items: center; gap: .6rem 1rem; flex-wrap: wrap; padding: .6rem 0; border-bottom: 1px solid var(--line); }
 .rows li:last-child { border-bottom: 0; }
 .rows li > .muted { flex: 1; min-width: 10rem; }
+.rows li > time.muted { flex: none; min-width: 0; }   /* a time beside its text, not a column of its own */
 .row-buttons { display: flex; gap: .4rem; flex-wrap: wrap; margin-left: auto; }
 
 .feed { list-style: none; margin: 0; padding: 0; }
