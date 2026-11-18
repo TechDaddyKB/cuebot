@@ -7,8 +7,9 @@ enum EventsCardSettings {
     static let groupsKey = "eventsCard.groups"
     static let expandedKey = "eventsCard.expanded"
     static let defaultGroups = FeedGroup.encode(FeedGroup.defaults)
-    /// From this width the card sits beside chat instead of above it (iPad, large phones in landscape).
-    static let wideWidth: CGFloat = 600
+    /// From this width the card (320pt) sits beside chat instead of above it: only when chat still gets 480pt next to
+    /// it (iPad in landscape, a large iPad upright). Narrower, chat and its "Send as" row would be squeezed.
+    static let wideWidth: CGFloat = 320 + 480
 }
 
 /// The events card beside chat (wide screens): every recent event, newest first.

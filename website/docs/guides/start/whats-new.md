@@ -4,6 +4,15 @@ What changed in each version of Cuebot, newest first. Each line links to the gui
 
 To get the newest version, see [Updating Cuebot](updating.md).
 
+## Coming next
+
+- **Phone app chat on tablets.** A tablet held upright now shows the events card as a strip above chat, so chat
+  gets the full width and **Send as** no longer wraps. Turning the device keeps the chat on the newest message.
+  See [Events next to chat](../mods/phone-app.md#events-next-to-chat).
+- **Test sign-in for app testers.** The phone apps and the browser mod portal accept a test server's own sign-in
+  page, so testers on the Cuebot Companion test server can join as a mod without a Google, Twitch or Discord
+  account. Real invites still only use Google, Twitch and Discord.
+
 ## 1.0.1
 
 A fix for the mod portal on tablets and phones. Update Cuebot so your mods get the new portal, and update the phone app

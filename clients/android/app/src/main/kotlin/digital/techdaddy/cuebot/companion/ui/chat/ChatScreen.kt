@@ -43,6 +43,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -91,7 +94,7 @@ fun ChatScreen(vm: ChatViewModel, container: AppContainer, events: List<FeedItem
             colors = TopAppBarDefaults.topAppBarColors(containerColor = LocalCuebotColors.current.ground),
         )
         ConnectionGate(container, goToSettings) {
-            // The events card (issue #45): beside chat on wide screens, a strip above it on narrow ones; hidden in Settings.
+            // The events card (issue #45): beside chat when both fit, a strip above it otherwise; hidden in Settings.
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val shown = card.filter(events)
                 when {
@@ -110,8 +113,13 @@ fun ChatScreen(vm: ChatViewModel, container: AppContainer, events: List<FeedItem
     }
 }
 
-/** From this width the events card sits beside chat instead of above it (tablets, phones in landscape). */
-private val WIDE_CHAT = 600.dp
+/**
+ * From this width the events card sits beside chat instead of above it: only when chat still gets [CHAT_MIN_WIDTH]
+ * next to the card (a tablet in landscape, a large tablet upright). A 600dp tablet held upright gets the strip above
+ * chat, or chat and its "Send as" row would be squeezed into half the screen.
+ */
+private val CHAT_MIN_WIDTH = 480.dp
+private val WIDE_CHAT = EventsPanelWidth + CHAT_MIN_WIDTH
 
 @Composable
 private fun Content(vm: ChatViewModel, state: ChatViewModel.UiState) {
@@ -153,10 +161,27 @@ private fun Messages(state: ChatViewModel.UiState, modifier: Modifier, onAct: (C
     val colors = LocalCuebotColors.current
     val rows = state.visibleRows
     val list = rememberLazyListState()
-    // Follow new lines while the list is at (or near) the bottom.
-    LaunchedEffect(rows.size) {
-        val last = list.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-        if (rows.isNotEmpty() && last >= rows.size - 3) list.scrollToItem(rows.size - 1)
+    // Follow new lines while the list is at (or near) the bottom. Whether it follows is decided by the reader's own
+    // scrolling, not by what is on screen, so a list that is laid out afresh (turning the device, the events card
+    // moving between beside and above chat) opens at the newest line instead of the oldest.
+    var follow by rememberSaveable { mutableStateOf(true) }
+    var dragged by remember { mutableStateOf(false) }
+    LaunchedEffect(list) {
+        list.interactionSource.interactions.collect { if (it is DragInteraction.Start) dragged = true }
+    }
+    LaunchedEffect(list) {
+        // When a scroll the reader started comes to rest: follow again only if they left it at the bottom.
+        snapshotFlow { list.isScrollInProgress }.collect { scrolling ->
+            if (!scrolling && dragged) {
+                dragged = false
+                follow = !list.canScrollForward
+            }
+        }
+    }
+    val count by rememberUpdatedState(rows.size)
+    LaunchedEffect(list) {
+        // New lines, or a new height (turning the device, the keyboard): stay on the newest line while following.
+        snapshotFlow { count to list.layoutInfo.viewportSize.height }.collect { (n, _) -> if (n > 0 && follow) list.scrollToItem(n - 1) }
     }
     if (state.loaded && rows.isEmpty()) {
         Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -239,7 +264,7 @@ private fun SendBox(vm: ChatViewModel, state: ChatViewModel.UiState) {
                         onClick = { vm.sendAs(option) },
                         shape = SegmentedButtonDefaults.itemShape(i, options.size),
                         modifier = Modifier.testTag("chat-as-${option.wire}"),
-                    ) { Text(if (option == SendAs.Bot) "Bot" else "Broadcaster") }
+                    ) { Text(if (option == SendAs.Bot) "Bot" else "Broadcaster", maxLines = 1, softWrap = false) }
                 }
             }
         }

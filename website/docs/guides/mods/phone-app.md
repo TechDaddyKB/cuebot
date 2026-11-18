@@ -145,8 +145,8 @@ The **Events** card on the Chat tab shows the latest stream events from every pl
 and memberships, bits, Kicks, Super Chats, rants, tips and raids. Each line has the platform, who it was, what kind of
 event it was and the amount. It is the same list as **Activity** on the Dashboard, and it updates live.
 
-- On a tablet, or a phone turned sideways, the card sits **beside** chat.
-- On a phone held upright it is a strip **above** chat that shows the newest event. Tap the strip to open the list,
+- When there's room for both, as on a tablet turned sideways, the card sits **beside** chat.
+- Otherwise (a phone, or a smaller tablet held upright) it is a strip **above** chat that shows the newest event. Tap the strip to open the list,
   and tap it again to close it.
 
 In **Settings**, under **Chat page**:

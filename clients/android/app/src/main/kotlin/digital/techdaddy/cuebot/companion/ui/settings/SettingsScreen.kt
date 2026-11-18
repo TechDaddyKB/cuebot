@@ -131,7 +131,7 @@ fun SettingsScreen(vm: SettingsViewModel) {
                     }
                 }
             }
-            item { Footer("Recent follows, subs, tips and raids from every platform, beside chat on wide screens and above it on phones. On this phone only.") }
+            item { Footer("Recent follows, subs, tips and raids from every platform, beside chat when there's room for both, above it otherwise. On this phone only.") }
 
             item { Header("Menu") }
             item { SwitchRow("Keep menu open", vm.menuPinned(settings), "menu-pinned", rowColors) { vm.setMenuPinned(it) } }

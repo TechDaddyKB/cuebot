@@ -27,7 +27,7 @@ struct ChatTab: View {
         }
     }
 
-    /// The events card (issue #45, from the Dashboard's live feed): beside chat on wide screens, a strip above it on
+    /// The events card (issue #45, from the Dashboard's live feed): beside chat when both fit, a strip above it on
     /// narrow ones; Settings hides it or chooses which events it shows.
     @ViewBuilder private var withEvents: some View {
         if eventsVisible {
