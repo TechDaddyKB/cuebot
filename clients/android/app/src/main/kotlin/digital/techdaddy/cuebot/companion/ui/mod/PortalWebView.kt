@@ -3,6 +3,7 @@ package digital.techdaddy.cuebot.companion.ui.mod
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
+import android.view.ViewGroup
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -15,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -56,8 +58,13 @@ fun PortalWebView(portal: ModState.Portal, onSignOut: () -> Unit, onFailed: (Str
         chooser[0] = null
     }
 
+    // The page the portal was on (its #hash), so turning the device reopens the same page instead of Home.
+    val page = rememberSaveable(portal.membership.relay) { arrayOf("") }
     val webView = remember(portal) {
         WebView(context).apply {
+            // A WebView that is not told to fill its space treats its height as "wrap content", and the portal's vh-sized
+            // parts (the chat list, held messages, the user card) collapse to a sliver.
+            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = false
@@ -69,6 +76,10 @@ fun PortalWebView(portal: ModState.Portal, onSignOut: () -> Unit, onFailed: (Str
                 override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse =
                     assets.shouldInterceptRequest(request.url)
                         ?: WebResourceResponse("text/plain", "utf-8", 403, "Blocked", emptyMap(), ByteArrayInputStream(ByteArray(0)))
+
+                override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
+                    page[0] = pageHash(url)
+                }
 
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                     val url = request.url
@@ -116,7 +127,7 @@ fun PortalWebView(portal: ModState.Portal, onSignOut: () -> Unit, onFailed: (Str
                     "failed" -> onFailed((m["error"] as? JsonPrimitive)?.content ?: "The mod portal did not start.")
                 }
             }
-            loadUrl(PAGE)
+            loadUrl(PAGE + page[0])
         }
     }
     DisposableEffect(webView) {
@@ -126,4 +137,10 @@ fun PortalWebView(portal: ModState.Portal, onSignOut: () -> Unit, onFailed: (Str
         }
     }
     AndroidView(factory = { webView }, modifier = modifier)
+}
+
+/** The portal page in [url] as "#id" (the UI keeps it in the hash), or "" for none. */
+internal fun pageHash(url: String?): String {
+    val hash = url?.substringAfter('#', "") ?: ""
+    return if (Regex("[a-z][a-z-]{0,31}").matches(hash) && hash != "chat-popout") "#$hash" else ""
 }

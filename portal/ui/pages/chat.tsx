@@ -158,7 +158,7 @@ export function ChatPage({ popout = false }: { popout?: boolean }) {
               {can("ViewModLog") && <button type="button" role="tab" aria-selected={tab === "log"} class={tab === "log" ? "active" : ""} onClick={() => setTab("log")}>Mod log</button>}
             </span>
           )}
-          {!popout && <button type="button" onClick={popOut} title="Chat only, full height, in its own window">Pop out</button>}
+          {!popout && <button type="button" class="pop-out" onClick={popOut} title="Chat only, full height, in its own window">Pop out</button>}
         </div>
       </div>
       <LoadError data={problem} />
@@ -454,7 +454,7 @@ function HeldLane({ waiting, decided, caps, decide, onCard }: {
   onCard: (h: HeldItem) => void;
 }) {
   return (
-    <section class="card held-lane" aria-label="Held messages">
+    <section class={waiting.length === 0 && decided.length === 0 ? "card held-lane empty" : "card held-lane"} aria-label="Held messages">
       <h2>Held for review <span class={waiting.length ? "chip count" : "chip"}>{waiting.length}</span></h2>
       {waiting.length === 0 && <p class="muted small">Nothing is waiting. Messages AutoMod or a blocked term holds back appear here.</p>}
       <ul class="rows">

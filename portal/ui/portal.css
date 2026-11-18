@@ -46,6 +46,17 @@ body.portal main { display: block; }
 .nav button.active { background: var(--panel-2); color: var(--accent); font-weight: 600; }
 .content { padding: 1.4rem clamp(1rem, 3vw, 2.2rem) 3rem; max-width: 980px; width: 100%; }
 
+/* In the Cuebot app (its host page adds body.in-app): the app's own bar already names the streamer and signs out, so the
+   portal's bar would only cost height, and a pop-out window is not possible there. */
+body.in-app .top, body.in-app .pop-out { display: none; }
+/* A landscape tablet or phone is short: the menu moves to the top so every page gets the full width. */
+@media (max-height: 560px) and (min-width: 761px) {
+  .shell { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; }
+  .nav { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: .4rem .6rem; scrollbar-width: none; }
+  .nav button { white-space: nowrap; }
+  .content { max-width: none; padding-top: 1rem; }
+}
+
 @media (max-width: 760px) {
   .shell { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; }
   .top { padding: .6rem 1rem; }
@@ -133,7 +144,7 @@ input[type="range"] { padding: 0; border: 0; background: none; accent-color: var
 .status-rejected, .status-expired { color: var(--danger); }
 .load-error { color: var(--warn); background: var(--panel); border: 1px dashed var(--line); border-radius: .5rem; padding: .6rem .9rem; }
 
-.canvas { position: relative; width: 100%; max-height: 70vh; margin: 0 auto 1rem; background: repeating-conic-gradient(var(--panel-2) 0 25%, var(--panel) 0 50%) 0 0 / 24px 24px;
+.canvas { position: relative; width: 100%; max-height: max(16rem, 70vh); margin: 0 auto 1rem; background: repeating-conic-gradient(var(--panel-2) 0 25%, var(--panel) 0 50%) 0 0 / 24px 24px;
   border: 1px solid var(--line); border-radius: .5rem; overflow: hidden; touch-action: none; }
 .layer-box { position: absolute; border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 2px;
   cursor: grab; overflow: hidden; display: flex; align-items: flex-start; }
@@ -149,7 +160,7 @@ details.item > summary { cursor: pointer; }
 .sticky-save { position: sticky; bottom: 0; background: var(--bg); padding: .6rem 0; border-top: 1px solid var(--line); }
 
 /* Assistant */
-.assistant-lines { display: flex; flex-direction: column; gap: .5rem; max-height: 60vh; overflow-y: auto; padding-bottom: .5rem; }
+.assistant-lines { display: flex; flex-direction: column; gap: .5rem; max-height: max(16rem, 60vh); overflow-y: auto; padding-bottom: .5rem; }
 .msg { white-space: pre-wrap; overflow-wrap: anywhere; padding: .5rem .75rem; border-radius: .6rem; max-width: 85%; }
 .msg.user { align-self: flex-end; background: var(--accent); color: var(--accent-text); }
 .msg.ai { align-self: flex-start; background: var(--panel-2); }
@@ -178,7 +189,7 @@ input[type="color"] { width: 4rem; height: 2.2rem; padding: .1rem; border: 1px s
 .tabs button { border: 0; border-radius: 0; background: var(--panel); }
 .tabs button.active { background: var(--panel-2); color: var(--accent); font-weight: 600; }
 .chat-lines { list-style: none; margin: 0 0 1rem; padding: .3rem .6rem; background: var(--panel); border: 1px solid var(--line); border-radius: .75rem;
-  height: 60vh; overflow-y: auto; overscroll-behavior: contain; }
+  height: max(16rem, 60vh); overflow-y: auto; overscroll-behavior: contain; }
 .chat-line { border-bottom: 1px solid var(--line); padding: .25rem 0; }
 .chat-line:last-child { border-bottom: 0; }
 .chat-line.selected { background: var(--panel-2); }
@@ -212,24 +223,42 @@ a.button { display: inline-block; padding: .4rem .8rem; border: 1px solid var(--
 .chat-page.popout { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .chat-page.popout .chat-lines { height: auto; flex: 1; min-height: 0; }
 .chat-page.popout .user-card { top: 1rem; }
-@media (max-width: 760px) { .chat-lines { height: 65vh; } .user-card { top: auto; height: 75vh; } }
+@media (max-width: 760px) { .chat-lines { height: max(16rem, 65vh); } .user-card { top: auto; height: max(20rem, 75vh); } }
+/* Short screens (landscape): the chat fills the screen once scrolled to, and the user card uses the full height. */
+/* Short screens (landscape): one header row, and the chat list takes whatever height is left (at least 12rem, then the page
+   scrolls); the user card uses the full height. */
+@media (max-height: 560px) {
+  .chat-page:not(.popout) { display: flex; flex-direction: column; height: calc(100vh - 4.6rem); min-height: 22rem; }
+  .chat-page:not(.popout) .chat-lines { flex: 1; min-height: 12rem; height: auto; margin-bottom: 0; }
+  .chat-page .page-head h1 { display: none; }
+  .chat-page .page-head, .chat-page .chat-controls { flex: 1; flex-wrap: nowrap; }
+  .chat-page .chat-controls select { flex: 1 1 10rem; width: auto; }
+  .chat-page > p.small { margin: .3rem 0 .5rem; }
+  .chat-page .card { margin-bottom: .5rem; padding: .55rem 1.1rem; }
+  .content { padding-bottom: 1rem; }
+  .user-card { top: .5rem; bottom: .5rem; height: auto; }
+}
+body.in-app .user-card { top: .5rem; }
 
 /* Identity links and linked actions (chat-links.tsx). */
 .linked .linked-accounts li { display: grid; gap: .2rem; }
 .linked textarea, .same-person textarea, .notes textarea { width: 100%; min-height: 3.5rem; }
 .same-person .pick-list { max-height: 12rem; overflow-y: auto; }
 .verify-code { font-size: 1.4rem; letter-spacing: .2em; }
-.dialog { position: fixed; left: 50%; top: 4.5rem; transform: translateX(-50%); width: min(760px, calc(100vw - 2rem)); max-height: calc(100vh - 6rem);
+.dialog { position: fixed; left: 50%; top: 4.5rem; transform: translateX(-50%); width: min(760px, calc(100vw - 2rem)); max-height: max(20rem, calc(100vh - 6rem));
   overflow-y: auto; z-index: 20; box-shadow: 0 8px 32px rgba(0, 0, 0, .35); }
 .linked-preview { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .linked-preview th, .linked-preview td { text-align: left; padding: .3rem .4rem; border-bottom: 1px solid var(--line, rgba(127, 127, 127, .25)); vertical-align: top; }
 .linked-dialog .reason { width: 100%; margin: .5rem 0; }
 .mod-log li.incident { display: grid; gap: .3rem; border-left: 3px solid var(--warn); padding-left: .5rem; }
 .later-arrivals li { display: grid; gap: .3rem; }
-@media (max-width: 760px) { .dialog { top: 1rem; max-height: calc(100vh - 2rem); } .linked-preview { font-size: .8rem; } }
+@media (max-width: 760px) { .dialog { top: 1rem; max-height: max(20rem, calc(100vh - 2rem)); } .linked-preview { font-size: .8rem; } }
 .status-problem { color: var(--danger); }
 .chip.count { color: var(--accent-text); background: var(--warn); }
-.held-lane { margin-bottom: .75rem; max-height: 40vh; overflow-y: auto; }
+.held-lane { margin-bottom: .75rem; max-height: max(12rem, 40vh); overflow-y: auto; }
+.held-lane.empty { padding: .55rem 1.1rem; }
+.held-lane.empty h2 { display: inline; margin-right: .5rem; }
+.held-lane.empty p { display: inline; margin: 0; }
 .held-lane h2, .mod-tools h2 { font-size: 1rem; margin: 0 0 .4rem; }
 .held-lane .rows li, .unban-requests .rows li, .blocked-terms .rows li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .5rem; }
 .held-lane .row-buttons, .unban-requests .row-buttons { margin-left: auto; }

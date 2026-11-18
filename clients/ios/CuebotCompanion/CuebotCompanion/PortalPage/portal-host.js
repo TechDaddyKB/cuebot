@@ -31,7 +31,7 @@ async function mount({ js, css, me }) {
     const module = await import(url);
     const main = document.querySelector("main");
     main.replaceChildren();
-    document.body.classList.add("portal");
+    document.body.classList.add("portal", "in-app");
     module.mount(main, { me, request, signOut: async () => send({ type: "signOut" }) });
     send({ type: "mounted" });
   } catch (e) {

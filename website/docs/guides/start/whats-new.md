@@ -4,6 +4,14 @@ What changed in each version of Cuebot, newest first. Each line links to the gui
 
 To get the newest version, see [Updating Cuebot](updating.md).
 
+## Coming next
+
+- **The mod portal fits tablets and phones in both directions.** In the phone app, the chat list, held messages and the
+  user card no longer shrink to a sliver. Turned sideways, the menu moves to the top and the chat fills what's left
+  of the screen, and turning the device keeps you on the same page. The app's own bar replaces the portal's, so there's
+  more room for chat. Your mods need both this Cuebot and the next phone app; either one on its own already stops the
+  chat from shrinking.
+
 ## 1.0.0
 
 Cuebot's first full release. It's no longer marked **Pre-release**, so the **Stable** update channel finds it. If you
