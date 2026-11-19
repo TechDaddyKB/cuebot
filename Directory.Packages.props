@@ -55,7 +55,7 @@
     <PackageVersion Include="Grpc.Tools" Version="2.85.0" />
     <!-- Mod log (docs/design/UNIFIED_MOD_CHAT_PLAN.md, decision 7): Microsoft.Data.Sqlite (MIT) with SQLitePCLRaw (Apache-2.0)
          and the SQLite library (public domain) for every platform. -->
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="11.0.0" />
     <!-- Tests -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
