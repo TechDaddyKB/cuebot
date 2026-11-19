@@ -6,6 +6,7 @@
     <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Data.Sqlite" />
   </ItemGroup>
   <ItemGroup>
     <Protobuf Include="Api\Grpc\stream_list.proto" GrpcServices="Client" Access="Internal" />
