@@ -4,6 +4,13 @@ What changed in each version of Cuebot, newest first. Each line links to the gui
 
 To get the newest version, see [Updating Cuebot](updating.md).
 
+## 1.0.3
+
+A fix for the Android phone app. Update it from Google Play.
+
+- **Chat no longer crashes the phone app.** On Android, new chat messages arriving while the screen turned or the
+  keyboard opened could, rarely, close the app from the Chat tab. See [Phone app](../mods/phone-app.md).
+
 ## 1.0.2
 
 Phone app fixes for mods and tablets. Update Cuebot and the phone app from Google Play or the App Store.
