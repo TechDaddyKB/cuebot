@@ -1,6 +1,8 @@
 package digital.techdaddy.cuebot.core.portal
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -113,12 +115,13 @@ class PortalLinkTest {
     @Test fun `a lost link answers waiting requests and says why`(): Unit = runBlocking {
         serve()
         val link = PortalLink.open(target())
-        var reason: String? = null
-        link.onClosed { reason = it }
+        // The link answers waiting requests first and calls onClosed after, on the socket's thread: wait for it.
+        val reason = CompletableDeferred<String>()
+        link.onClosed { reason.complete(it) }
         val answer = link.request("drop")
         assertFalse(answer.ok)
         assertEquals("The streamer has closed the mod portal.", answer.error)
-        assertEquals(answer.error, reason)
+        assertEquals(answer.error, withTimeout(5_000) { reason.await() })
         assertThrows(LinkClosed::class.java) { runBlocking { link.request("again") } }
     }
 

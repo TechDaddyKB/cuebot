@@ -124,21 +124,28 @@ public sealed class CompanionApiTests : IAsyncLifetime
 
         var before = (await _host.GetAsync("/api/v1/dashboard")).Body!["revision"]!.GetValue<long>();
         for (var i = 0; i < 5; i++) await _host.PostAsync("/api/v1/subathon/Main/time", new { add = 10 });
+        var last = (await _host.GetAsync("/api/v1/dashboard")).Body!["revision"]!.GetValue<long>();
+        Assert.True(last > before, $"revision {last} should be past {before}");
 
+        // Changes are coalesced, so a notice can arrive mid-burst with an earlier revision; a later one always carries
+        // the last. Read notices until it does.
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         string? type = null;
-        JsonNode? data = null;
-        while (data is null)
+        long revision = 0;
+        while (revision < last)
         {
             var line = await reader.ReadLineAsync(timeout.Token);
             if (line is null) break;
             if (line.StartsWith("event: ", StringComparison.Ordinal)) type = line[7..];
-            else if (line.StartsWith("data: ", StringComparison.Ordinal)) data = JsonNode.Parse(line[6..]);
+            else if (line.StartsWith("data: ", StringComparison.Ordinal))
+            {
+                Assert.Equal("dashboard.changed", type);
+                var seen = JsonNode.Parse(line[6..])!["args"]!["revision"]!.GetValue<long>();
+                Assert.True(seen > before, $"revision {seen} should be past {before}");
+                revision = seen;
+            }
         }
-        Assert.Equal("dashboard.changed", type);
-        var revision = data!["args"]!["revision"]!.GetValue<long>();
-        Assert.True(revision > before, $"revision {revision} should be past {before}");
-        Assert.Equal(revision, (await _host.GetAsync("/api/v1/dashboard")).Body!["revision"]!.GetValue<long>());
+        Assert.Equal(last, revision);
     }
 
     [Fact]
