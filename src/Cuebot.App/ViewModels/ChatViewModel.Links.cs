@@ -9,7 +9,7 @@ using Cuebot.Core.Users;
 namespace Cuebot.App.ViewModels;
 
 /// <summary>
-/// Identity links on the Chat page (docs/UNIFIED_MOD_CHAT_PLAN.md, phases 4 and 5): the user card's linked accounts,
+/// Identity links on the Chat page (docs/design/UNIFIED_MOD_CHAT_PLAN.md, phases 4 and 5): the user card's linked accounts,
 /// suggestions, <c>!link</c> verification, confirm, reject and unlink, notes and same-name hints; the linked ban and
 /// timeout dialog; "Undo incident"; the later-arrival strip. All of it only while the streamer has turned identity links
 /// on (Chat options); otherwise nothing here shows and Ban and Timeout work on the one account as before.

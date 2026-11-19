@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Cuebot.Core.Portal;
 
 /// <summary>
-/// The mod portal's approval queue for the REST API, which the streamer's paired companion app uses (docs/MOD_PORTAL_PLAN.md,
+/// The mod portal's approval queue for the REST API, which the streamer's paired companion app uses (docs/design/MOD_PORTAL_PLAN.md,
 /// section 5). Cuebot.Portal implements it; the REST API answers 503 without it.
 /// </summary>
 public interface IPortalApprovals

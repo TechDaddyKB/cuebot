@@ -7,7 +7,7 @@ using Cuebot.Portal.Crypto;
 namespace Cuebot.Portal.Tests;
 
 /// <summary>
-/// The .NET half of the portal encryption against portal/test/vectors.json, which the TypeScript tests check too.
+/// The .NET half of the portal encryption against services/portal/test/vectors.json, which the TypeScript tests check too.
 /// CUEBOT_WRITE_PORTAL_VECTORS=1 adds a .NET-made signature to the source file for the TypeScript side to verify.
 /// </summary>
 public sealed class PortalCryptoTests
@@ -180,7 +180,7 @@ public sealed class PortalCryptoTests
     {
         if (Environment.GetEnvironmentVariable("CUEBOT_WRITE_PORTAL_VECTORS") != "1") return;
         using var id = Identity();
-        var source = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../portal/test/vectors.json"));
+        var source = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../services/portal/test/vectors.json"));
         var json = JsonNode.Parse(File.ReadAllText(source))!.AsObject();
         json["dotnetSignature"] = PortalKeys.Base64Url(id.Sign(B("transcript")));
         File.WriteAllText(source, json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + "\n");

@@ -21,7 +21,7 @@ import java.security.spec.ECGenParameterSpec
 
 /**
  * One streamer this phone is a mod for: where their Cuebot is, the identity it pinned at sign-in, and the alias of this
- * device's key for that membership. Like a browser's saved device (portal/web/main.ts), but the key is in the Keystore.
+ * device's key for that membership. Like a browser's saved device (services/portal/web/main.ts), but the key is in the Keystore.
  */
 @Serializable
 data class Membership(

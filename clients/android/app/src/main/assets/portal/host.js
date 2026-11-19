@@ -1,6 +1,6 @@
-// Mounts the portal UI the streamer's Cuebot sends (portal/ui, `mount(root, host)`) with a host whose requests go to
+// Mounts the portal UI the streamer's Cuebot sends (services/portal/ui, `mount(root, host)`) with a host whose requests go to
 // the app over `cuebotApp` (a WebView message listener only this page's origin can use). The app pinned that Cuebot
-// at sign-in and checks every frame, as the web loader does (portal/web/main.ts).
+// at sign-in and checks every frame, as the web loader does (services/portal/web/main.ts).
 
 const app = window.cuebotApp;
 const waiting = new Map();

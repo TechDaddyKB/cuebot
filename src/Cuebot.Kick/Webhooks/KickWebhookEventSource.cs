@@ -20,7 +20,7 @@ public sealed record KickWebhookDelivery(string MessageId, string Timestamp, str
 public enum KickWebhookOutcome { Accepted, Duplicate, Ignored, BadSignature, Malformed }
 
 /// <summary>
-/// The webhook event source. It has no listener of its own: the user-hosted relay (relay/, see PROTOCOL.md)
+/// The webhook event source. It has no listener of its own: the user-hosted relay (services/relay/, see PROTOCOL.md)
 /// forwards each delivery to <see cref="HandleAsync"/>, which verifies Kick's signature against the public key
 /// from the API (re-fetched once on a mismatch, as Kick may rotate it), drops repeated message ids and raises
 /// the decoded events.

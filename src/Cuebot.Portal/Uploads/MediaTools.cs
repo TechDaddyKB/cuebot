@@ -15,7 +15,7 @@ public sealed record ToolResult(int ExitCode, string Output, string Errors, Tool
 /// <summary>
 /// Finds ffmpeg and ffprobe and runs them on one upload at a time, boxed in: a fresh working folder, no inherited
 /// environment, low priority, a time limit and a memory limit (polled everywhere; on Linux also a hard address-space
-/// limit). Cuebot's own build (build/ffmpeg/build.sh) ships next to the app; a system ffmpeg on the PATH works too (the
+/// limit). Cuebot's own build (tools/ffmpeg/build.sh) ships next to the app; a system ffmpeg on the PATH works too (the
 /// Arch package, development), and the forced demuxers and file-only protocol keep either to the one file.
 /// </summary>
 public sealed class MediaTools(string ffmpeg, string ffprobe, bool bundled)

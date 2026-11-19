@@ -51,7 +51,7 @@ public static class RelayEvents
 }
 
 /// <summary>
-/// Cuebot's side of the self-hosted Cloudflare relay (relay/README.md): keeps an outbound websocket to
+/// Cuebot's side of the self-hosted Cloudflare relay (services/relay/README.md): keeps an outbound websocket to
 /// <c>wss://&lt;relay&gt;/connect</c> (bearer connect token), reconnecting with backoff; dispatches each forwarded
 /// webhook to the <see cref="IWebhookHandler"/> whose <see cref="IWebhookHandler.Service"/> matches, one at a time in
 /// arrival order; acknowledges it afterwards whatever the outcome (so the relay drops it from its buffer); drops
@@ -177,9 +177,9 @@ public sealed class RelayClient : IConnectable, IAsyncDisposable
     public string? MissingSettings()
     {
         var s = Settings;
-        if (string.IsNullOrWhiteSpace(s.Url)) return "Enter the relay URL (printed by relay/setup)";
+        if (string.IsNullOrWhiteSpace(s.Url)) return "Enter the relay URL (printed by services/relay/setup)";
         if (ConnectUri(s.Url) is null) return "The relay URL is not a valid https:// address";
-        if (string.IsNullOrWhiteSpace(s.ConnectToken)) return "Enter the relay connect token (printed by relay/setup)";
+        if (string.IsNullOrWhiteSpace(s.ConnectToken)) return "Enter the relay connect token (printed by services/relay/setup)";
         return null;
     }
 
@@ -511,7 +511,7 @@ public sealed class RelayClient : IConnectable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Handles a delivery that came in another way (the shared portal relay, docs/MOD_PORTAL_PLAN.md section 7) exactly
+    /// Handles a delivery that came in another way (the shared portal relay, docs/design/MOD_PORTAL_PLAN.md section 7) exactly
     /// like one from this relay: replays dropped, the matching handler run, the outcome shown on the Webhooks page.
     /// </summary>
     public async Task DeliverAsync(WebhookDelivery delivery, CancellationToken ct = default)

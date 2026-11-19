@@ -8,7 +8,7 @@ public struct LinkClosed: Error, Equatable, Sendable {
 }
 
 /// One encrypted connection from this phone to the streamer's Cuebot through the relay: the handshake pinned to the
-/// invite's fingerprint, then JSON requests and answers matched by "req" (portal/web/link.ts does the same in a
+/// invite's fingerprint, then JSON requests and answers matched by "req" (services/portal/web/link.ts does the same in a
 /// browser). A lost link answers every waiting request with ok false and the reason.
 public final class PortalLink: NSObject, URLSessionWebSocketDelegate, @unchecked Sendable {
     private let lock = NSLock()
@@ -237,7 +237,7 @@ public final class PortalLink: NSObject, URLSessionWebSocketDelegate, @unchecked
         }
     }
 
-    /// Words for the relay's close codes (portal/RELAY.md).
+    /// Words for the relay's close codes (services/portal/RELAY.md).
     public static func closeReason(_ code: Int) -> String {
         switch code {
         case 4404, 4503: "The streamer's Cuebot is not online right now. Try again when it is running."

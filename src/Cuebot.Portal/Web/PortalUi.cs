@@ -3,8 +3,8 @@ using System.Reflection;
 namespace Cuebot.Portal.Web;
 
 /// <summary>
-/// The mod portal's web UI (portal/ui, built by <c>npm run build</c> in portal/ into this folder and embedded): Cuebot
-/// sends it to a signed-in device, so the UI always matches this Cuebot's API (docs/MOD_PORTAL_PLAN.md, section 3).
+/// The mod portal's web UI (services/portal/ui, built by <c>npm run build</c> in services/portal/ into this folder and embedded): Cuebot
+/// sends it to a signed-in device, so the UI always matches this Cuebot's API (docs/design/MOD_PORTAL_PLAN.md, section 3).
 /// </summary>
 public static class PortalUi
 {

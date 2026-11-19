@@ -84,7 +84,7 @@ title/category changes without a public URL.
 ## 3. Webhooks (official) — `Webhooks/`
 
 Kick delivers events **only** by HTTP POST to the webhook URL configured in the app, i.e. a public URL. Cuebot
-receives them through the user-hosted Cloudflare relay (`relay/README.md`): Kick posts to the relay, the relay
+receives them through the user-hosted Cloudflare relay (`services/relay/README.md`): Kick posts to the relay, the relay
 forwards the raw request over Cuebot's outbound websocket (`Cuebot.Relay.RelayClient`), and
 `Webhooks/KickWebhookHandler` (route `kick`, registered by `AddKick()`) maps the `Kick-Event-*` headers to a
 `KickWebhookDelivery` and calls `KickWebhookEventSource.HandleAsync`. The relay answers Kick with an empty 200 at
@@ -92,7 +92,7 @@ once (Kick expects a quick 2xx and retries otherwise); verification happens in C
 the relay. Handler outcomes: accepted → Handled, duplicate/unsupported type → Ignored, bad or missing signature →
 Rejected, unparsable body → Failed. While the relay is connected the "Webhook relay" event source shows as connected.
 
-Setting it up (once, after deploying the relay with `relay/setup.ps1` or `relay/setup.sh`):
+Setting it up (once, after deploying the relay with `services/relay/setup.ps1` or `services/relay/setup.sh`):
 
 1. In Cuebot open **Webhooks**, enter the relay URL, connect token and route secret, enable the relay and connect.
    Copy the URL shown for **Kick**: `https://<relay>/hook/<route secret>/kick`.
@@ -107,8 +107,8 @@ at Cuebot's shared webhooks address, `https://hooks.techdaddydigital.com/<relay 
 
 **Built-in app: Cuebot's shared Kick intake (November 2026).** Every streamer on Cuebot's built-in app shares that
 app's single webhook address, so Cuebot runs one intake for all of them: the built-in app's webhook URL is
-`https://hooks.techdaddydigital.com/kick`, served by the shared portal relay Worker (`portal/worker/kick.ts`,
-`portal/RELAY.md` "Kick events").
+`https://hooks.techdaddydigital.com/kick`, served by the shared portal relay Worker (`services/portal/worker/kick.ts`,
+`services/portal/RELAY.md` "Kick events").
 
 1. On connect, with **Receive Kick's official events through Cuebot's relay** on (`UseSharedEvents`, default on), Cuebot
    subscribes the broadcaster to the supported events (chat only with `WebhookChat`, because of the 1,000 chat

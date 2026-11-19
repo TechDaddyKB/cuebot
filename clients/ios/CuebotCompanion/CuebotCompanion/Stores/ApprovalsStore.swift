@@ -3,7 +3,7 @@ import Foundation
 import Observation
 
 /// The streamer's side: mods' changes that wait for an OK on the paired Cuebot (GET /api/v1/portal/changes), checked
-/// every few seconds while the Mods tab is on screen, approved or rejected from the phone (docs/MOD_PORTAL_PLAN.md,
+/// every few seconds while the Mods tab is on screen, approved or rejected from the phone (docs/design/MOD_PORTAL_PLAN.md,
 /// section 5). Approving something the streamer changed since the mod asked needs a second tap, as on the desktop.
 @MainActor @Observable
 final class ApprovalsStore {

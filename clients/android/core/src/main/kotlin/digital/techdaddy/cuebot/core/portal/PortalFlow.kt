@@ -12,7 +12,7 @@ import java.net.URLDecoder
 /**
  * What an invite link (or a saved membership) points at: the streamer's relay ID, the fingerprint of their Cuebot's
  * identity key, the invite secret when joining, and where the relay is. Everything comes from the link's fragment,
- * which no server sees (docs/MOD_PORTAL_PLAN.md, section 4).
+ * which no server sees (docs/design/MOD_PORTAL_PLAN.md, section 4).
  */
 @Serializable
 data class PortalTarget(
@@ -65,7 +65,7 @@ data class PortalProvider(val id: String, val name: String, val authorize: Strin
 data class PendingSignIn(val target: PortalTarget, val provider: String, val state: String, val verifier: String)
 
 /**
- * The sign-in steps that need no screen or network (portal/web/flow.ts does the same in a browser). The provider
+ * The sign-in steps that need no screen or network (services/portal/web/flow.ts does the same in a browser). The provider
  * sends the mod back to the one fixed return page on portal.<domain>; when [PendingSignIn.state] starts with
  * [APP_STATE], that page hands the code to this app instead of signing the browser in.
  */

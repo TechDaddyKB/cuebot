@@ -1,10 +1,10 @@
 import CryptoKit
 import Foundation
 
-/// The mod portal's end-to-end encryption, the phone's half of src/Cuebot.Portal/Crypto and portal/src/crypto.ts
-/// (docs/MOD_PORTAL_PLAN.md, section 3). CryptoKit only. Formats: P-256 public keys as raw uncompressed points
+/// The mod portal's end-to-end encryption, the phone's half of src/Cuebot.Portal/Crypto and services/portal/src/crypto.ts
+/// (docs/design/MOD_PORTAL_PLAN.md, section 3). CryptoKit only. Formats: P-256 public keys as raw uncompressed points
 /// (65 bytes, CryptoKit's x963Representation), signatures as IEEE P1363 (64 bytes, CryptoKit's rawRepresentation),
-/// frames as AES-256-GCM ciphertext || tag with a counter nonce. Checked against portal/test/vectors.json.
+/// frames as AES-256-GCM ciphertext || tag with a counter nonce. Checked against services/portal/test/vectors.json.
 public enum PortalCrypto {
     public static let version: UInt8 = 1
     public static let label = "cuebot-portal-v1"
@@ -146,7 +146,7 @@ public final class PortalSession: @unchecked Sendable {
     }
 }
 
-/// The key a device proves itself with on every connection (docs/MOD_PORTAL_PLAN.md, section 4). In the app it lives in
+/// The key a device proves itself with on every connection (docs/design/MOD_PORTAL_PLAN.md, section 4). In the app it lives in
 /// the Secure Enclave or the Keychain and cannot be read out; tests use `SoftwareDeviceKey`.
 public protocol DeviceKey: Sendable {
     /// The raw P-256 public key (65 bytes).

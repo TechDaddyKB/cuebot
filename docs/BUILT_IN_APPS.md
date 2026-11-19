@@ -29,7 +29,7 @@ Unset ones only produce a warning in the release run; that service then asks use
 | `CUEBOT_PORTAL_TWITCH_CLIENT_ID`, `CUEBOT_PORTAL_TWITCH_CLIENT_SECRET` | Mod portal sign-in with Twitch (Confidential app) |
 | `CUEBOT_PORTAL_DISCORD_CLIENT_ID` | Mod portal sign-in with Discord (Public Client, no secret) |
 
-For a local build with the apps, export the same variables before `dotnet build` / `build/publish.sh`. Values may only
+For a local build with the apps, export the same variables before `dotnet build` / `tools/publish.sh`. Values may only
 contain URL-safe characters (`A-Z a-z 0-9 . _ ~ + / = -`); the build fails otherwise, without printing the value.
 
 ## Registering the apps
@@ -78,7 +78,7 @@ always uses port 8913). Copy the Client ID and Client Secret.
 
 Mods sign in on `https://portal.techdaddydigital.com`; every provider returns to
 `https://portal.techdaddydigital.com/auth/return`, and the streamer's Cuebot exchanges the code
-(`src/Cuebot.Portal/SignIn`, docs/MOD_PORTAL_PLAN.md section 4). These apps only identify the mod, then Cuebot
+(`src/Cuebot.Portal/SignIn`, docs/design/MOD_PORTAL_PLAN.md section 4). These apps only identify the mod, then Cuebot
 revokes the token. A build without them cannot let mods sign in (the Mod portal page says so); there is no "own app"
 option for the portal yet.
 

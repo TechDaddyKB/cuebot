@@ -19,7 +19,7 @@ import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.spec.ECPrivateKeySpec
 
-/** The phone's half of the portal encryption against portal/test/vectors.json, which .NET and TypeScript check too. */
+/** The phone's half of the portal encryption against services/portal/test/vectors.json, which .NET and TypeScript check too. */
 class PortalCryptoTest {
     private val v: JsonObject = Json.parseToJsonElement(File(System.getProperty("cuebot.portalVectors")).readText()).jsonObject
 

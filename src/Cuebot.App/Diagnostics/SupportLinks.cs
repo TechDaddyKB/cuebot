@@ -11,7 +11,7 @@ public static class SupportLinks
     public const string NewIssueUrl = RepoUrl + "/issues/new";
 
     /// <summary>
-    /// Cuebot's report intake (report/ in the repository): a Cloudflare Worker that files reports as issues through the
+    /// Cuebot's report intake (services/report/ in the repository): a Cloudflare Worker that files reports as issues through the
     /// "Cuebot Reports" GitHub App, so streamers need no GitHub account.
     /// </summary>
     public const string ReportEndpoint = "https://cuebot-report-intake.kris-barrantes.workers.dev/v1/reports";

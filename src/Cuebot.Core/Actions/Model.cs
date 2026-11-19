@@ -82,7 +82,7 @@ public sealed class SubActionDefinition
     public NodeLayout? Layout { get; set; }
 
     /// <summary>
-    /// The mod portal member who last added or changed this step (docs/MOD_PORTAL_PLAN.md); null for the streamer's
+    /// The mod portal member who last added or changed this step (docs/design/MOD_PORTAL_PLAN.md); null for the streamer's
     /// own steps. Once such a step has run, steps that run code, programs or files refuse to in the same run
     /// (<see cref="ModInfluence"/>).
     /// </summary>

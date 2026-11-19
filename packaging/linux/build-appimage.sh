@@ -13,7 +13,7 @@ case "$rid" in
 esac
 
 publish="$root/artifacts/publish/$rid"
-[ -x "$publish/Cuebot" ] || "$root/build/publish.sh" "$rid"
+[ -x "$publish/Cuebot" ] || "$root/tools/publish.sh" "$rid"
 
 appdir="$root/artifacts/AppDir"
 rm -rf "$appdir"

@@ -35,7 +35,7 @@ Module: `src/Cuebot.Assistant`. Settings: `assistant.json` (data folder). UI: `C
   call that would replace an existing file asks first (the tool's confirmation). The Assistant page attaches files
   (**Attach…** or drop) as full paths appended to the message, so it works with every provider.
 - **Feature requests.** `request_feature` (MCP, `ApiOperations.RequestFeatureAsync`) files a public GitHub issue labelled
-  `enhancement` through the report intake (`report/`, kind `feature`) via `IFeatureRequestSender`, which the app provides
+  `enhancement` through the report intake (`services/report/`, kind `feature`) via `IFeatureRequestSender`, which the app provides
   (`FeatureRequestSender`: scrubs secrets like Send report, adds a footer, falls back to a prefilled
   `issues/new?labels=enhancement` link when the intake refuses). The tool sets `McpTool.AlwaysConfirm`, so the streamer
   approves the full text even with "require confirmation" off. The prompt tells the AI to offer it only after checking

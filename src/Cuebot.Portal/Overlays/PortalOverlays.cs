@@ -11,7 +11,7 @@ using static Cuebot.Portal.Overlays.OverlayValues;
 namespace Cuebot.Portal.Overlays;
 
 /// <summary>
-/// Overlays and widgets in the portal (docs/MOD_PORTAL_PLAN.md, phase 6). With <see cref="PortalPermission.EditOverlays"/>
+/// Overlays and widgets in the portal (docs/design/MOD_PORTAL_PLAN.md, phase 6). With <see cref="PortalPermission.EditOverlays"/>
 /// a mod moves, resizes, shows and hides layers, edits text, image, video and slideshow layers and widget settings
 /// (alert designs included); with <see cref="PortalPermission.CreateOverlays"/> also adds and removes layers and
 /// overlays. Widget code, CSS and hidden settings are never theirs to change. Files are uploads or files the

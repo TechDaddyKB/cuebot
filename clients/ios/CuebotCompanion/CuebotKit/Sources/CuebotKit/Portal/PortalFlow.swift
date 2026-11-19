@@ -2,7 +2,7 @@ import Foundation
 
 /// What an invite link (or a saved membership) points at: the streamer's relay ID, the fingerprint of their Cuebot's
 /// identity key, the invite secret when joining, and where the relay is. Everything comes from the link's fragment,
-/// which no server sees (docs/MOD_PORTAL_PLAN.md, section 4).
+/// which no server sees (docs/design/MOD_PORTAL_PLAN.md, section 4).
 public struct PortalTarget: Codable, Hashable, Sendable {
     public var relay: String
     public var fingerprint: String
@@ -62,7 +62,7 @@ public struct PendingSignIn: Codable, Hashable, Sendable {
     public var target: PortalTarget, provider: String, state: String, verifier: String
 }
 
-/// The sign-in steps that need no screen or network (portal/web/flow.ts does the same in a browser). The provider
+/// The sign-in steps that need no screen or network (services/portal/web/flow.ts does the same in a browser). The provider
 /// sends the mod back to the one fixed return page on portal.<domain>; when the state starts with `appState`, that page
 /// hands the code to this app (cuebot-portal://signin?code=…&state=…) instead of signing the browser in.
 public enum PortalSignIn {

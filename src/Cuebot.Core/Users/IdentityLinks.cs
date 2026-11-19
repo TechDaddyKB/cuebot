@@ -89,7 +89,7 @@ public interface IPersonDataStore
 }
 
 /// <summary>
-/// Identity links (docs/UNIFIED_MOD_CHAT_PLAN.md, phase 4): people made of platform accounts, with how sure the team is
+/// Identity links (docs/design/UNIFIED_MOD_CHAT_PLAN.md, phase 4): people made of platform accounts, with how sure the team is
 /// (suggested, confirmed by a second person, or verified by the viewer with <c>!link CODE</c>), the evidence, rejected
 /// suggestions, and mod notes that follow links. The rules of section 7: a link never includes the broadcaster, a
 /// platform moderator or VIP, a portal member or a bot account; an account belongs to one person (adding it to another

@@ -34,7 +34,7 @@ public sealed class ModerationSettings
     /// <summary>
     /// Identity links (phase 4) and linked actions (phase 5): linked accounts, notes and <c>!link</c> verification on
     /// user cards, the linked ban and timeout preview. Off by default: the viewer wording, the GDPR position and the
-    /// retention periods are waiting for a legal and privacy review (docs/UNIFIED_MOD_CHAT_PLAN.md, decision 12). While
+    /// retention periods are waiting for a legal and privacy review (docs/design/UNIFIED_MOD_CHAT_PLAN.md, decision 12). While
     /// off nothing about links is shown, <c>!link</c> gets no answer, no action goes through a link and nothing is
     /// suggested; links already stored stay (and keep their retention) until the streamer turns it back on or erases them.
     /// </summary>
@@ -217,7 +217,7 @@ public static class LinkPermissionDefaults
 
 /// <summary>
 /// The single way into chat moderation for the desktop Chat page, the mod portal and action steps
-/// (docs/UNIFIED_MOD_CHAT_PLAN.md, section 5.4): asks the permission hook, refuses protected targets (the broadcaster,
+/// (docs/design/UNIFIED_MOD_CHAT_PLAN.md, section 5.4): asks the permission hook, refuses protected targets (the broadcaster,
 /// platform moderators and VIPs, portal members, bot accounts) unless the streamer acts, applies members' rate limits,
 /// prefixes members' reasons with their name on Twitch and Kick, checks the YouTube quota, calls the platform, and
 /// writes the mod log. It also records deletions, bans and timeouts made outside Cuebot (on a website) as

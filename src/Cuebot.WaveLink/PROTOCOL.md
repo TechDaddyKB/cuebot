@@ -27,7 +27,7 @@ Sources (all public):
   <https://github.com/kylergib/WaveLinkPluginTouchPortal>.
 - Trigger / sub-action names and variables: <https://docs.streamer.bot/api/triggers/elgato/wave-link-3>,
   <https://docs.streamer.bot/api/sub-actions/elgato/wave-link-3>, <https://docs.streamer.bot/api/sub-actions/elgato/wave-link>
-  (summarised in `docs/parity/streamerbot-inventory.md` §3.8). Most trigger pages say "missing documentation", so trigger
+  (summarised in `docs/design/parity/streamerbot-inventory.md` §3.8). Most trigger pages say "missing documentation", so trigger
   variables follow the sub-action pages' naming (`waveLinkChannel*`, `waveLinkMix*`, `waveLinkInputDevice*`, ...).
 - Elgato: <https://help.elgato.com> (user docs only; no developer API).
 

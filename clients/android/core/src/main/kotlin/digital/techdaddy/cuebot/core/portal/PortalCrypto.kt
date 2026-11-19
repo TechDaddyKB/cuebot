@@ -22,10 +22,10 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * The mod portal's end-to-end encryption, the phone's half of src/Cuebot.Portal/Crypto and portal/src/crypto.ts
- * (docs/MOD_PORTAL_PLAN.md, section 3). Java's built-in crypto only. Formats: P-256 public keys as raw uncompressed
+ * The mod portal's end-to-end encryption, the phone's half of src/Cuebot.Portal/Crypto and services/portal/src/crypto.ts
+ * (docs/design/MOD_PORTAL_PLAN.md, section 3). Java's built-in crypto only. Formats: P-256 public keys as raw uncompressed
  * points (65 bytes), signatures as IEEE P1363 (64 bytes), frames as AES-256-GCM ciphertext || tag with a counter
- * nonce. Checked against portal/test/vectors.json.
+ * nonce. Checked against services/portal/test/vectors.json.
  */
 object PortalCrypto {
     const val VERSION = 1
@@ -218,7 +218,7 @@ class PortalSession(private val sendKey: ByteArray, private val receiveKey: Byte
 }
 
 /**
- * The key a device proves itself with on every connection (docs/MOD_PORTAL_PLAN.md, section 4). In the app it lives
+ * The key a device proves itself with on every connection (docs/design/MOD_PORTAL_PLAN.md, section 4). In the app it lives
  * in the Android Keystore and cannot be read out; tests use [SoftwareDeviceKey].
  */
 interface DeviceKey {

@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Cuebot.LiveTests;
 
 /// <summary>
-/// Opt-in end-to-end test through the user's deployed Cloudflare relay (relay/README.md): a webhook posted to the
+/// Opt-in end-to-end test through the user's deployed Cloudflare relay (services/relay/README.md): a webhook posted to the
 /// public URL reaches Cuebot over the relay connection and fires the custom-webhook trigger. See docs/LIVE_TESTING.md.
 /// </summary>
 public sealed class RelayLiveTests
@@ -84,7 +84,7 @@ internal static class RelayLiveEnvironment
     }
 }
 
-/// <summary>Runs only with CUEBOT_LIVE_RELAY_URL, _CONNECT_TOKEN and _ROUTE_SECRET set (printed by relay/setup).</summary>
+/// <summary>Runs only with CUEBOT_LIVE_RELAY_URL, _CONNECT_TOKEN and _ROUTE_SECRET set (printed by services/relay/setup).</summary>
 public sealed class LiveRelayFactAttribute : LiveFactAttribute
 {
     public LiveRelayFactAttribute()
@@ -92,6 +92,6 @@ public sealed class LiveRelayFactAttribute : LiveFactAttribute
         if (Skip is not null) return;
         if (RelayLiveEnvironment.Get("CUEBOT_LIVE_RELAY_URL") is null || RelayLiveEnvironment.Get("CUEBOT_LIVE_RELAY_CONNECT_TOKEN") is null
             || RelayLiveEnvironment.Get("CUEBOT_LIVE_RELAY_ROUTE_SECRET") is null)
-            Skip = "Set CUEBOT_LIVE_RELAY_URL, CUEBOT_LIVE_RELAY_CONNECT_TOKEN and CUEBOT_LIVE_RELAY_ROUTE_SECRET (see relay/README.md)";
+            Skip = "Set CUEBOT_LIVE_RELAY_URL, CUEBOT_LIVE_RELAY_CONNECT_TOKEN and CUEBOT_LIVE_RELAY_ROUTE_SECRET (see services/relay/README.md)";
     }
 }

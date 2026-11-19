@@ -10,7 +10,7 @@ using Cuebot.Portal.SignIn;
 namespace Cuebot.Portal.Chat;
 
 /// <summary>
-/// Identity links, notes and linked bans and timeouts in the mod portal (docs/UNIFIED_MOD_CHAT_PLAN.md, phases 4 and 5),
+/// Identity links, notes and linked bans and timeouts in the mod portal (docs/design/UNIFIED_MOD_CHAT_PLAN.md, phases 4 and 5),
 /// through <see cref="IdentityLinks"/> and <see cref="ModerationService"/> acting as the member. Every op is refused
 /// while the streamer's Identity links setting is off. Accounts, names, chat roles and the messages attached as evidence
 /// are read from Cuebot's own chat and link records, never taken from the device; a preview is kept here and the device

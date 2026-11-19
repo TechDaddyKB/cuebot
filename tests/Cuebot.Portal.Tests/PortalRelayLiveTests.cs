@@ -13,7 +13,7 @@ namespace Cuebot.Portal.Tests;
 /// <summary>
 /// A real round trip through a running relay Worker: Cuebot connects and proves its key, a "mod device" does the
 /// handshake and a ping over its own WebSocket, and a webhook posted to the relay arrives sealed. Runs only when
-/// CUEBOT_PORTAL_RELAY_URL is set, e.g. http://localhost:8787 (<c>npx wrangler dev</c> in portal/) or the deployed
+/// CUEBOT_PORTAL_RELAY_URL is set, e.g. http://localhost:8787 (<c>npx wrangler dev</c> in services/portal/) or the deployed
 /// https://cuebot-portal.&lt;account&gt;.workers.dev.
 /// </summary>
 public sealed class PortalRelayLiveTests

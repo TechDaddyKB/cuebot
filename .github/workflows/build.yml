@@ -15,7 +15,7 @@ env:
   DOTNET_NOLOGO: 1
 
 jobs:
-  # Cuebot's own minimal LGPL ffmpeg for cleaning mod portal uploads (build/ffmpeg/build.sh), cached by the script's
+  # Cuebot's own minimal LGPL ffmpeg for cleaning mod portal uploads (tools/ffmpeg/build.sh), cached by the script's
   # hash. Windows and Linux arm64 are cross-built on Linux; Intel Macs on Apple silicon.
   ffmpeg:
     strategy:
@@ -34,7 +34,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: artifacts/ffmpeg/${{ matrix.rid }}
-          key: ffmpeg-${{ matrix.rid }}-${{ hashFiles('build/ffmpeg/build.sh') }}
+          key: ffmpeg-${{ matrix.rid }}-${{ hashFiles('tools/ffmpeg/build.sh') }}
       - name: Install build tools
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -47,7 +47,7 @@ jobs:
           fi
       - name: Build
         if: steps.cache.outputs.cache-hit != 'true'
-        run: build/ffmpeg/build.sh ${{ matrix.rid }} artifacts/ffmpeg/${{ matrix.rid }}
+        run: tools/ffmpeg/build.sh ${{ matrix.rid }} artifacts/ffmpeg/${{ matrix.rid }}
       - name: Check that it runs and is LGPL
         if: matrix.rid == 'linux-x64' || matrix.rid == 'osx-arm64'
         run: |
@@ -124,7 +124,7 @@ jobs:
         with:
           name: ffmpeg-win-x64
           path: artifacts/ffmpeg/win-x64
-      - run: ./build/publish.ps1 -Runtimes win-x64 -NoZip
+      - run: ./tools/publish.ps1 -Runtimes win-x64 -NoZip
         shell: pwsh
       # Signs Cuebot's own files (Cuebot.exe, Cuebot*.dll) with Azure Artifact Signing when the repository variables
       # in docs/CODE_SIGNING.md are set. Pull requests and forks build unsigned packages.
@@ -164,7 +164,7 @@ jobs:
           $sig = Get-AuthenticodeSignature artifacts/publish/win-x64/Cuebot.exe
           "$($sig.Status): $($sig.SignerCertificate.Subject)"
           if ($sig.Status -ne 'Valid') { throw "Cuebot.exe is not validly signed" }
-      - run: ./build/publish.ps1 -Runtimes win-x64 -ZipOnly
+      - run: ./tools/publish.ps1 -Runtimes win-x64 -ZipOnly
         shell: pwsh
       - uses: actions/upload-artifact@v7
         with:
@@ -403,37 +403,37 @@ jobs:
             artifacts/smoke-*
 
   portal:
-    # The mod portal (portal/): its browser-side encryption, checked against the same vectors as tests/Cuebot.Portal.Tests,
+    # The mod portal (services/portal/): its browser-side encryption, checked against the same vectors as tests/Cuebot.Portal.Tests,
     # the shared relay Worker, tested inside workerd, and the portal UI Cuebot embeds (built by npm test).
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: portal
+        working-directory: services/portal
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: portal/package-lock.json
+          cache-dependency-path: services/portal/package-lock.json
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - name: The embedded portal UI matches portal/ui (run npm run build in portal/ and commit)
-        run: git diff --exit-code -- ../src/Cuebot.Portal/Web
+      - name: The embedded portal UI matches services/portal/ui (run npm run build in services/portal/ and commit)
+        run: git diff --exit-code -- ../../src/Cuebot.Portal/Web
 
   streamdeck-plugin:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: streamdeck
+        working-directory: plugins/streamdeck
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: streamdeck/package-lock.json
+          cache-dependency-path: plugins/streamdeck/package-lock.json
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
@@ -443,14 +443,14 @@ jobs:
         with:
           retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default
           name: Cuebot-StreamDeck-plugin
-          path: streamdeck/dist/io.github.cuebot.streamdeck.streamDeckPlugin
+          path: plugins/streamdeck/dist/io.github.cuebot.streamdeck.streamDeckPlugin
 
   # Cuebot's plugin for StreamController (Linux): tests the connection and key logic, then zips the plugin folder.
   streamcontroller-plugin:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: streamcontroller
+        working-directory: plugins/streamcontroller
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -463,4 +463,4 @@ jobs:
         with:
           retention-days: 7
           name: Cuebot-StreamController-plugin
-          path: streamcontroller/dist/Cuebot-StreamController-plugin.zip
+          path: plugins/streamcontroller/dist/Cuebot-StreamController-plugin.zip

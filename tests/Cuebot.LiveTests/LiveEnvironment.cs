@@ -23,7 +23,7 @@ internal static class LiveEnvironment
     }
 
     /// <summary>
-    /// Live tests only run when the caller sets CUEBOT_LIVE_TESTS=1 (build/run-live-tests.* does), so a plain
+    /// Live tests only run when the caller sets CUEBOT_LIVE_TESTS=1 (tools/run-live-tests.* does), so a plain
     /// `dotnet test` of the solution never goes live just because ~/.cuebot/live.env exists.
     /// </summary>
     public const string RunSwitch = "CUEBOT_LIVE_TESTS";
@@ -118,7 +118,7 @@ public abstract class LiveFactAttribute : FactAttribute
     protected LiveFactAttribute()
     {
         if (!LiveEnvironment.RunRequested)
-            Skip = "Live tests run only via build/run-live-tests (sets CUEBOT_LIVE_TESTS=1); see docs/LIVE_TESTING.md";
+            Skip = "Live tests run only via tools/run-live-tests (sets CUEBOT_LIVE_TESTS=1); see docs/LIVE_TESTING.md";
     }
 }
 

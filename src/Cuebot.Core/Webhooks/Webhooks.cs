@@ -4,7 +4,7 @@ namespace Cuebot.Core.Webhooks;
 
 /// <summary>
 /// One HTTP webhook as a service sent it, exactly as received (so signatures can be checked against the raw bytes).
-/// It arrives through the user's Cloudflare relay (see relay/README.md), or any other transport that produces one.
+/// It arrives through the user's Cloudflare relay (see services/relay/README.md), or any other transport that produces one.
 /// </summary>
 /// <param name="Id">Unique per delivery (assigned by the relay); used to acknowledge it and to drop replays.</param>
 /// <param name="Service">The route the webhook was sent to, e.g. <c>kofi</c>, <c>patreon</c>, <c>kick</c>, <c>custom</c>.</param>

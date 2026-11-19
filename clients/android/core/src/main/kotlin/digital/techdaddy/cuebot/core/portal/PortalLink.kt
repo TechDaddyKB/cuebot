@@ -26,7 +26,7 @@ class LinkClosed(message: String) : Exception(message)
 
 /**
  * One encrypted connection from this phone to the streamer's Cuebot through the relay: the handshake pinned to the
- * invite's fingerprint, then JSON requests and answers matched by "req" (portal/web/link.ts does the same in a
+ * invite's fingerprint, then JSON requests and answers matched by "req" (services/portal/web/link.ts does the same in a
  * browser). Every answer has "ok"; a lost link answers every waiting request with ok false and the reason.
  */
 class PortalLink private constructor(private val session: PortalSession) {
@@ -148,7 +148,7 @@ class PortalLink private constructor(private val session: PortalSession) {
             }
         }
 
-        /** Words for the relay's close codes (portal/RELAY.md). */
+        /** Words for the relay's close codes (services/portal/RELAY.md). */
         fun closeReason(code: Int): String = when (code) {
             4404, 4503 -> "The streamer's Cuebot is not online right now. Try again when it is running."
             4403 -> "The streamer has closed the mod portal."

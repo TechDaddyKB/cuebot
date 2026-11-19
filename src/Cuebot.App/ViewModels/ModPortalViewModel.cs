@@ -12,7 +12,7 @@ using Cuebot.Portal.Uploads;
 namespace Cuebot.App.ViewModels;
 
 /// <summary>
-/// "Mod portal" page (docs/MOD_PORTAL_PLAN.md): invite mods with a role, change or remove their access, approve their
+/// "Mod portal" page (docs/design/MOD_PORTAL_PLAN.md): invite mods with a role, change or remove their access, approve their
 /// changes and undo them, set what each role may do, and open the portal on the shared relay. Signing in comes in a
 /// later version; until then invites can be made and managed but not yet used.
 /// </summary>

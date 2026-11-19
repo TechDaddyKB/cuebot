@@ -4,9 +4,9 @@ import Foundation
 import Observation
 import SwiftUI   // WebAuthenticationSession
 
-/// Mod mode (docs/MOD_PORTAL_PLAN.md, section 6): join a streamer's Cuebot by invite, sign in with a provider, then use
+/// Mod mode (docs/design/MOD_PORTAL_PLAN.md, section 6): join a streamer's Cuebot by invite, sign in with a provider, then use
 /// the portal UI that Cuebot sends, all over the encrypted link through the relay. Mirrors the Android app's
-/// ModViewModel and the web loader (portal/web/main.ts).
+/// ModViewModel and the web loader (services/portal/web/main.ts).
 @MainActor @Observable
 final class ModStore {
     /// Signed in: the portal UI the streamer's Cuebot sent (`js` nil when that Cuebot is too old to send one). When the

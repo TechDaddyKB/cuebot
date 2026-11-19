@@ -1,7 +1,7 @@
-// Mounts the portal UI the streamer's Cuebot sends (portal/ui, `mount(root, host)`) with a host whose requests go to
+// Mounts the portal UI the streamer's Cuebot sends (services/portal/ui, `mount(root, host)`) with a host whose requests go to
 // the app: messages to the `cuebotApp` handler, answers back through window.cuebotAppReceive (Views/PortalWebView.swift,
 // which takes messages only from this page's main frame). The app pinned that Cuebot at sign-in and checks every frame,
-// as the web loader does (portal/web/main.ts). The Android app's assets/portal/host.js is the same apart from the bridge.
+// as the web loader does (services/portal/web/main.ts). The Android app's assets/portal/host.js is the same apart from the bridge.
 
 const handler = window.webkit.messageHandlers.cuebotApp;
 const app = { postMessage: (text) => handler.postMessage(text), onmessage: null };

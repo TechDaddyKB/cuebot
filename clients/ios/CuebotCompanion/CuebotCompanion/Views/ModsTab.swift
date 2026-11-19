@@ -4,7 +4,7 @@ import PhotosUI
 import SwiftUI
 
 /// Mods: the streamer approves mods' changes here (on the paired Cuebot), and a mod opens the portals of the streamers
-/// they help (docs/MOD_PORTAL_PLAN.md, sections 5 and 6). Like the Android app's Mods tab.
+/// they help (docs/design/MOD_PORTAL_PLAN.md, sections 5 and 6). Like the Android app's Mods tab.
 struct ModsTab: View {
     @Environment(ModStore.self) private var store
 

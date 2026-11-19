@@ -126,7 +126,7 @@ against it (Cuebot additions are listed in `StreamerBotEventCatalogTests.CuebotE
 ## Overlay server (default 127.0.0.1:7476)
 
 Serves Cuebot overlays (`src/Cuebot.Server/Overlays`, stores in `src/Cuebot.Core/Overlays`; plan in
-`docs/OVERLAYS_PLAN.md`). On by default from servers.json version 3; overlays are managed on the Overlays & Widgets
+`docs/design/OVERLAYS_PLAN.md`). On by default from servers.json version 3; overlays are managed on the Overlays & Widgets
 page.
 
 | Route | |

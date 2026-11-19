@@ -38,7 +38,7 @@ Linux tests that use Python or espeak-ng need `python3` and `espeak-ng` installe
 ### Packages
 
 ```bash
-pwsh build/publish.ps1 -Runtimes win-x64
+pwsh tools/publish.ps1 -Runtimes win-x64
 ```
 
 ```bash
@@ -70,10 +70,16 @@ Google Cloud project and so on). See [docs/BUILT_IN_APPS.md](docs/BUILT_IN_APPS.
 | `src/Cuebot.Scripting` | C# and Python script runners. |
 | `src/Cuebot.Assistant` | The Assistant page: AI providers working through Cuebot's MCP tools ([docs/ASSISTANT.md](docs/ASSISTANT.md)). |
 | `src/Cuebot.App` | Avalonia UI and composition root. |
-| `relay/` | Optional Cloudflare Worker that forwards webhooks to Cuebot. |
-| `streamdeck/` | Stream Deck plugin. |
 | `tests/*` | xunit tests per project. `Cuebot.UiTests` renders every page headlessly and writes screenshots. |
+| `clients/` | Cuebot Companion, the phone and tablet app (`android/`, `ios/`). |
+| `services/portal/` | The shared mod portal relay (Cloudflare Worker) and the portal's web UI, which builds into `src/Cuebot.Portal/Web`. |
+| `services/relay/` | Optional self-hosted Cloudflare Worker that forwards webhooks to Cuebot. |
+| `services/report/` | The Cloudflare Worker that turns "Send report" into GitHub issues. |
+| `plugins/streamdeck/`, `plugins/streamcontroller/` | The Elgato Stream Deck plugin and the StreamController plugin (Linux). |
 | `packaging/` | AppImage, Flatpak, AUR, desktop and metainfo files, icons. |
+| `tools/` | Publish and live-test scripts, the ffmpeg build, icon generators, docs screenshot helpers. |
+| `website/` | The user guide (MkDocs), published to GitHub Pages. |
+| `docs/` | Contributor and maintainer docs; design plans and research are in `docs/design/`. |
 
 Each module registers its triggers, sub-actions and script functions through one `AddXxx()` call; see
 [docs/MODULE_GUIDE.md](docs/MODULE_GUIDE.md). Protocol notes for each integration live in a `PROTOCOL.md` beside its

@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 
 namespace Cuebot.Core.Chat.Moderation;
 
-/// <summary>Who made a moderation action (docs/UNIFIED_MOD_CHAT_PLAN.md, section 6.1).</summary>
+/// <summary>Who made a moderation action (docs/design/UNIFIED_MOD_CHAT_PLAN.md, section 6.1).</summary>
 public enum ModActorKind
 {
     /// <summary>The streamer, on this computer.</summary>

@@ -1,5 +1,5 @@
 # CodeQL configuration for .github/workflows/codeql.yml. Generated, vendored and build output is not scanned: findings
-# there belong to the source it came from (portal/ui for the embedded portal UI) or to someone else's project.
+# there belong to the source it came from (services/portal/ui for the embedded portal UI) or to someone else's project.
 paths-ignore:
   - '**/bin/**'
   - '**/obj/**'

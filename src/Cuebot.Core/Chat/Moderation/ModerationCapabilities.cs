@@ -1,6 +1,6 @@
 namespace Cuebot.Core.Chat.Moderation;
 
-/// <summary>The moderation tools of the combined chat (docs/UNIFIED_MOD_CHAT_PLAN.md, section 4).</summary>
+/// <summary>The moderation tools of the combined chat (docs/design/UNIFIED_MOD_CHAT_PLAN.md, section 4).</summary>
 public enum ModerationAction
 {
     Delete,

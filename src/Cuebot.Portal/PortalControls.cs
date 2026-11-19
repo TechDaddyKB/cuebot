@@ -12,7 +12,7 @@ using Cuebot.Speech;
 namespace Cuebot.Portal;
 
 /// <summary>
-/// The portal's live controls (docs/MOD_PORTAL_PLAN.md, section 6): the dashboard, scenes, audio levels, queues,
+/// The portal's live controls (docs/design/MOD_PORTAL_PLAN.md, section 6): the dashboard, scenes, audio levels, queues,
 /// text-to-speech and sounds. Using one is not a change to anything saved, so it never waits for approval; each is
 /// gated by a role permission, limited per member and written to the log with the member's name. Every service is
 /// optional (tests, and a Cuebot without that module).

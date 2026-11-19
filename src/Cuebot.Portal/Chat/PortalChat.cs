@@ -13,7 +13,7 @@ using Cuebot.Portal.SignIn;
 namespace Cuebot.Portal.Chat;
 
 /// <summary>
-/// The member's role decides which moderation tools they may use (docs/UNIFIED_MOD_CHAT_PLAN.md, section 8).
+/// The member's role decides which moderation tools they may use (docs/design/UNIFIED_MOD_CHAT_PLAN.md, section 8).
 /// <see cref="ModerationService"/> asks before every command a member sends; the streamer and Cuebot's own rules are
 /// never asked about.
 /// </summary>
@@ -95,7 +95,7 @@ public sealed class PortalModerationPermissions(PortalDirectory directory) : IMo
 }
 
 /// <summary>
-/// The combined chat in the mod portal (docs/UNIFIED_MOD_CHAT_PLAN.md, phase 2): the recent chat, every moderation tool
+/// The combined chat in the mod portal (docs/design/UNIFIED_MOD_CHAT_PLAN.md, phase 2): the recent chat, every moderation tool
 /// through <see cref="ModerationService"/> (acting as the member), the mod log, and two push topics, "chat" (messages,
 /// deletions, bans and timeouts as the platforms report them) and "modlog" (new and changed log rows). Moderation is
 /// not a change: it applies at once, nothing waits for approval, and the mod log records who did it. Members' rate

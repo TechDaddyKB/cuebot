@@ -123,5 +123,5 @@ Afterwards remove **Demo Cuebot** in the app's **Settings** (the phone's own Cue
 setting you changed for a picture, run `adb reverse --remove-all`, and delete the link file to stop the demo. Do not
 use pictures of the Settings top: it lists the phone's other paired Cuebots with their addresses.
 
-**Mod portal** (`portal-*.png`): `portal/shots.mjs` drives headless Chromium against a demo (see the top of that file);
-`node portal/shots.mjs "$(cat link)" out chat` takes the Chat page against `PortalOverlaysLiveDemo`, which keeps chatting.
+**Mod portal** (`portal-*.png`): `services/portal/shots.mjs` drives headless Chromium against a demo (see the top of that file);
+`node services/portal/shots.mjs "$(cat link)" out chat` takes the Chat page against `PortalOverlaysLiveDemo`, which keeps chatting.

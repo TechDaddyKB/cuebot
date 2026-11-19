@@ -1,5 +1,5 @@
 # Flatpak manifest packaging a prebuilt self-contained linux-x64 publish.
-#   build/publish.sh linux-x64
+#   tools/publish.sh linux-x64
 #   flatpak-builder --user --install --force-clean build-dir packaging/flatpak/io.github.cuebot.Cuebot.yml
 app-id: io.github.cuebot.Cuebot
 runtime: org.freedesktop.Platform

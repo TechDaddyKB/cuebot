@@ -7,7 +7,7 @@ using Cuebot.Portal.Members;
 namespace Cuebot.Portal.Changes;
 
 /// <summary>
-/// What a role may change (docs/MOD_PORTAL_PLAN.md, section 5). Every check returns the problems in words for the
+/// What a role may change (docs/design/MOD_PORTAL_PLAN.md, section 5). Every check returns the problems in words for the
 /// mod; an empty list means allowed. Cuebot checks every request, whatever the portal showed.
 /// </summary>
 public static class PortalPolicy

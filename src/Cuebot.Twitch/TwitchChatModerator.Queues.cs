@@ -5,7 +5,7 @@ using Cuebot.Core.Events;
 namespace Cuebot.Twitch;
 
 /// <summary>
-/// Twitch's moderation queues for the combined chat (docs/UNIFIED_MOD_CHAT_PLAN.md, phase 3): AutoMod held messages
+/// Twitch's moderation queues for the combined chat (docs/design/UNIFIED_MOD_CHAT_PLAN.md, phase 3): AutoMod held messages
 /// (automod.message.hold / update v2), Shield Mode (channel.shield_mode.begin / end and Helix), suspicious users
 /// (channel.suspicious_user.update / message), unban requests and blocked terms (Helix lists). The state comes from the
 /// Twitch events Cuebot publishes (<see cref="OnEvent"/>, subscribed in DI); actions arrive through

@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 namespace Cuebot.Portal.Crypto;
 
 /// <summary>
-/// The end-to-end handshake between a mod device and Cuebot (docs/MOD_PORTAL_PLAN.md, section 3). The relay only
+/// The end-to-end handshake between a mod device and Cuebot (docs/design/MOD_PORTAL_PLAN.md, section 3). The relay only
 /// forwards these bytes.
 /// <list type="number">
 /// <item>Client hello: <c>0x01 || clientEphemeral(65)</c>.</item>

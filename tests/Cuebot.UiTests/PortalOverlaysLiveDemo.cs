@@ -18,7 +18,7 @@ namespace Cuebot.UiTests;
 /// layer, an image layer, a goal and an alert box behind the shared relay (CUEBOT_PORTAL_RELAY_URL for another one).
 /// It writes an invite link to that file and the overlay's URL to the same name plus ".overlay", for a browser or OBS,
 /// and serves until the link file is deleted (at most 30 minutes). Sign-in is stood in for as in PortalUiLiveTests (the
-/// code "test"); `node portal/shots.mjs "$(cat link)" out overlays` drives it (or `... out chat` for the Chat page). CUEBOT_PORTAL_UI_ROLE: lead (default) or
+/// code "test"); `node services/portal/shots.mjs "$(cat link)" out overlays` drives it (or `... out chat` for the Chat page). CUEBOT_PORTAL_UI_ROLE: lead (default) or
 /// tech. Uploads need an ffmpeg (CUEBOT_FFMPEG_DIR).
 /// </summary>
 public sealed class PortalOverlaysLiveDemo
@@ -81,7 +81,7 @@ public sealed class PortalOverlaysLiveDemo
             await File.WriteAllTextAsync(linkFile, directory.CreateInvite(role, "Overlay test").Link, timeout.Token);
             try
             {
-                // Example chat on four platforms, for the Chat page (`node portal/shots.mjs "$(cat link)" out chat`).
+                // Example chat on four platforms, for the Chat page (`node services/portal/shots.mjs "$(cat link)" out chat`).
                 var bus = host.Get<Cuebot.Core.Events.EventBus>();
                 var i = 0;
                 while (File.Exists(linkFile))

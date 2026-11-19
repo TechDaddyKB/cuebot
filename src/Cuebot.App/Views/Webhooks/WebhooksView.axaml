@@ -26,7 +26,7 @@
         <StackPanel Spacing="8">
           <TextBlock Classes="h2" Text="Or your own relay" />
           <TextBlock Classes="muted" TextWrapping="Wrap"
-                     Text="Set it up by running relay/setup.ps1 (Windows) or relay/setup.sh (Linux) from the Cuebot source folder. It asks you to sign in to Cloudflare in your browser and then shows the three values to type below. Details are in relay/README.md." />
+                     Text="Set it up by running services/relay/setup.ps1 (Windows) or services/relay/setup.sh (Linux) from the Cuebot source folder. It asks you to sign in to Cloudflare in your browser and then shows the three values to type below. Details are in services/relay/README.md." />
           <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
             <TextBlock Text="Relay URL" VerticalAlignment="Center" />
             <TextBox Grid.Column="1" Name="RelayUrl" Text="{Binding Url}" PlaceholderText="https://cuebot-relay.yourname.workers.dev" ToolTip.Tip="The web address of your relay, shown by the setup script."  />

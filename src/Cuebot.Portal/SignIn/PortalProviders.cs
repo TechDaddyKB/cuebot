@@ -28,7 +28,7 @@ public sealed record PortalProviderEndpoints(
         DiscordRevoke: "https://discord.com/api/oauth2/token/revoke");
 }
 
-/// <summary>The sign-in apps the portal offers, in build order (docs/MOD_PORTAL_PLAN.md, section 4).</summary>
+/// <summary>The sign-in apps the portal offers, in build order (docs/design/MOD_PORTAL_PLAN.md, section 4).</summary>
 public sealed record PortalProviderApps(AppCredentials Google, AppCredentials Twitch, AppCredentials Discord)
 {
     public static PortalProviderApps BuiltIn { get; } = new(BuiltInApps.PortalGoogle, BuiltInApps.PortalTwitch, BuiltInApps.PortalDiscord);

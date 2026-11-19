@@ -18,7 +18,7 @@ updates:
         update-types: [version-update:semver-major]
 
   - package-ecosystem: npm
-    directories: [/portal, /relay, /report, /streamdeck]
+    directories: [/services/portal, /services/relay, /services/report, /plugins/streamdeck]
     schedule: { interval: weekly }
     groups:
       npm-minor:

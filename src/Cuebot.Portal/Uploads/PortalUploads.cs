@@ -8,7 +8,7 @@ using Microsoft.Win32.SafeHandles;
 namespace Cuebot.Portal.Uploads;
 
 /// <summary>
-/// Uploads from the portal (docs/MOD_PORTAL_PLAN.md, section 8). The browser sends a file in small chunks (the relay
+/// Uploads from the portal (docs/design/MOD_PORTAL_PLAN.md, section 8). The browser sends a file in small chunks (the relay
 /// takes frames up to 64 KB); Cuebot writes them into a quarantine folder of its own, checks the size and SHA-256 the
 /// browser declared, then cleans one file at a time with <see cref="MediaCleaner"/>. Only the cleaned file reaches the
 /// library, as a change: live at once or waiting for the streamer, by the member's change setting.

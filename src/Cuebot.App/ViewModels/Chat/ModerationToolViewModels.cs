@@ -7,7 +7,7 @@ using Cuebot.Core.Chat.Moderation;
 namespace Cuebot.App.ViewModels.Chat;
 
 /// <summary>
-/// One moderation tool button for one platform (docs/UNIFIED_MOD_CHAT_PLAN.md, section 4): it works, does the closest
+/// One moderation tool button for one platform (docs/design/UNIFIED_MOD_CHAT_PLAN.md, section 4): it works, does the closest
 /// thing (and says how it differs), opens the platform's website, or is greyed out with the reason.
 /// </summary>
 public sealed partial class ModToolViewModel : ObservableObject

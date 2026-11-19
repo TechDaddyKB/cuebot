@@ -5,7 +5,7 @@ using Cuebot.Rumble.Chat;
 namespace Cuebot.Rumble;
 
 /// <summary>
-/// Rumble has no moderation API (docs/UNIFIED_MOD_CHAT_PLAN.md, section 4.1). By default every tool opens Rumble's own
+/// Rumble has no moderation API (docs/design/UNIFIED_MOD_CHAT_PLAN.md, section 4.1). By default every tool opens Rumble's own
 /// pages. With <see cref="RumbleSettings.UnofficialModeration"/> on (off by default; Rumble's terms forbid automated use
 /// without permission) deleting and muting go through the unofficial addresses Rumble's web chat uses: a timeout is a
 /// five-minute mute or, for anything longer, a mute until the stream ends; a ban is a permanent mute. Unmuting needs the

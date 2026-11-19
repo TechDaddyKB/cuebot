@@ -11,8 +11,8 @@ using Cuebot.Relay;
 namespace Cuebot.App.ViewModels.Webhooks;
 
 /// <summary>
-/// Webhooks page: Cuebot's shared relay (nothing to set up, docs/MOD_PORTAL_PLAN.md section 7) or the user's own
-/// Cloudflare relay (relay/README.md), the webhook URL to paste into each service that has a handler, and the latest
+/// Webhooks page: Cuebot's shared relay (nothing to set up, docs/design/MOD_PORTAL_PLAN.md section 7) or the user's own
+/// Cloudflare relay (services/relay/README.md), the webhook URL to paste into each service that has a handler, and the latest
 /// deliveries with their outcome.
 /// </summary>
 public sealed partial class WebhooksViewModel : PageViewModel

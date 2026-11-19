@@ -8,7 +8,7 @@ using Cuebot.Portal.Relay;
 namespace Cuebot.Portal.SignIn;
 
 /// <summary>
-/// A mod device's messages over its encrypted link (docs/MOD_PORTAL_PLAN.md, section 4). JSON requests
+/// A mod device's messages over its encrypted link (docs/design/MOD_PORTAL_PLAN.md, section 4). JSON requests
 /// <c>{"op": "...", "req": n, ...}</c>; every answer echoes <c>req</c>. Before sign-in a device may only ask for
 /// <c>ping</c>, <c>providers</c>, <c>signin</c> and <c>resume</c>; afterwards everything goes to the portal API as the
 /// signed-in member.

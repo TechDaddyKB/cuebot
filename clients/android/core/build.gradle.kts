@@ -16,7 +16,7 @@ dependencies {
     testImplementation(libs.okhttp.mockwebserver)
 }
 
-// The portal's shared crypto test vectors (portal/test/vectors.json), which the .NET and TypeScript tests check too.
+// The portal's shared crypto test vectors (services/portal/test/vectors.json), which the .NET and TypeScript tests check too.
 tasks.test {
-    systemProperty("cuebot.portalVectors", rootProject.file("../../portal/test/vectors.json").absolutePath)
+    systemProperty("cuebot.portalVectors", rootProject.file("../../services/portal/test/vectors.json").absolutePath)
 }

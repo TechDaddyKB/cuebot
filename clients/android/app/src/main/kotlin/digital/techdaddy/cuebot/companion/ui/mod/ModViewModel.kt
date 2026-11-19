@@ -30,7 +30,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.UUID
 
-/** Where the mod mode is (docs/MOD_PORTAL_PLAN.md, section 6: the phone app joins by invite, then shows the portal). */
+/** Where the mod mode is (docs/design/MOD_PORTAL_PLAN.md, section 6: the phone app joins by invite, then shows the portal). */
 sealed interface ModState {
     /** The streamers this phone mods for, and joining with an invite. */
     data object Home : ModState

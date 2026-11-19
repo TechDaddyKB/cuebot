@@ -162,7 +162,7 @@ public sealed partial class LinkedRowViewModel : ObservableObject
 }
 
 /// <summary>
-/// The linked ban or timeout dialog (docs/UNIFIED_MOD_CHAT_PLAN.md, section 7.4): the preview of every linked account,
+/// The linked ban or timeout dialog (docs/design/UNIFIED_MOD_CHAT_PLAN.md, section 7.4): the preview of every linked account,
 /// a required reason, a second confirmation for a ban on more than one platform, then the result per row with "I did
 /// it" for by-hand platforms, a retry for failures and "Undo incident".
 /// </summary>

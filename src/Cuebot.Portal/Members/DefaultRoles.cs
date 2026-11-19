@@ -4,7 +4,7 @@ using static Cuebot.Portal.Members.PortalPermission;
 namespace Cuebot.Portal.Members;
 
 /// <summary>
-/// The roles a new portal starts with (docs/MOD_PORTAL_PLAN.md, section 5; chat rights from docs/UNIFIED_MOD_CHAT_PLAN.md,
+/// The roles a new portal starts with (docs/design/MOD_PORTAL_PLAN.md, section 5; chat rights from docs/design/UNIFIED_MOD_CHAT_PLAN.md,
 /// section 8 and decisions 4 and 10). The streamer can change them all.
 /// </summary>
 public static class DefaultRoles

@@ -3,7 +3,7 @@ using Cuebot.Core.Storage;
 
 namespace Cuebot.Portal.Members;
 
-/// <summary>What a role lets its members do in the portal (docs/MOD_PORTAL_PLAN.md, section 5).</summary>
+/// <summary>What a role lets its members do in the portal (docs/design/MOD_PORTAL_PLAN.md, section 5).</summary>
 public enum PortalPermission
 {
     /// <summary>Run the actions the role's scope allows (running is not a change and never waits for approval).</summary>
@@ -38,7 +38,7 @@ public enum PortalPermission
     /// <summary>Create, change and delete Twitch and Kick channel point rewards (ones Cuebot made).</summary>
     ManageRewards,
 
-    // The combined chat (docs/UNIFIED_MOD_CHAT_PLAN.md, section 8). Moderation is never a "change": it applies at once
+    // The combined chat (docs/design/UNIFIED_MOD_CHAT_PLAN.md, section 8). Moderation is never a "change": it applies at once
     // and is written to the mod log.
 
     /// <summary>See the combined chat of every platform.</summary>

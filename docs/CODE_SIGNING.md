@@ -12,11 +12,11 @@ release must be signed with the same identity to keep that reputation.
 
 The `windows-package` job in `.github/workflows/build.yml`:
 
-1. publishes the Windows build without zipping it (`build/publish.ps1 -NoZip`),
+1. publishes the Windows build without zipping it (`tools/publish.ps1 -NoZip`),
 2. signs `Cuebot.exe` and `Cuebot*.dll` with `azure/artifact-signing-action`, logging in to Azure through OpenID Connect
    (no stored password or secret),
 3. checks that `Cuebot.exe` carries a valid signature,
-4. zips the signed files (`build/publish.ps1 -ZipOnly`).
+4. zips the signed files (`tools/publish.ps1 -ZipOnly`).
 
 Signing runs only when the variable `AZURE_SIGNING_ACCOUNT` is set, and never for pull requests, so forks and pull
 requests still build unsigned packages. The job runs in the GitHub environment **signing**; the Azure login trusts only

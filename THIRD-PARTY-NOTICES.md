@@ -40,7 +40,7 @@ Each keeps its own license; full license texts are available from the linked pro
 ### FFmpeg (separate programs)
 
 The `ffmpeg` folder next to Cuebot holds `ffmpeg` and `ffprobe`, built by
-[build/ffmpeg/build.sh](build/ffmpeg/build.sh) and used only to check and clean files mods upload through the mod portal.
+[tools/ffmpeg/build.sh](tools/ffmpeg/build.sh) and used only to check and clean files mods upload through the mod portal.
 They are separate programs that Cuebot starts; Cuebot does not link to them. They are licensed under the
 **GNU Lesser General Public License 2.1 or later** (no GPL or non-free parts are enabled): the license text and the
 exact sources and configure options are in `ffmpeg/LICENSE.txt` and `ffmpeg/SOURCES.txt`, and the build script in this

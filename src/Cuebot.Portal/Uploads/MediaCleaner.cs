@@ -12,7 +12,7 @@ public sealed record CleanResult(CleanedMedia? Media, string? Error, string? Det
 }
 
 /// <summary>
-/// Turns one untrusted upload into a fresh file (docs/MOD_PORTAL_PLAN.md, section 8): the first bytes pick the format
+/// Turns one untrusted upload into a fresh file (docs/design/MOD_PORTAL_PLAN.md, section 8): the first bytes pick the format
 /// (never the name), ffprobe checks streams and limits through that format's demuxer only, ffmpeg decodes it fully and
 /// encodes a new file with no metadata, and ffprobe decodes the result again. Nothing of the original survives except
 /// the pictures and sound, so a polyglot or a file with a payload in its metadata comes out as plain media.

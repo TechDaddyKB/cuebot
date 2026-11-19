@@ -4,7 +4,7 @@ namespace Cuebot.Core.Actions;
 
 /// <summary>
 /// How much harm a step or trigger type can do in the wrong hands. Mod portal roles allow steps up to a level
-/// (docs/MOD_PORTAL_PLAN.md, section 5); <see cref="Never"/> is never available through the portal.
+/// (docs/design/MOD_PORTAL_PLAN.md, section 5); <see cref="Never"/> is never available through the portal.
 /// </summary>
 public enum StepRisk
 {

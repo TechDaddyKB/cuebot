@@ -4,7 +4,7 @@ using Cuebot.Core.Users;
 
 namespace Cuebot.Core.Chat.Moderation;
 
-/// <summary>One account in a linked ban or timeout preview (docs/UNIFIED_MOD_CHAT_PLAN.md, section 7.4).</summary>
+/// <summary>One account in a linked ban or timeout preview (docs/design/UNIFIED_MOD_CHAT_PLAN.md, section 7.4).</summary>
 public sealed record LinkedPreviewRow
 {
     public string RowId { get; init; } = "";

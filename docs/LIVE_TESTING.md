@@ -21,7 +21,7 @@ helps find it in the log.
 - [ ] Every platform and service you use shows as connected in the top bar. With more than four, they are small
       badges; hovering one shows its name and status. Nothing covers the search box, title or profile switcher.
 - [ ] Optional: run the automated tests for what you will use on stream (see [Running](#running)), for example
-      `build/run-live-tests.sh Kick`. Leave `CUEBOT_LIVE_STREAM` unset so nothing goes live.
+      `tools/run-live-tests.sh Kick`. Leave `CUEBOT_LIVE_STREAM` unset so nothing goes live.
 
 **Twitch rewards** (Platforms > Twitch)
 
@@ -181,7 +181,7 @@ The mod does these on their own device; you watch Cuebot.
 - [ ] The mod's message count goes down by one per message, and the Assistant cannot do anything the role does not
       allow (ask it for something outside the role, such as changing a setting it has no permission for).
 
-### 4b. While live: chat moderation (phases 0 and 1 of docs/UNIFIED_MOD_CHAT_PLAN.md)
+### 4b. While live: chat moderation (phases 0 and 1 of docs/design/UNIFIED_MOD_CHAT_PLAN.md)
 
 Use your own test accounts as the targets, never a real viewer. Nothing below was confirmed against a live channel yet.
 
@@ -207,7 +207,7 @@ Use your own test accounts as the targets, never a real viewer. Nothing below wa
 - [ ] **Portal, must stay a Twitch mod**: tick it for a test mod, remove them as moderator on Twitch. Within five
       minutes their portal pages say access is paused; mod them again and it comes back.
 
-### 4c. While live: Twitch moderation depth (phase 3 of docs/UNIFIED_MOD_CHAT_PLAN.md)
+### 4c. While live: Twitch moderation depth (phase 3 of docs/design/UNIFIED_MOD_CHAT_PLAN.md)
 
 Use the test channel and test accounts only. Nothing below was confirmed against a live channel yet.
 
@@ -231,7 +231,7 @@ Use the test channel and test accounts only. Nothing below was confirmed against
 - [ ] **Missing permission**: untick **Shield mode** on the Twitch Settings tab and sign in again. The Shield Mode
       button is greyed out and says to sign in again and allow it. Tick it, sign in again, and it works.
 
-### 4d. While live: identity links and linked bans (phases 4 and 5 of docs/UNIFIED_MOD_CHAT_PLAN.md)
+### 4d. While live: identity links and linked bans (phases 4 and 5 of docs/design/UNIFIED_MOD_CHAT_PLAN.md)
 
 Identity links are off by default and wait for the legal and privacy review (plan decision 12). Run this only on the
 test channel, with your own test accounts on at least two platforms. Never link or ban a real viewer. Nothing below
@@ -358,7 +358,7 @@ of the solution go live. To run that suite directly, set `CUEBOT_LIVE_TESTS=1` y
 
 ## Setup
 
-1. Copy [`docs/live.env.example`](live.env.example) to `~/.cuebot/live.env` (on Windows
+1. Copy [`tests/Cuebot.LiveTests/live.env.example`](../tests/Cuebot.LiveTests/live.env.example) to `~/.cuebot/live.env` (on Windows
    `%USERPROFILE%\.cuebot\live.env`) and fill in what you want tested. The file stays outside the repository;
    `live.env` is also git-ignored. Stream keys are only ever handed to OBS and are never logged.
 2. **Twitch app**: register one at <https://dev.twitch.tv/console> with category *Chat Bot*, client type
@@ -416,7 +416,7 @@ never attaches, Rumble has probably changed them.
 
 ### Webhook relay
 
-Deploy the relay once (`relay/setup.ps1` or `relay/setup.sh`, see `relay/README.md`) and put the three values it prints in
+Deploy the relay once (`services/relay/setup.ps1` or `services/relay/setup.sh`, see `services/relay/README.md`) and put the three values it prints in
 `CUEBOT_LIVE_RELAY_URL`, `CUEBOT_LIVE_RELAY_CONNECT_TOKEN` and `CUEBOT_LIVE_RELAY_ROUTE_SECRET`. `RelayLiveTests` connects to it,
 posts a custom webhook to the public URL with a throw-away hook, checks the trigger fires with the posted fields, and
 checks that a wrong hook token is rejected in Cuebot. Nothing reaches viewers.
@@ -473,7 +473,7 @@ Desktop to "Starting Soon" and appends a line to a file in the test's data folde
 `CUEBOT_OBS_PASSWORD` (OBS) and `CUEBOT_LIVE_SLOBS_TOKEN` (Streamlabs Desktop), with both apps running. Missing scenes
 and the source (a small colour source) are created and removed afterwards, an existing "Follow Alert" gets its
 visibility back, and both apps return to the scene they were on. Nothing streams or records; chat steps are captured,
-not sent. Run it with `CUEBOT_LIVE_E2E=1 bash build/run-live-tests.sh StreamerBotSetupLiveTests`. Last run: OBS 33 and
+not sent. Run it with `CUEBOT_LIVE_E2E=1 bash tools/run-live-tests.sh StreamerBotSetupLiveTests`. Last run: OBS 33 and
 Streamlabs Desktop 1.22.2, 2026-10-28, passes.
 
 ### Meld Studio, PolyPop
@@ -569,14 +569,14 @@ a file or shell tool could produce the secret). An app that is installed but not
 ## Running
 
 ```powershell
-./build/run-live-tests.ps1
+./tools/run-live-tests.ps1
 ```
 
 ```bash
-build/run-live-tests.sh
+tools/run-live-tests.sh
 ```
 
-Pass a name fragment to run a subset, e.g. `./build/run-live-tests.ps1 -Filter Kick`. Reports (`.trx` and
+Pass a name fragment to run a subset, e.g. `./tools/run-live-tests.ps1 -Filter Kick`. Reports (`.trx` and
 console logs) go to `artifacts/live-tests/`.
 
 **First run:** the Twitch tests open the device-activation page in your browser and wait up to five minutes

@@ -2,7 +2,7 @@ namespace Cuebot.Core.Actions;
 
 /// <summary>
 /// Keeps what mod portal members set away from steps that run code, programs or files (<see cref="StepRisk.Never"/>;
-/// docs/MOD_PORTAL_PLAN.md, section 5). Once a step a mod added or changed (<see cref="SubActionDefinition.EditedBy"/>)
+/// docs/design/MOD_PORTAL_PLAN.md, section 5). Once a step a mod added or changed (<see cref="SubActionDefinition.EditedBy"/>)
 /// has run, the run carries <see cref="ArgName"/> (also into actions it runs), and Never steps in it refuse to run.
 /// Variables a mod's step set are marked in <see cref="GlobalVariables"/>; a Never step whose settings name one refuses
 /// too. Code reads variables by name in its text, so a code step that mentions a marked name is refused the same way.

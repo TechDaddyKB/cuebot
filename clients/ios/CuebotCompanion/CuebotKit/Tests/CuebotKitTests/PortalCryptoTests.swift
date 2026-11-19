@@ -3,13 +3,13 @@ import Foundation
 import Testing
 @testable import CuebotKit
 
-/// The phone's half of the portal encryption against portal/test/vectors.json, which .NET, TypeScript and the Android
+/// The phone's half of the portal encryption against services/portal/test/vectors.json, which .NET, TypeScript and the Android
 /// app check too.
 struct PortalCryptoTests {
     nonisolated(unsafe) private static let vectors: [String: Any] = {   // read once, never changed
         var url = URL(fileURLWithPath: #filePath)
         for _ in 0 ..< 7 { url.deleteLastPathComponent() }   // Tests/CuebotKitTests/<file> → the repository root
-        let data = try! Data(contentsOf: url.appending(path: "portal/test/vectors.json"))
+        let data = try! Data(contentsOf: url.appending(path: "services/portal/test/vectors.json"))
         return try! JSONSerialization.jsonObject(with: data) as! [String: Any]
     }()
 

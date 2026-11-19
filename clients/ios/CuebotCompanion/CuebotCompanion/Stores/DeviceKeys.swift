@@ -3,7 +3,7 @@ import CuebotKit
 import Foundation
 import Security
 
-/// This phone's mod portal keys, one ECDSA P-256 key per membership (docs/MOD_PORTAL_PLAN.md, section 4): in the Secure
+/// This phone's mod portal keys, one ECDSA P-256 key per membership (docs/design/MOD_PORTAL_PLAN.md, section 4): in the Secure
 /// Enclave when the phone has one, else a Keychain key marked not extractable. The app can sign with them; nothing can
 /// read them out.
 enum DeviceKeys {

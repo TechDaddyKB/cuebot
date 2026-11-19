@@ -3,7 +3,7 @@ using Cuebot.Core.Variables;
 namespace Cuebot.Core.Users;
 
 /// <summary>
-/// How sure the team is that an account belongs to a person (docs/UNIFIED_MOD_CHAT_PLAN.md, section 7.1). Ordered from
+/// How sure the team is that an account belongs to a person (docs/design/UNIFIED_MOD_CHAT_PLAN.md, section 7.1). Ordered from
 /// weakest to strongest; <see cref="Rejected"/> is not a membership, it is remembered so the same wrong suggestion is not
 /// made again.
 /// </summary>

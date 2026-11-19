@@ -62,7 +62,7 @@ relay. Cuebot picks them up from there. While Cuebot is closed, the relay keeps 
     You need the Cuebot source folder from GitHub and a free Cloudflare account. If that sounds like too much, you can
     skip webhooks; everything else in Cuebot works without them.
 
-1. Run `relay/setup.ps1` (Windows) or `relay/setup.sh` (Linux) from the Cuebot source folder. It asks you to sign in
+1. Run `services/relay/setup.ps1` (Windows) or `services/relay/setup.sh` (Linux) from the Cuebot source folder. It asks you to sign in
    to Cloudflare in your browser.
 2. At the end it shows three values. Type them into the **Relay** tab: **Relay URL**, **Connect token** and **Route
    secret**.
@@ -71,7 +71,7 @@ relay. Cuebot picks them up from there. While Cuebot is closed, the relay keeps 
    settings.
 
 The full steps are in the
-[relay instructions](https://github.com/TechDaddyKB/cuebot/blob/main/relay/README.md).
+[relay instructions](https://github.com/TechDaddyKB/cuebot/blob/main/services/relay/README.md).
 
 !!! warning "Treat webhook addresses like passwords"
     Anyone who knows one could send fake messages. Cuebot checks every message with the service's secret (for Throne,

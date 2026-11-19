@@ -5,7 +5,7 @@ using System.Net.Sockets;
 namespace Cuebot.Server.Api;
 
 /// <summary>
-/// The link a phone scans to pair with this Cuebot (the companion app, docs/IOS_COMPANION_PLAN.md):
+/// The link a phone scans to pair with this Cuebot (the companion app, docs/design/IOS_COMPANION_PLAN.md):
 /// <c>cuebot://pair?v=1&amp;name=&amp;host=&amp;api=&amp;http=&amp;token=&amp;deckToken=&amp;id=</c>.
 /// It holds the API token, so it is shown only on request.
 /// </summary>

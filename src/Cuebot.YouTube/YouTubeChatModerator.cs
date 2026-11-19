@@ -133,7 +133,7 @@ internal sealed class YouTubeChatModerator(YouTubeService youtube) : IChatModera
 }
 
 /// <summary>
-/// YouTube's daily quota as moderation sees it (docs/UNIFIED_MOD_CHAT_PLAN.md, section 5.4): the units Cuebot counted
+/// YouTube's daily quota as moderation sees it (docs/design/UNIFIED_MOD_CHAT_PLAN.md, section 5.4): the units Cuebot counted
 /// today (the count starts again at midnight Pacific time), what is left of the project's daily quota, and a reserve
 /// moderation may not spend, so reading chat keeps working until the reset.
 /// </summary>
@@ -184,7 +184,7 @@ internal sealed class YouTubeProtectedAccounts(YouTubeService youtube) : IProtec
 
 /// <summary>
 /// Reads a linked YouTube account again (YouTube's developer policies: API data is refreshed or deleted within 30 days),
-/// so identity links can keep it (docs/UNIFIED_MOD_CHAT_PLAN.md, section 9.3).
+/// so identity links can keep it (docs/design/UNIFIED_MOD_CHAT_PLAN.md, section 9.3).
 /// </summary>
 internal sealed class YouTubeAccountLookup(YouTubeService youtube) : Cuebot.Core.Users.IAccountLookup
 {

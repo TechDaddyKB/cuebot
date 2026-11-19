@@ -1,0 +1,34 @@
+// The shared mod portal relay (worker/index.ts, RELAY.md). Deployed to Kris's Cloudflare account for every Cuebot
+// user; nothing in it is per streamer and it has no secrets. `npx wrangler deploy` from this folder.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cuebot-portal",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  // Custom domains on the techdaddydigital.com zone. They take precedence over the zone's wildcard record.
+  "routes": [
+    { "pattern": "portal.techdaddydigital.com", "custom_domain": true },
+    { "pattern": "relay.techdaddydigital.com", "custom_domain": true },
+    { "pattern": "hooks.techdaddydigital.com", "custom_domain": true }
+  ],
+  // The built loader (npm run build). The Worker answers every request itself and fetches loader.js from here.
+  "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": true },
+  "durable_objects": {
+    "bindings": [
+      { "name": "PORTAL_RELAY", "class_name": "PortalRelay" },
+      { "name": "KICK_ROUTES", "class_name": "KickRoute" }
+    ]
+  },
+  // The class never writes to storage; SQLite-backed is simply the current default for new classes.
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["PortalRelay"] },
+    { "tag": "v2", "new_sqlite_classes": ["KickRoute"] }
+  ],
+  "vars": {
+    "PORTAL_DOMAIN": "techdaddydigital.com"
+  },
+  // No logs, traces or tail consumers: the relay keeps nothing about anyone (docs/design/MOD_PORTAL_PLAN.md, section 9).
+  "observability": { "enabled": false, "logs": { "enabled": false, "invocation_logs": false } },
+  "logpush": false
+}

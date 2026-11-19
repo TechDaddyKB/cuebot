@@ -14,7 +14,7 @@ using static Cuebot.UiTests.DocsScreenshots;
 namespace Cuebot.UiTests;
 
 /// <summary>
-/// A demo Cuebot for trying the StreamController plugin (streamcontroller/ in the repo) by hand and taking its
+/// A demo Cuebot for trying the StreamController plugin (plugins/streamcontroller/ in the repo) by hand and taking its
 /// documentation screenshots. Opt-in: CUEBOT_SC_TOKEN=&lt;REST API token to use&gt; CUEBOT_SC_DIR=&lt;empty folder&gt;
 /// (optional CUEBOT_SC_PORT, default 7475). It seeds the documentation's demo actions, turns on the REST API with that
 /// token and then follows a script: every line appended to &lt;dir&gt;/commands.txt is one of

@@ -7,7 +7,7 @@ using Cuebot.Portal.Members;
 namespace Cuebot.Portal.Relay;
 
 /// <summary>
-/// A push topic a feature offers to signed-in mod devices (portal/RELAY.md, "Push"). A device may subscribe only while
+/// A push topic a feature offers to signed-in mod devices (services/portal/RELAY.md, "Push"). A device may subscribe only while
 /// its member exists, is not paused, still has this device, and passes <see cref="Permission"/> and
 /// <see cref="Authorize"/>; this is checked again whenever the member list changes and before every delivery.
 /// </summary>
@@ -34,7 +34,7 @@ public sealed record PortalPushLimits
 
     public int MaxEventsPerFrame { get; init; } = 100;
 
-    /// <summary>Largest push frame (plaintext). Well under the relay's caps (portal/RELAY.md "Limits").</summary>
+    /// <summary>Largest push frame (plaintext). Well under the relay's caps (services/portal/RELAY.md "Limits").</summary>
     public int MaxFrameBytes { get; init; } = 32 * 1024;
 
     /// <summary>Largest single event; <see cref="PortalPush.Publish"/> refuses bigger ones.</summary>
@@ -87,7 +87,7 @@ internal interface IPortalPushLink
 }
 
 /// <summary>
-/// Server push on the encrypted portal link (docs/UNIFIED_MOD_CHAT_PLAN.md, section 5.4). Devices send
+/// Server push on the encrypted portal link (docs/design/UNIFIED_MOD_CHAT_PLAN.md, section 5.4). Devices send
 /// <c>{"op":"subscribe","topic":"…","params":{…}}</c> and <c>{"op":"unsubscribe","sub":n}</c>; Cuebot sends
 /// <c>{"push":"&lt;topic&gt;","sub":n,"events":[…]}</c> frames, batched every <see cref="PortalPushLimits.FlushInterval"/>.
 /// A subscription that falls behind loses its queue and gets <c>{"push":…,"sub":n,"resync":true,"missed":k}</c>

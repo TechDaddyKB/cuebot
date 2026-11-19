@@ -19,7 +19,7 @@ public static class StreamerBotArgs
     /// <summary>
     /// A variable Streamer.bot documents but the platform's API cannot supply: set to a neutral value of the documented
     /// type (0, false, "", an empty list, <c>default(DateTime)</c>) unless already present, so actions written for
-    /// Streamer.bot that read it do not fail. Each module lists its placeholders in <c>docs/PARITY.md</c>.
+    /// Streamer.bot that read it do not fail. Each module lists its placeholders in <c>docs/design/PARITY.md</c>.
     /// </summary>
     public static void Placeholder(IDictionary<string, object?> args, string name, object? value) => Set(args, name, value);
 

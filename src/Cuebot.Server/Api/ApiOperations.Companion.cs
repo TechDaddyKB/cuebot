@@ -3,7 +3,7 @@ using Cuebot.Core.Subathon;
 
 namespace Cuebot.Server.Api;
 
-/// <summary>What the companion app (docs/IOS_COMPANION_PLAN.md) reads and controls: the dashboard, subathon timers and goals.</summary>
+/// <summary>What the companion app (docs/design/IOS_COMPANION_PLAN.md) reads and controls: the dashboard, subathon timers and goals.</summary>
 public sealed partial class ApiOperations
 {
     private const int DashboardFeedSize = 50;

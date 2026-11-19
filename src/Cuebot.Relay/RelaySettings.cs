@@ -1,7 +1,7 @@
 using Cuebot.Core.Storage;
 namespace Cuebot.Relay;
 
-/// <summary>relay.json: where the user's Cloudflare relay (relay/ in the repository) lives and how to sign in to it.</summary>
+/// <summary>relay.json: where the user's Cloudflare relay (services/relay/ in the repository) lives and how to sign in to it.</summary>
 public sealed class RelaySettings
 {
     /// <summary>The Worker's address as printed by the setup script, e.g. <c>https://cuebot-relay.name.workers.dev</c>.</summary>

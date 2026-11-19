@@ -3,7 +3,7 @@ import Foundation
 import Observation
 
 /// One streamer this phone is a mod for: where their Cuebot is, the identity it pinned at sign-in, and the alias of
-/// this device's key for that membership. Like a browser's saved device (portal/web/main.ts), with the key in the
+/// this device's key for that membership. Like a browser's saved device (services/portal/web/main.ts), with the key in the
 /// Secure Enclave or the Keychain.
 struct Membership: Codable, Hashable, Identifiable, Sendable {
     static let defaultName = "Mod portal"

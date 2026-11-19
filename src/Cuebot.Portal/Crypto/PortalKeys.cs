@@ -5,7 +5,7 @@ using System.Text;
 namespace Cuebot.Portal.Crypto;
 
 /// <summary>
-/// Encodings shared with the TypeScript side (portal/src/crypto.ts). P-256 public keys travel as raw uncompressed
+/// Encodings shared with the TypeScript side (services/portal/src/crypto.ts). P-256 public keys travel as raw uncompressed
 /// points (65 bytes, 0x04 || X || Y), signatures as IEEE P1363 (r || s, 64 bytes), the same formats WebCrypto uses.
 /// </summary>
 public static class PortalKeys

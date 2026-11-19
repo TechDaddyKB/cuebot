@@ -70,7 +70,7 @@ public sealed class PingLinkHandler : IPortalLinkHandler
 }
 
 /// <summary>
-/// Cuebot's side of the shared portal relay (portal/RELAY.md): an outbound WebSocket to
+/// Cuebot's side of the shared portal relay (services/portal/RELAY.md): an outbound WebSocket to
 /// <c>wss://relay.techdaddydigital.com/connect?id=&lt;relay id&gt;</c>, signed in by proving the identity key behind
 /// the relay ID. Carries each mod device's end-to-end encrypted channel (handshake, then frames, handed to an
 /// <see cref="IPortalLinkHandler"/>) and webhooks sealed to the identity key. Reconnects with backoff.
@@ -83,7 +83,7 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
     public const string SharedHooks = "https://hooks.techdaddydigital.com";
     public const uint HookChannel = 0;
 
-    /// <summary>Close codes (portal/RELAY.md).</summary>
+    /// <summary>Close codes (services/portal/RELAY.md).</summary>
     public const int ReplacedCloseCode = 4000;
     public const int AuthFailedCloseCode = 4001;
     public const int ProtocolCloseCode = 4003;
@@ -141,7 +141,7 @@ public sealed class PortalRelayClient : IConnectable, IAsyncDisposable
     /// <summary>Should the relay connection be up: the portal or shared webhooks are on, or Kick events are routed here.</summary>
     public bool Wanted => _directory.Enabled || _directory.SharedWebhooks || KickEventsWanted();
 
-    // ---- Kick events (Cuebot's built-in Kick app; portal/RELAY.md "Kick events") ----
+    // ---- Kick events (Cuebot's built-in Kick app; services/portal/RELAY.md "Kick events") ----
 
     /// <summary>
     /// The broadcaster's Kick access token while this Cuebot wants Kick's events through the shared intake, else null

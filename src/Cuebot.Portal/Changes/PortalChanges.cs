@@ -51,7 +51,7 @@ public interface IPortalArea
 public enum ChangeResult { Applied, Pending, Rejected, NotFound, NotPending, Conflict, NotAllowed }
 
 /// <summary>
-/// The change log, the approval queue and undo (docs/MOD_PORTAL_PLAN.md, section 5). A member's change goes live or
+/// The change log, the approval queue and undo (docs/design/MOD_PORTAL_PLAN.md, section 5). A member's change goes live or
 /// waits for the streamer by <see cref="PortalDirectory.ChangeModeOf"/>; pending changes expire after 7 days; approve
 /// and undo refuse when the thing changed since (a conflict) unless forced.
 /// </summary>

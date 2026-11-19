@@ -1,6 +1,6 @@
 # Elgato: lights (Control Center), Camera Hub, Elgato Studio
 
-This module covers the Streamer.bot integrations listed in `docs/parity/streamerbot-inventory.md` §3.8 under
+This module covers the Streamer.bot integrations listed in `docs/design/parity/streamerbot-inventory.md` §3.8 under
 "Camera Hub", "Control Center" and "Elgato Studio". (The Stream Deck plugin and Wave Link are separate modules.)
 Clean-room: trigger and sub-action names come from the public docs at docs.streamer.bot. Wire formats come from public
 community documentation and open-source projects, which were read for formats only; no code was copied.
@@ -210,7 +210,7 @@ When an automatic mode is on, white-balance and shutter changes fire the "Live" 
   - Sub-actions: Set White Balance Tint, Set Dynamic Range and Set Noise Reduction.
   - Facecam may expose some of these through UVC extension units, which are vendor-specific and undocumented.
   - **Why Set Dynamic Range, Set Noise Reduction and Set White Balance Tint stay ❌ (re-checked 2026-10-28, see
-    `docs/ELGATO_SDKS.md`).** Elgato publishes no Camera Hub SDK, API or plugin system. Its Maker documentation
+    `docs/design/ELGATO_SDKS.md`).** Elgato publishes no Camera Hub SDK, API or plugin system. Its Maker documentation
     covers Stream Deck, Wave Link, iCUE, OBS and the Marketplace only, so no Camera Hub plugin can be written to
     expose these settings. The only thing that controls Camera Hub from outside is Elgato's own Stream Deck plugin,
     over a private channel that the clean-room rule keeps closed. On the camera, standard UVC/V4L2 has no HDR,

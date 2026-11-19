@@ -443,7 +443,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>
     /// Linked actions by mods, automatic mirroring and accounts newly linked to a banned person (identity links,
-    /// docs/UNIFIED_MOD_CHAT_PLAN.md section 7.4) notify the streamer, like "Live and tell me" changes. Clicking the
+    /// docs/design/UNIFIED_MOD_CHAT_PLAN.md section 7.4) notify the streamer, like "Live and tell me" changes. Clicking the
     /// notification opens the Chat page, where the mod log has "Undo incident".
     /// </summary>
     private void WatchModerationNotices(AppHost host)

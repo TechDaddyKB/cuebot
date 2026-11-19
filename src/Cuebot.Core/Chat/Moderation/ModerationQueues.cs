@@ -3,7 +3,7 @@ using Cuebot.Core.Commands;
 namespace Cuebot.Core.Chat.Moderation;
 
 /// <summary>
-/// A platform's moderation queues and channel safety state (docs/UNIFIED_MOD_CHAT_PLAN.md, phase 3): messages its
+/// A platform's moderation queues and channel safety state (docs/design/UNIFIED_MOD_CHAT_PLAN.md, phase 3): messages its
 /// filter held for review, Shield Mode, suspicious chatters, unban requests and blocked terms. Implemented by the
 /// platform's <see cref="IChatModerator"/> (Twitch); <see cref="ModerationService.QueuesFor"/> finds it. Reading goes
 /// through this interface; every change goes through <see cref="ModerationService.ExecuteAsync"/> with the queue tools

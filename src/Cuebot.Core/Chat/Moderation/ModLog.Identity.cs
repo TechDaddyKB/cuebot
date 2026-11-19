@@ -6,7 +6,7 @@ namespace Cuebot.Core.Chat.Moderation;
 
 /// <summary>
 /// Schema version 2 of the mod log: identity links (people and their accounts, confirmations, evidence, rejections) and
-/// mod notes (docs/UNIFIED_MOD_CHAT_PLAN.md, sections 6.2 and 6.3). These tables are state, not history: they change
+/// mod notes (docs/design/UNIFIED_MOD_CHAT_PLAN.md, sections 6.2 and 6.3). These tables are state, not history: they change
 /// and rows go. The history of every link, confirmation, rejection and unlink is a <c>mod_actions</c> row written by
 /// <see cref="IdentityLinks"/>. Notes are stored on the account they were written on and shown on every account linked to it.
 /// </summary>

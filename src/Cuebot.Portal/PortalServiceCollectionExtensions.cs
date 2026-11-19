@@ -23,7 +23,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Cuebot.Portal;
 
-/// <summary>Registers the mod portal (docs/MOD_PORTAL_PLAN.md).</summary>
+/// <summary>Registers the mod portal (docs/design/MOD_PORTAL_PLAN.md).</summary>
 public static class PortalServiceCollectionExtensions
 {
     /// <summary>

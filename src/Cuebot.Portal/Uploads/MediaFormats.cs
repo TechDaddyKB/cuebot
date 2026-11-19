@@ -6,7 +6,7 @@ public enum UploadKind { Sound, Image, Video }
 
 /// <summary>
 /// An accepted input format: the ffmpeg demuxer it is forced through (ffmpeg never guesses the format of an upload), the
-/// kinds it may be uploaded as and the codecs allowed inside it (docs/MOD_PORTAL_PLAN.md, section 8).
+/// kinds it may be uploaded as and the codecs allowed inside it (docs/design/MOD_PORTAL_PLAN.md, section 8).
 /// </summary>
 public sealed record MediaFormat(string Name, string Demuxer, UploadKind[] Kinds, string[] Codecs)
 {

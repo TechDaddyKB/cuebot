@@ -15,7 +15,7 @@ namespace Cuebot.Portal;
 /// <summary>
 /// What a signed-in mod device may ask for, one JSON request at a time: <c>{"op": "...", ...}</c> in,
 /// <c>{"ok": true, ...}</c> or <c>{"ok": false, "error": "..."}</c> out. The transport (the encrypted relay link,
-/// docs/MOD_PORTAL_PLAN.md phase 2) hands over the member it authenticated; every request re-reads the member's role,
+/// docs/design/MOD_PORTAL_PLAN.md phase 2) hands over the member it authenticated; every request re-reads the member's role,
 /// so a change of role or a suspension applies at once.
 /// </summary>
 public sealed class PortalApi(PortalDirectory directory, PortalChanges changes, ProfileService profile, CommandStore commands,
