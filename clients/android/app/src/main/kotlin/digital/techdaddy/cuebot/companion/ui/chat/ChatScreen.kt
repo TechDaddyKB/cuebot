@@ -181,7 +181,10 @@ private fun Messages(state: ChatViewModel.UiState, modifier: Modifier, onAct: (C
     val count by rememberUpdatedState(rows.size)
     LaunchedEffect(list) {
         // New lines, or a new height (turning the device, the keyboard): stay on the newest line while following.
-        snapshotFlow { count to list.layoutInfo.viewportSize.height }.collect { (n, _) -> if (n > 0 && follow) list.scrollToItem(n - 1) }
+        // requestScrollToItem, not scrollToItem: the viewport height changes during layout, and this can run before
+        // that layout pass ends; scrollToItem forces a remeasure then and Compose throws ("performMeasureAndLayout
+        // called during measure layout"). The request is applied on the next measure instead.
+        snapshotFlow { count to list.layoutInfo.viewportSize.height }.collect { (n, _) -> if (n > 0 && follow) list.requestScrollToItem(n - 1) }
     }
     if (state.loaded && rows.isEmpty()) {
         Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
