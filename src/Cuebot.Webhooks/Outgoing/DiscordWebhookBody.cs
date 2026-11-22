@@ -64,7 +64,7 @@ public static partial class DiscordWebhookJson
             foreach (var key in data.Select(p => p.Key).Where(k => !EditableKeys.Contains(k)).ToArray()) data.Remove(key);
 
         var mentions = data.ContainsKey("allowed_mentions") ? null : AllowedMentions(data, resolve);
-        Substitute(data, resolve);
+        Substitute(data, mentions?["parse"] is JsonArray { Count: > 0 } ? KeepOnlyTypedEveryone(resolve) : resolve);
         if (mentions is not null) data["allowed_mentions"] = mentions;
         NormalizeColors(data);
         Validate(data, forEdit);
@@ -136,6 +136,23 @@ public static partial class DiscordWebhookJson
         if (users.Count > 0) result["users"] = new JsonArray(users.Select(u => (JsonNode?)JsonValue.Create(u)).ToArray());
         if (roles.Count > 0) result["roles"] = new JsonArray(roles.Select(r => (JsonNode?)JsonValue.Create(r)).ToArray());
         return result;
+    }
+
+    /// <summary>
+    /// Discord's "everyone" permission covers @everyone and @here in the whole message, so once the author typed one, a
+    /// variable's copy would ping too. Variable text gets a zero-width space after the @. The marker is random so a
+    /// viewer cannot write it into their message.
+    /// </summary>
+    private static Func<string, string> KeepOnlyTypedEveryone(Func<string, string> resolve)
+    {
+        var marker = Guid.NewGuid().ToString("N");
+        string typedEveryone = marker + "e", typedHere = marker + "h";
+        return text => resolve(text.Replace("@everyone", typedEveryone, StringComparison.Ordinal)
+                                   .Replace("@here", typedHere, StringComparison.Ordinal))
+            .Replace("@everyone", "@​everyone", StringComparison.Ordinal)
+            .Replace("@here", "@​here", StringComparison.Ordinal)
+            .Replace(typedEveryone, "@everyone", StringComparison.Ordinal)
+            .Replace(typedHere, "@here", StringComparison.Ordinal);
     }
 
     private static void Strings(JsonNode? node, List<string> into)

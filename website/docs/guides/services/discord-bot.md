@@ -52,8 +52,12 @@ To send an embed without a bot:
 }
 ```
 
-- **Pings:** only mentions you typed in the JSON can ping, so a viewer whose name is `@everyone` pings nobody. To control
-  this yourself, add your own `allowed_mentions`.
+- **Pings:** in both **Simple** and **JSON**, only mentions you typed into the step can ping, so a viewer whose message
+  is `@everyone` pings nobody. `<@%discordUserId%>` still works, because you typed the mention and the variable is only
+  the ID. In JSON, you can add your own `allowed_mentions` to control this yourself.
+- **If you kept a ping in a variable:** since 1.0.5, a variable holding `@everyone`, `@here`, `<@USER_ID>` or
+  `<@&ROLE_ID>` shows as text and does not ping. Type the mention into the step instead, or keep only the ID in the
+  variable and write `<@&~roleId~>`.
 - **Buttons:** webhooks can only send **link** buttons. Buttons that run something need the bot.
 - **Threads:** fill in **Thread ID** to post in a thread, or **New forum post title** to start a forum post.
 - **Edit or delete later:** type a name like `live post` in **Remember it as**. Then use **Edit webhook message** or

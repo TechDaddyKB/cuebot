@@ -99,7 +99,7 @@
       "fields": {
         "name": "A name for you to remember this webhook by. It is not sent to Discord.",
         "webhookUrl": "The webhook link. Copy it in Discord: Server Settings, Integrations, Webhooks, then Copy Webhook URL. Keep it private.",
-        "content": "The message text. Up to 2000 letters. To ping someone use <@USER_ID>, for a role use <@&ROLE_ID>.",
+        "content": "The message text. Up to 2000 letters. To ping someone use <@USER_ID>, for a role use <@&ROLE_ID>. Only pings typed here work. Text from a variable cannot ping.",
         "username": "The name shown as the sender. Empty uses the webhook's own name.",
         "avatarUrl": "Web link to a picture for the sender. Empty uses the webhook's own picture.",
         "textToSpeech": "Tick to let Discord read the message out loud to people watching that channel.",

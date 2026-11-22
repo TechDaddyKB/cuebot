@@ -11,7 +11,7 @@ Posts a message in a Discord channel through a webhook (a private address Discor
 | --- | --- |
 | **Webhook name** | A name for you to remember this webhook by. It is not sent to Discord. |
 | **Webhook URL** | The webhook link. Copy it in Discord: Server Settings, Integrations, Webhooks, then Copy Webhook URL. Keep it private. |
-| **Content** | The message text. Up to 2000 letters. To ping someone use <@USER_ID>, for a role use <@&ROLE_ID>. |
+| **Content** | The message text. Up to 2000 letters. To ping someone use <@USER_ID>, for a role use <@&ROLE_ID>. Only pings typed here work. Text from a variable cannot ping. |
 | **Username** | The name shown as the sender. Empty uses the webhook's own name. |
 | **Avatar URL** | Web link to a picture for the sender. Empty uses the webhook's own picture. |
 | **Text to speech** | Tick to let Discord read the message out loud to people watching that channel. Starts as: `false`. |

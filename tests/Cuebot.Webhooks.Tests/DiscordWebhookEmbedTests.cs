@@ -74,6 +74,48 @@ public sealed class DiscordWebhookEmbedTests : IAsyncDisposable
         Assert.Equal("222", allowed["roles"]![0]!.GetValue<string>());
     }
 
+    private async Task<JsonObject> SendSimpleAsync(string content, string viewerMessage)
+    {
+        Globals.Set("viewerMessage", viewerMessage, persist: false);
+        var error = await RunAsync(OutgoingWebhookSubActions.DiscordBasicWebhook, new() { ["webhookUrl"] = Url, ["content"] = content });
+        Assert.Null(error);
+        var (_, _, sent) = Assert.Single(_http.Requests);
+        return JsonNode.Parse(sent)!.AsObject();
+    }
+
+    [Fact]
+    public async Task Simple_mode_a_viewer_message_cannot_ping()
+    {
+        var body = await SendSimpleAsync("New message: ~viewerMessage~", "@everyone @here <@111> <@&222>");
+
+        var mentions = body["allowed_mentions"]!.AsObject();
+        Assert.Empty(mentions["parse"]!.AsArray());
+        Assert.False(mentions.ContainsKey("users"));
+        Assert.False(mentions.ContainsKey("roles"));
+        Assert.False(body["tts"]!.GetValue<bool>());
+    }
+
+    [Fact]
+    public async Task Simple_mode_typed_mentions_still_ping()
+    {
+        var body = await SendSimpleAsync("@everyone <@111> <@&222> live: ~viewerMessage~", "hello");
+
+        var mentions = body["allowed_mentions"]!.AsObject();
+        Assert.Equal("everyone", mentions["parse"]![0]!.GetValue<string>());
+        Assert.Equal("111", mentions["users"]![0]!.GetValue<string>());
+        Assert.Equal("222", mentions["roles"]![0]!.GetValue<string>());
+        Assert.Equal("@everyone <@111> <@&222> live: hello", body["content"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Simple_mode_a_typed_here_does_not_let_a_viewer_ping_everyone()
+    {
+        var body = await SendSimpleAsync("@here said: ~viewerMessage~", "@everyone and @here");
+
+        Assert.Equal("everyone", body["allowed_mentions"]!["parse"]![0]!.GetValue<string>());
+        Assert.Equal("@here said: @​everyone and @​here", body["content"]!.GetValue<string>());
+    }
+
     [Fact]
     public void A_variable_in_a_mention_must_be_an_id()
     {

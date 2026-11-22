@@ -62,7 +62,11 @@ public static class OutgoingWebhookSubActions
                 [
                     new("name", "Webhook name") { Help = "A label for this webhook (not sent)" },
                     new("webhookUrl", "Webhook URL") { Help = "Discord: Server Settings → Integrations → Webhooks → Copy Webhook URL" },
-                    new("content", "Content", ParameterKind.Multiline) { Help = "Ping users with <@USER_ID> and roles with <@&ROLE_ID>" },
+                    new("content", "Content", ParameterKind.Multiline)
+                    {
+                        Help = "Ping users with <@USER_ID> and roles with <@&ROLE_ID>. Only pings typed here work; text from a variable cannot ping",
+                        ResolveVariables = false,
+                    },
                     new("username", "Username") { Help = "Leave empty for the webhook's own name" },
                     new("avatarUrl", "Avatar URL") { Help = "Leave empty for the webhook's own avatar" },
                     new("textToSpeech", "Text to speech", ParameterKind.Boolean) { DefaultValue = "false" },
@@ -76,11 +80,11 @@ public static class OutgoingWebhookSubActions
                 {
                     var body = IsJson(v)
                         ? DiscordWebhookJson.FromJson(v["json"], ctx.Resolve)
-                        : DiscordWebhookClient.SimpleBody(v["content"], null, null, IsTrue(v["textToSpeech"]));
+                        : DiscordWebhookJson.FromText(v["content"], ctx.Resolve);
                     // The step's sender fields fill in for both kinds of body; a name inside the JSON wins.
                     if (v["username"].Trim() is { Length: > 0 } username && !body.Payload.ContainsKey("username")) body.Payload["username"] = username;
                     if (v["avatarUrl"].Trim() is { Length: > 0 } avatar && !body.Payload.ContainsKey("avatar_url")) body.Payload["avatar_url"] = avatar;
-                    if (IsJson(v) && IsTrue(v["textToSpeech"])) body.Payload["tts"] = true;
+                    if (!IsJson(v) || IsTrue(v["textToSpeech"])) body.Payload["tts"] = IsTrue(v["textToSpeech"]);
 
                     var sent = await discord.PostAsync(v["webhookUrl"], body, v["threadId"], v["threadName"], ct).ConfigureAwait(false);
                     // %messageId% for Streamer.bot actions (it replaces the trigger's chat message id), and a name of its own.
