@@ -3,6 +3,26 @@ import Testing
 @testable import CuebotKit
 
 struct PairingLinkTests {
+    @Test func httpsPortSwitchesBothBasesToHttps() throws {
+        let endpoint = try PairingLink.parse("cuebot://pair?v=1&host=test.example.com&api=80&http=80&https=443&token=t")
+        #expect(endpoint.https == true)
+        #expect(endpoint.apiBase.absoluteString == "https://test.example.com:443")
+        #expect(endpoint.httpBase.absoluteString == "https://test.example.com:443")
+    }
+
+    @Test func linkWithoutHttpsStaysPlainHttp() throws {
+        let endpoint = try PairingLink.parse("cuebot://pair?v=1&host=192.168.1.20&api=7575&http=7574&token=t")
+        #expect(endpoint.https == nil)
+        #expect(endpoint.apiBase.absoluteString == "http://192.168.1.20:7575")
+        #expect(endpoint.httpBase.absoluteString == "http://192.168.1.20:7574")
+    }
+
+    @Test func badHttpsPortIsRejected() {
+        #expect(throws: PairingLink.Failure.badPort("https")) {
+            try PairingLink.parse("cuebot://pair?host=x&https=99999&token=t")
+        }
+    }
+
     @Test func parsesEveryField() throws {
         let endpoint = try PairingLink.parse("cuebot://pair?v=1&name=Studio%20PC&host=192.168.1.20&api=7575&http=7574&token=abc&deckToken=dk&id=inst-1")
         #expect(endpoint == CuebotEndpoint(name: "Studio PC", host: "192.168.1.20", apiPort: 7575, httpPort: 7574,
