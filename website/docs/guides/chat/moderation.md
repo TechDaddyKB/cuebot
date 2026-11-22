@@ -43,7 +43,7 @@ Not every platform can do everything. Hold the mouse over a button to see what i
 
 | Button | Twitch | YouTube | Kick | Rumble |
 | --- | --- | --- | --- | --- |
-| Delete message | Works | Works (costs 50 quota units) | Works | Website (or see below) |
+| Delete message | Works | Works (costs 20 quota units) | Works | Website (or see below) |
 | Timeout | Works, 1 second to 14 days | Works, while you are live | Whole minutes, 1 minute to 7 days | Website (or see below) |
 | Ban | Works | Works, while you are live | Works | Website (or see below) |
 | Unban | Works | Only bans made from Cuebot | Works | Website |
@@ -156,7 +156,7 @@ and `BanMonthsAfterEnd`.
 ## YouTube quota
 
 YouTube gives every app a daily allowance, called **quota**. It resets at midnight Pacific time. Every YouTube action
-uses some of it: a ban, a timeout or a deletion each cost 50 units. The chat page shows how much is left when you work
+uses some of it: deleting a message costs 20 units; a ban, a timeout or an unban costs 200. The chat page shows how much is left when you work
 on YouTube.
 
 Cuebot keeps some quota back so your chat keeps arriving. Moderation stops when less than **Units moderation must

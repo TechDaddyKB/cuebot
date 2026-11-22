@@ -174,6 +174,7 @@ Bans a viewer from your Twitch chat for good. Fails when the user is not found. 
 | --- | --- | --- |
 | `user` | `user` | Optional. A Twitch login name (a leading @ is fine) or "id:12345". Leave it out for the user who triggered the action. |
 | `reason` | `reason` | Optional. Why, like "Spam". |
+| `useBot` | `use_bot` | Optional. true to do this as your bot account. It must be signed in and a moderator here; if it cannot, your main account does it and the log says why. Leave it out for your main account. |
 
 **Gives back:** An object with bannedUser (display name), bannedUserName (login), bannedUserId, bannedUserType ("twitch") and banResult (true).
 
@@ -2795,6 +2796,7 @@ Times out a viewer in your Twitch chat, so they cannot chat for a while. Fails w
 | `user` | `user` | Optional. A Twitch login name (a leading @ is fine) or "id:12345". Leave it out for the user who triggered the action. |
 | `duration` | `duration` | Optional. How long, in seconds (1 second to 14 days). Leave it out for 600 (10 minutes). |
 | `reason` | `reason` | Optional. Why, like "Calm down". |
+| `useBot` | `use_bot` | Optional. true to do this as your bot account. It must be signed in and a moderator here; if it cannot, your main account does it and the log says why. Leave it out for your main account. |
 
 **Gives back:** An object with timedOutUser (display name), timedOutUserName (login), timedOutUserId, timedOutUserType ("twitch") and timeoutResult (true).
 
@@ -2817,6 +2819,7 @@ Lets a banned viewer chat in your Twitch channel again. Fails when Twitch is not
 | Value | In Python | What to put in |
 | --- | --- | --- |
 | `user` | `user` | Optional. A Twitch login name (a leading @ is fine) or "id:12345". Leave it out for the user who triggered the action. |
+| `useBot` | `use_bot` | Optional. true to do this as your bot account. It must be signed in and a moderator here; if it cannot, your main account does it and the log says why. Leave it out for your main account. |
 
 **Gives back:** An object with unbannedUser (display name), unbannedUserName (login), unbannedUserId, unbannedUserType ("twitch") and unbanResult (true).
 

@@ -26,9 +26,14 @@ public static class DesktopFeatures
 
         // Hotkeys: the backend connects lazily (first enabled hotkey); the service starts on the first timer tick.
         services.AddSingleton<IGlobalHotkeys>(sp => GlobalHotkeys.CreateDefault(sp.GetRequiredService<AppLog>()));
-        services.AddSingleton(sp => new HotkeyService(sp.GetRequiredService<JsonFile<HotkeySettings>>(), sp.GetRequiredService<IGlobalHotkeys>(),
-            sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(),
-            (action, args) => sp.GetRequiredService<ActionEngine>().RunByNameAsync(action, args)));
+        services.AddSingleton(sp =>
+        {
+            var hotkeys = new HotkeyService(sp.GetRequiredService<JsonFile<HotkeySettings>>(), sp.GetRequiredService<IGlobalHotkeys>(),
+                sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(),
+                (action, args) => sp.GetRequiredService<ActionEngine>().RunByNameAsync(action, args));
+            sp.GetRequiredService<ProfileService>().ActionRenamed += hotkeys.RenameAction;
+            return hotkeys;
+        });
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<HotkeyService>());
 
         // Notifications and clipboard

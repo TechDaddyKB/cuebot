@@ -32,6 +32,9 @@ public sealed class ChatPageServices
     public Action<string>? OpenUrl { get; init; }
     public ActionEngine? Engine { get; init; }
 
+    /// <summary>The profile, so quick actions follow a renamed action.</summary>
+    public ProfileService? Profile { get; init; }
+
     /// <summary>Action names offered in the quick action editor.</summary>
     public Func<IEnumerable<string>>? ActionNames { get; init; }
 
@@ -53,6 +56,7 @@ public sealed class ChatPageServices
             ModerationActions = host.GetAll<ModerationService>().FirstOrDefault(),
             ModerationSettings = host.GetAll<JsonFile<ModerationSettings>>().FirstOrDefault(),
             Engine = host.Get<ActionEngine>(),
+            Profile = host.Get<ProfileService>(),
             ActionNames = () => host.Get<ProfileService>().Snapshot.Actions.Select(a => a.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase),
             Settings = new JsonFile<ChatPageSettings>(paths.File("chat-page.json"), log),
         };

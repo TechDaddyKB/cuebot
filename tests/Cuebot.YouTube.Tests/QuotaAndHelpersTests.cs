@@ -41,12 +41,28 @@ public sealed class QuotaAndHelpersTests
     {
         var (live, idle) = QuotaCosts.EstimatePerHour(chatSeconds: 8, broadcastSeconds: 120, liveSeconds: 60, subscriberSeconds: 300,
             monitorUpcoming: false, pollSubscribers: true);
-        // idle: 30 broadcast lists x 5 + 12 subscriber lists x 1 = 162; live adds 450 chat polls x 5 + 60 video reads x 1.
-        Assert.Equal(162, idle);
-        Assert.Equal(162 + 2250 + 60, live);
+        // idle: 30 broadcast lists x 1 + 12 subscriber lists x 1 = 42; live adds 450 chat polls x 5 + 60 video reads x 1.
+        Assert.Equal(42, idle);
+        Assert.Equal(42 + 2250 + 60, live);
 
         var (_, withUpcoming) = QuotaCosts.EstimatePerHour(8, 120, 60, 300, monitorUpcoming: true, pollSubscribers: false);
-        Assert.Equal(300, withUpcoming);
+        Assert.Equal(60, withUpcoming);
+    }
+
+    [Fact]
+    public void Costs_match_googles_quota_table()
+    {
+        Assert.Equal(1, QuotaCosts.LiveBroadcastsList);
+        Assert.Equal(5, QuotaCosts.LiveChatMessagesList);
+        Assert.Equal(5, QuotaCosts.LiveChatMessagesStream);
+        Assert.Equal(20, QuotaCosts.LiveChatMessagesInsert);
+        Assert.Equal(20, QuotaCosts.LiveChatMessagesDelete);
+        Assert.Equal(20, QuotaCosts.LiveChatMessagesTransition);
+        Assert.Equal(200, QuotaCosts.LiveChatBansInsert);
+        Assert.Equal(200, QuotaCosts.LiveChatBansDelete);
+        Assert.Equal(200, QuotaCosts.LiveChatModeratorsInsert);
+        Assert.Equal(200, QuotaCosts.LiveChatModeratorsDelete);
+        Assert.Equal(50, QuotaCosts.LiveChatModeratorsList);
     }
 
     [Fact]
@@ -55,8 +71,8 @@ public sealed class QuotaAndHelpersTests
         var (live, idle) = QuotaCosts.EstimatePerHour(chatSeconds: 8, broadcastSeconds: 120, liveSeconds: 60, subscriberSeconds: 300,
             monitorUpcoming: false, pollSubscribers: true, streamChat: true);
         // 12 connections x 5 (one every 5 minutes) instead of 450 polls x 5.
-        Assert.Equal(162, idle);
-        Assert.Equal(162 + 60 + 60, live);
+        Assert.Equal(42, idle);
+        Assert.Equal(42 + 60 + 60, live);
     }
 
     [Fact]

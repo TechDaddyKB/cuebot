@@ -54,6 +54,51 @@ public class JsonFileTests
         Assert.Contains(log.Recent(), e => e.Level == LogLevel.Error);
     }
 
+    private static void WriteBackup(string dir, string stamp, string entry, string json)
+    {
+        var folder = System.IO.Path.Combine(dir, "backups");
+        Directory.CreateDirectory(folder);
+        using var zip = System.IO.Compression.ZipFile.Open(System.IO.Path.Combine(folder, $"cuebot-{stamp}-start.zip"), System.IO.Compression.ZipArchiveMode.Create);
+        using var writer = new StreamWriter(zip.CreateEntry(entry).Open());
+        writer.Write(json);
+    }
+
+    [Fact]
+    public void Corrupt_file_is_restored_from_the_newest_valid_backup()
+    {
+        using var dir = new TempDir();
+        using var log = new AppLog();
+        var path = System.IO.Path.Combine(dir.Path, "s.json");
+        File.WriteAllText(path, "{ not json");
+        WriteBackup(dir.Path, "20260101-100000", "s.json", """{"name":"oldest"}""");
+        WriteBackup(dir.Path, "20260102-100000", "s.json", """{"name":"newest good"}""");
+        WriteBackup(dir.Path, "20260103-100000", "s.json", "{ also damaged");
+        WriteBackup(dir.Path, "20260104-100000", "other.json", """{"name":"wrong file"}""");
+
+        using (var file = new JsonFile<Sample>(path, log))
+            Assert.Equal("newest good", file.Value.Name);
+
+        Assert.Equal("{ not json", File.ReadAllText(Assert.Single(Directory.GetFiles(dir.Path, "s.json.corrupt-*"))));
+        Assert.Contains("newest good", File.ReadAllText(path));   // the good copy is back on disk
+        Assert.Contains(log.Recent(), e => e.Level == LogLevel.Error && e.Message.Contains("restored from cuebot-20260102-100000-start.zip", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Corrupt_file_with_only_damaged_backups_starts_with_defaults()
+    {
+        using var dir = new TempDir();
+        using var log = new AppLog();
+        var path = System.IO.Path.Combine(dir.Path, "s.json");
+        File.WriteAllText(path, "{ not json");
+        WriteBackup(dir.Path, "20260101-100000", "s.json", "{ damaged too");
+        File.WriteAllText(System.IO.Path.Combine(dir.Path, "backups", "cuebot-20260102-100000-start.zip"), "not a zip");
+
+        using var file = new JsonFile<Sample>(path, log);
+
+        Assert.Equal("", file.Value.Name);
+        Assert.Single(Directory.GetFiles(dir.Path, "s.json.corrupt-*"));
+    }
+
     [Fact]
     public void Profile_with_branches_round_trips()
     {

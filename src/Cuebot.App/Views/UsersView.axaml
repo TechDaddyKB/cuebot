@@ -137,7 +137,7 @@
                   <Button Grid.Column="6" Content="Delete group" Command="{Binding DeleteGroupCommand}" ToolTip.Tip="Deletes this group and its list of members." />
                 </Grid>
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="If you rename a group, commands that allow or block it by name are not updated. Check them on the Commands page." />
+                           Text="If you rename a group, commands that allow or block it follow the new name." />
                 <TextBlock Classes="h2" Text="Add a member" Margin="0,6,0,0" />
                 <Grid ColumnDefinitions="120,8,*,8,160,8,Auto">
                   <AutoCompleteBox Text="{Binding MemberPlatform}" ItemsSource="{Binding Platforms}" MinimumPrefixLength="0"
