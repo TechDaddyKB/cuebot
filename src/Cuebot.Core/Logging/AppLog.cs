@@ -40,7 +40,9 @@ public sealed class AppLog : IDisposable
         {
             _history.Enqueue(entry);
             while (_history.Count > HistorySize) _history.Dequeue();
-            _file?.WriteLine(entry.ToString());
+            // Logging never throws: a closed log (late in shutdown) or a full disk must not take the caller down.
+            try { _file?.WriteLine(entry.ToString()); }
+            catch (Exception ex) when (ex is ObjectDisposedException or IOException) { }
         }
         EntryAdded?.Invoke(entry);
     }
