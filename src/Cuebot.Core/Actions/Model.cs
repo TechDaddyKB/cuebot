@@ -60,6 +60,14 @@ public sealed class TriggerDefinition
     /// </summary>
     public bool AlwaysRun { get; set; }
 
+    /// <summary>Only run while live on a connected platform. JSON: "onlyWhileLive".</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool OnlyWhileLive { get; set; }
+
+    /// <summary>With <see cref="OnlyWhileLive"/>: the platforms that count (null = any). JSON: "livePlatforms".</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? LivePlatforms { get; set; }
+
     public NodeLayout? Layout { get; set; }
 }
 
@@ -129,6 +137,14 @@ public sealed class TimerDefinition
 
     /// <summary>Optional cron schedule ("*/15 * * * *": minute hour day-of-month month day-of-week). Overrides the interval.</summary>
     public string? Cron { get; set; }
+
+    /// <summary>Only run while live on a connected platform. JSON: "onlyWhileLive".</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool OnlyWhileLive { get; set; }
+
+    /// <summary>With <see cref="OnlyWhileLive"/>: the platforms that count (null = any). JSON: "livePlatforms".</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? LivePlatforms { get; set; }
 }
 
 /// <summary>Everything the user builds: actions and timers. Stored in actions.json.</summary>

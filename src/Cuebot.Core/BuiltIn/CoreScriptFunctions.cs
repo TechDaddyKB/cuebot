@@ -40,8 +40,18 @@ public sealed class CoreScriptFunctions : IScriptFunctionProvider
         {
             var name = a.GetString("name");
             var target = ctx.Engine.FindAction(name) ?? throw new ScriptException($"No action named '{name}'");
-            return await ctx.Engine.RunAsync(target, ctx.Args, ctx.Depth + 1, $"Script in '{ctx.Action.Name}'", ct);
+            return await ctx.Engine.RunAsync(target, ctx.Args, ctx.Depth + 1, $"Script in '{ctx.Action.Name}'", ct, ctx.RunId);
         }),
+        new("actions.cancel", "Cancel the running and queued runs of an action (blank = this action); returns how many", ["name", "includePending", "includeThisRun"],
+            (ctx, a, ct) =>
+            {
+                var name = a.GetString("name");
+                var target = name.Trim().Length == 0 ? ctx.Action : ctx.Engine.FindAction(name) ?? throw new ScriptException($"No action named '{name}'");
+                var count = ctx.Engine.CancelRuns(target.Id, a.GetBool("includePending", true),
+                    keep: a.GetBool("includeThisRun") ? null : ctx.RunId, self: ctx.RunId);
+                ct.ThrowIfCancellationRequested();
+                return Task.FromResult<object?>(count);
+            }),
         new("args.resolve", "Fill in %variables% and ~globals~ in a text, the way step settings are", ["text"],
             (ctx, a, _) => Task.FromResult<object?>(ctx.Resolve(a.GetString("text")))),
         new("steps.run", "Run one step by its type id; returns how it ended and the branch it picked", ["type", "parameters"],

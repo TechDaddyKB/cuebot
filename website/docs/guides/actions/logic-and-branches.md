@@ -45,6 +45,7 @@ list may stay empty.
 | **contains** / **does not contain** | Compare to is inside Value / is not. |
 | **starts with** / **ends with** | Value begins / ends with Compare to. |
 | **greater than** / **less than** | Value is bigger / smaller. |
+| **at least (≥)** / **at most (≤)** | Value is bigger or the same / smaller or the same. |
 | **is empty** / **is not empty** | Value has nothing in it (spaces count as nothing) / has something. |
 | **matches regex** | Value matches a *regular expression*, a search pattern for experts. |
 | **exists** / **does not exist** | a variable with that name is there / is not. Type only the name, like `targetUser`, without `%`. |
@@ -59,8 +60,18 @@ Good to know:
 - **matches regex** adds `%match.count%` and `%match[0]%` (the matched text; `%match[1]%` is the first captured
   piece) for the steps after it.
 
-Need *and* or *or*? Put an If inside the True branch of another If (*and*), or use a **Switch** with several values on
-one line (*or*).
+### Check several things at once
+
+Set **Combine with** to check up to four conditions in one If:
+
+- **All must be true (AND)**: the True steps run only when every condition holds.
+- **Any can be true (OR)**: one condition that holds is enough.
+
+Fill in **Value**, **Operator** and **Compare to** for conditions 2 to 4. Leave an operator on **not used** to skip that
+row. Cuebot checks them from top to bottom and stops as soon as the answer is known. For example, "at least 100 points
+AND is a subscriber" needs two rows with **All must be true**.
+
+Need more than four, or a mix of AND and OR? Put an If inside the True branch of another If.
 
 ## Switch: one of many
 
@@ -232,7 +243,14 @@ These live in the **Core** group. They change actions while the stream runs:
 | **Set action group state** / **Get action group state** | Switches (or checks) every action in a group folder. |
 | **Get action state** | Tells you whether an action is on. |
 | **Clear action queue** / **Set action queue pause state** / **Set queue to one at a time** | Control a [queue](queues.md). |
+| **Cancel running actions** | Stops the runs of this action or a chosen one, including those waiting in a queue. See below. |
 | **Send local signal** / **Wait for local signal** | One action waits until another one says "go". |
+
+**Cancel running actions** is useful for "stop the effect" commands, or to let only the newest run of an action
+continue. Choose **This action** or **Chosen action**. **Also cancel queued runs** includes runs still waiting, and
+**Leave this run alone** keeps the run doing the cancelling (and whatever started it) going. `%runsCancelled%` says how
+many were stopped. A run stops at its next step or wait, so the step it is on finishes first, and an action that is
+waiting for a cancelled run stops too.
 
 Every setting of every logic step is in the reference: [Logic sub-actions](../../reference/sub-actions/logic.md) and
 [Core sub-actions](../../reference/sub-actions/core.md).

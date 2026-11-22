@@ -5,7 +5,9 @@ namespace Cuebot.Core.BuiltIn;
 /// <summary>
 /// If / Else. "matches regex" also sets Streamer.bot's capture arguments when it matches: %match.count% (groups,
 /// including group 0), %match[0]%.. (each group's text) and one argument per named group. "does not exist" / "exists"
-/// test whether an argument is defined; the value is its bare name (or %name%).
+/// test whether an argument is defined; the value is its bare name (or %name%). "Combine with" adds up to three more
+/// conditions (All = AND, Any = OR), checked in order and stopping as soon as the answer is known. Steps saved without
+/// it keep their single condition.
 /// </summary>
 public sealed class IfSubAction : ISubActionHandler
 {
@@ -14,7 +16,20 @@ public sealed class IfSubAction : ISubActionHandler
     public const string DoesNotExist = "does not exist";
     public const string Exists = "exists";
 
+    public const string OnlyThis = "Only this";
+    public const string All = "All";
+    public const string Any = "Any";
+    public const string NotUsed = "not used";
+    public const int MaxConditions = 4;
+
     public static readonly IReadOnlyList<string> Operators = [.. Conditions.Operators, DoesNotExist, Exists];
+
+    private static readonly IReadOnlyDictionary<string, string> CombineLabels = new Dictionary<string, string>
+    {
+        [OnlyThis] = "Only this condition",
+        [All] = "All must be true (AND)",
+        [Any] = "Any can be true (OR)",
+    };
 
     public string TypeId => "core.if";
     public string Category => Categories.Logic;
@@ -23,30 +38,73 @@ public sealed class IfSubAction : ISubActionHandler
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("left", "Value") { DefaultValue = "%message%", Help = "For \"does not exist\" / \"exists\": the argument's name" },
-        new("operator", "Operator", ParameterKind.Choice) { DefaultValue = "equals", Choices = Operators },
+        new("operator", "Operator", ParameterKind.Choice) { DefaultValue = "equals", Choices = Operators, ChoiceLabels = Conditions.Labels },
         new("right", "Compare to"),
+        new("combine", "Combine with", ParameterKind.Choice)
+        {
+            DefaultValue = OnlyThis, Choices = [OnlyThis, All, Any], ChoiceLabels = CombineLabels,
+        },
+        .. Enumerable.Range(2, MaxConditions - 1).SelectMany(ExtraCondition),
     ];
+
+    private static IEnumerable<ParameterDescriptor> ExtraCondition(int n) =>
+    [
+        new($"left{n}", $"Value {n}"),
+        new($"operator{n}", $"Operator {n}", ParameterKind.Choice)
+        {
+            DefaultValue = NotUsed, Choices = [NotUsed, .. Operators], ChoiceLabels = Conditions.Labels,
+        },
+        new($"right{n}", $"Compare to {n}"),
+    ];
+
+    /// <summary>The setting names of each condition in use: the first, plus the extra ones when "Combine with" is on.</summary>
+    public static IReadOnlyList<(string Left, string Operator, string Right)> ConditionKeys(Func<string, string?> get)
+    {
+        var keys = new List<(string, string, string)> { ("left", "operator", "right") };
+        if (string.Equals(get("combine")?.Trim(), OnlyThis, StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(get("combine"))) return keys;
+        for (var n = 2; n <= MaxConditions; n++)
+        {
+            var op = get($"operator{n}")?.Trim();
+            if (!string.IsNullOrEmpty(op) && !op.Equals(NotUsed, StringComparison.OrdinalIgnoreCase)) keys.Add(($"left{n}", $"operator{n}", $"right{n}"));
+        }
+        return keys;
+    }
+
+    /// <summary>Whether "Combine with" asks for any one condition to be enough.</summary>
+    public static bool IsAny(string? combine) => string.Equals(combine?.Trim(), Any, StringComparison.OrdinalIgnoreCase);
 
     public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
-        var op = p["operator"].Trim();
+        var any = IsAny(p["combine"]);
+        var result = !any;
+        foreach (var (left, op, right) in ConditionKeys(p.GetString))
+        {
+            if (Check(context, p[left], p[op].Trim(), p[right]) != any) continue;
+            result = any;
+            break;
+        }
+        return Task.FromResult(SubActionResult.TakeBranch(result ? True : False));
+    }
+
+    private static bool Check(ActionRunContext context, string left, string op, string right)
+    {
         bool result;
         if (op.Equals(DoesNotExist, StringComparison.OrdinalIgnoreCase) || op.Equals(Exists, StringComparison.OrdinalIgnoreCase))
         {
-            result = ArgumentExists(context, p["left"]) == op.Equals(Exists, StringComparison.OrdinalIgnoreCase);
+            result = ArgumentExists(context, left) == op.Equals(Exists, StringComparison.OrdinalIgnoreCase);
         }
         else if (op.Equals("matches regex", StringComparison.OrdinalIgnoreCase))
         {
-            var match = System.Text.RegularExpressions.Regex.Match(p["left"], p["right"],
+            var match = System.Text.RegularExpressions.Regex.Match(left, right,
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
             result = match.Success;
             if (match.Success) SetCaptures(context.Args, match);
         }
         else
         {
-            result = Conditions.Evaluate(p["left"], op, p["right"]);
+            result = Conditions.Evaluate(left, op, right);
         }
-        return Task.FromResult(SubActionResult.TakeBranch(result ? True : False));
+        return result;
     }
 
     /// <summary>Whether an argument is defined. A resolved %name% that became a value means it exists.</summary>
@@ -97,7 +155,7 @@ public sealed class SwitchSubAction : IFlowContainerHandler, IDynamicBranchesPro
         {
             Help = "One case per line. Separate several values for the same case with |. The first matching case wins.",
         },
-        new("operator", "Match with", ParameterKind.Choice) { DefaultValue = "equals", Choices = Conditions.Operators },
+        new("operator", "Match with", ParameterKind.Choice) { DefaultValue = "equals", Choices = Conditions.Operators, ChoiceLabels = Conditions.Labels },
     ];
 
     /// <summary>The case lines of a raw "cases" parameter: trimmed, non-empty, distinct, in order.</summary>
@@ -193,7 +251,7 @@ public sealed class WhileSubAction : IFlowContainerHandler
     public IReadOnlyList<ParameterDescriptor> Parameters { get; } =
     [
         new("left", "Value") { DefaultValue = "%loopIteration%" },
-        new("operator", "Operator", ParameterKind.Choice) { DefaultValue = "less than", Choices = Conditions.Operators },
+        new("operator", "Operator", ParameterKind.Choice) { DefaultValue = "less than", Choices = Conditions.Operators, ChoiceLabels = Conditions.Labels },
         new("right", "Compare to") { DefaultValue = "10" },
         new("maxIterations", "Safety limit (iterations, 0 = none)", ParameterKind.Number) { DefaultValue = "10000" },
     ];

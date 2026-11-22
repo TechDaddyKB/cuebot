@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:c="using:Cuebot.App.Controls"
              xmlns:vm="using:Cuebot.App.ViewModels"
+             xmlns:gate="using:Cuebot.App.Views"
              x:Class="Cuebot.App.Views.CommandsView"
              x:DataType="vm:CommandsViewModel"
              x:Name="Root">
@@ -130,6 +131,7 @@
                     <CheckBox Content="Ignore the bot account" IsChecked="{Binding IgnoreBotAccount}" ToolTip.Tip="Ticked: messages written by your bot account do not run this command." />
                     <CheckBox Content="Ignore messages sent from Cuebot" IsChecked="{Binding IgnoreInternal}" ToolTip.Tip="Ticked: chat messages that Cuebot itself sends (from your actions) cannot run this command. This stops it from triggering itself." />
                   </WrapPanel>
+                  <gate:LiveGateView DataContext="{Binding LiveGate}" />
                   <StackPanel Spacing="4">
                     <TextBlock Text="Sources (one per line, e.g. Twitch or Twitch:Whisper; empty = every chat)" />
                     <TextBox Text="{Binding SourcesText}" AcceptsReturn="True" TextWrapping="NoWrap" MinHeight="56" ToolTip.Tip="Limit the command to some chats, one per line, like Twitch. Leave empty to allow every chat." />

@@ -12,6 +12,7 @@ Presses keys on your keyboard for you, in the app that is in front. On Linux you
 | Value | In Python | What to put in |
 | --- | --- | --- |
 | `keys` | `keys` | The keys to press, like "Ctrl+Shift+F1". Split several with commas, like "Ctrl+C, Ctrl+V". SendKeys text like "^c" or "{ENTER}" works too. |
+| `holdMs` | `hold_ms` | Optional. How many milliseconds to keep each combination down before letting go, up to 300000. Leave it out for a normal press. |
 
 **Gives back:** true when the keys were pressed.
 

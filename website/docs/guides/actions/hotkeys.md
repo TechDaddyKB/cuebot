@@ -19,6 +19,13 @@ so you can fire an alert or switch a scene without leaving your game.
 The **Desktop** part of the page sets where Cuebot's pop-up notifications appear (**Notifications appear**), and
 **Watch the clipboard ('Clipboard changed' trigger)** lets an action start whenever you copy something.
 
+## Hold a key down
+
+Hotkeys start actions. To make an action *press* a key, use the **Keyboard press** sub-action. Set **Hold for (ms)** to
+keep the keys down for that long, like `2000` for two seconds of sprint in a game. It takes a `%variable%` too, goes up
+to 5 minutes, and `0` is a normal quick press. Cuebot always lets go, even when the action is cancelled or the app
+closes. Some games ignore keys sent by other programs.
+
 ## On a Mac
 
 !!! note "Mac"

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Cuebot.Core.Commands;
 
 /// <summary>How a command's texts are compared with a chat message.</summary>
@@ -94,6 +96,14 @@ public sealed class CommandDefinition
 
     /// <summary>Keep the per-user use counters across restarts.</summary>
     public bool PersistUserCounter { get; set; }
+
+    /// <summary>Only run while live on a connected platform. JSON: "onlyWhileLive".</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool OnlyWhileLive { get; set; }
+
+    /// <summary>With <see cref="OnlyWhileLive"/>: the platforms that count (null = any). JSON: "livePlatforms".</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? LivePlatforms { get; set; }
 }
 
 /// <summary>commands.json.</summary>

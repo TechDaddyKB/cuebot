@@ -241,6 +241,93 @@ public sealed class InputTests : IDisposable
         threads.ForEach(t => t.Join());
     }
 
+    [Fact]
+    public async Task Hold_presses_waits_then_releases_in_reverse()
+    {
+        using var keyboard = new RecordingKeyboard();
+        await keyboard.HoldAsync(KeyCombos.Parse("Ctrl+W"), TimeSpan.FromMilliseconds(5));
+        Assert.Equal(["Ctrl+ W+", "W- Ctrl-"], keyboard.Combos);
+    }
+
+    [Fact]
+    public async Task Hold_of_zero_is_a_normal_press()
+    {
+        using var keyboard = new RecordingKeyboard();
+        await keyboard.HoldAsync(KeyCombos.Parse("W"), TimeSpan.Zero);
+        Assert.Equal(["W+ W-"], keyboard.Combos);
+    }
+
+    [Fact]
+    public async Task A_cancelled_hold_still_releases_its_keys()
+    {
+        using var keyboard = new RecordingKeyboard();
+        using var cts = new CancellationTokenSource();
+        var hold = keyboard.HoldAsync(KeyCombos.Parse("Shift+W"), TimeSpan.FromMinutes(1), cts.Token);
+        await WaitFor(() => keyboard.Combos.Count == 1);
+        await cts.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => hold);
+        Assert.Equal(["Shift+ W+", "W- Shift-"], keyboard.Combos);
+    }
+
+    [Fact]
+    public async Task Overlapping_holds_let_go_only_with_the_last_one()
+    {
+        using var keyboard = new RecordingKeyboard();
+        using var longer = new CancellationTokenSource();
+        var first = keyboard.HoldAsync(KeyCombos.Parse("Shift+W"), TimeSpan.FromMinutes(1), longer.Token);
+        await WaitFor(() => keyboard.Combos.Count == 1);
+
+        // Shift stays down when the shorter hold ends; only its own key goes up.
+        await keyboard.HoldAsync(KeyCombos.Parse("Shift+A"), TimeSpan.FromMilliseconds(5));
+        Assert.Equal(["Shift+ W+", "A+", "A-"], keyboard.Combos);
+
+        await longer.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        Assert.Equal("W- Shift-", keyboard.Combos[^1]);
+    }
+
+    [Fact]
+    public async Task A_tap_does_not_release_a_held_key()
+    {
+        using var keyboard = new RecordingKeyboard();
+        using var cts = new CancellationTokenSource();
+        var hold = keyboard.HoldAsync(KeyCombos.Parse("Shift+W"), TimeSpan.FromMinutes(1), cts.Token);
+        await WaitFor(() => keyboard.Combos.Count == 1);
+
+        await keyboard.PressAsync("Shift+A");
+        Assert.Equal(["Shift+ W+", "A+ A-"], keyboard.Combos);
+
+        await cts.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => hold);
+        Assert.Equal("W- Shift-", keyboard.Combos[^1]);
+    }
+
+    [Fact]
+    public async Task Closing_lets_go_of_held_keys()
+    {
+        var keyboard = new RecordingKeyboard();
+        using var cts = new CancellationTokenSource();
+        var hold = keyboard.HoldAsync(KeyCombos.Parse("W"), TimeSpan.FromMinutes(1), cts.Token);
+        await WaitFor(() => keyboard.Combos.Count == 1);
+
+        keyboard.Dispose();
+        Assert.Equal(["W+", "W-"], keyboard.Combos);
+
+        await cts.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => hold);
+        Assert.Equal(2, keyboard.Combos.Count);
+    }
+
+    private static async Task WaitFor(Func<bool> condition)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (!condition())
+        {
+            Assert.True(DateTime.UtcNow < deadline, "timed out");
+            await Task.Delay(2);
+        }
+    }
+
     public void Dispose() => _log.Dispose();
 
     private sealed class RecordingKeyboard : KeyboardOutputBase

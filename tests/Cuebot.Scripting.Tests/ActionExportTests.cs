@@ -221,6 +221,30 @@ public sealed class ActionExportTests : IAsyncLifetime
 
     // ---- Helpers ----
 
+    [Theory]
+    [InlineData("All", CodeLanguage.CSharp, " && ")]
+    [InlineData("Any", CodeLanguage.CSharp, " || ")]
+    [InlineData("All", CodeLanguage.Python, " and ")]
+    [InlineData("Any", CodeLanguage.Python, " or ")]
+    public void Combined_if_conditions_export_with_their_joiner(string combine, CodeLanguage language, string joiner)
+    {
+        var action = new ActionDefinition { Name = "Combined" };
+        action.SubActions.Add(new SubActionDefinition
+        {
+            Type = "core.if",
+            Parameters =
+            {
+                ["left"] = "%a%", ["operator"] = "at least", ["right"] = "1", ["combine"] = combine,
+                ["left2"] = "%b%", ["operator2"] = "at most", ["right2"] = "2",
+                ["left3"] = "%skipped%", ["operator3"] = IfSubAction.NotUsed, ["right3"] = "3",
+            },
+        });
+        var code = Export(action, language).Code;
+        Assert.Contains(joiner, code, StringComparison.Ordinal);
+        Assert.Contains("at most", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("%skipped%", code, StringComparison.Ordinal);
+    }
+
     private CodeExport Export(ActionDefinition action, CodeLanguage language) =>
         ActionCodeExporter.Export(action, _bot.Registry, language);
 

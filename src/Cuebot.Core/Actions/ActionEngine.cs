@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.ExceptionServices;
+using Cuebot.Core.Chat;
 using Cuebot.Core.Events;
 using Cuebot.Core.Logging;
 using Cuebot.Core.Transfer.StreamerBot;
@@ -60,14 +61,16 @@ public sealed class ActionEngine : IDisposable
     private readonly GlobalVariables _globals;
     private readonly AppLog _log;
     private readonly IRandomSource _random;
-    private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _active = new();
+    private readonly StreamLiveState _live;
+    private readonly ConcurrentDictionary<Guid, ActiveRun> _active = new();
     private readonly CancellationTokenSource _shutdown = new();
     private readonly bool _ownsQueues;
     private IDisposable? _subscription;
 
     public ActionEngine(EventBus bus, ProfileService profile, Registry registry, GlobalVariables globals, AppLog log,
-        QueueService? queues = null, ActionHistory? history = null, IRandomSource? random = null)
+        QueueService? queues = null, ActionHistory? history = null, IRandomSource? random = null, StreamLiveState? live = null)
     {
+        _live = live ?? new StreamLiveState();
         _bus = bus;
         _profile = profile;
         _registry = registry;
@@ -105,6 +108,7 @@ public sealed class ActionEngine : IDisposable
                 if (!trigger.Enabled) continue;
                 var type = _registry.GetTrigger(trigger.Type);
                 if (type is null || !type.EventTypes.Contains(e.Type)) continue;
+                if (!_live.Allows(trigger.OnlyWhileLive, trigger.LivePlatforms)) continue; // "Test trigger" skips this
 
                 var args = new Dictionary<string, object?>(e.Args, StringComparer.OrdinalIgnoreCase);
                 var settings = ParameterValues.From(type.Parameters, trigger.Settings);
@@ -200,10 +204,10 @@ public sealed class ActionEngine : IDisposable
     /// <summary>Cancels a pending or running run (e.g. "Break running" in the UI). Returns false if it already ended.</summary>
     public bool Cancel(Guid runId)
     {
-        if (!_active.TryGetValue(runId, out var cts)) return false;
+        if (!_active.TryGetValue(runId, out var run)) return false;
         try
         {
-            cts.Cancel();
+            run.Cancellation.Cancel();
         }
         catch (ObjectDisposedException)
         {
@@ -212,8 +216,27 @@ public sealed class ActionEngine : IDisposable
         return true;
     }
 
+    /// <summary>
+    /// Cancels the runs of one action; returns how many. <paramref name="includePending"/> also cancels runs still
+    /// waiting in a queue. <paramref name="keep"/> is left alone together with the runs that started it, because
+    /// cancelling a parent would stop it too. The caller's own run, when targeted, is cancelled last.
+    /// </summary>
+    public int CancelRuns(Guid actionId, bool includePending = true, Guid? keep = null, Guid? self = null)
+    {
+        var kept = new HashSet<Guid>();
+        for (var id = keep; id is { } current && kept.Add(current); id = _active.TryGetValue(current, out var run) ? run.ParentRunId : null)
+        {
+        }
+        var targets = _active
+            .Where(r => r.Value.ActionId == actionId && !kept.Contains(r.Key) && (includePending || r.Value.Started))
+            .OrderBy(r => r.Key == self)
+            .Select(r => r.Key)
+            .ToArray();
+        return targets.Count(Cancel);
+    }
+
     internal async Task<bool> RunAsync(ActionDefinition action, IReadOnlyDictionary<string, object?>? args, int depth,
-        string source, CancellationToken ct)
+        string source, CancellationToken ct, Guid? parentRunId = null)
     {
         if (depth > MaxDepth)
         {
@@ -253,7 +276,8 @@ public sealed class ActionEngine : IDisposable
         }
 
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _shutdown.Token);
-        _active[runId] = linked;
+        var active = new ActiveRun(linked, action.Id, parentRunId);
+        _active[runId] = active;
         IDisposable? lease = null;
         var watch = new Stopwatch();
         string? error = null;
@@ -268,6 +292,7 @@ public sealed class ActionEngine : IDisposable
                 lease = await Queues.EnterAsync(queue, action.AlwaysRun, exclusive, linked.Token).ConfigureAwait(false);
             }
 
+            active.Started = true;
             watch.Start();
             var startedAt = DateTimeOffset.Now;
             startedAtValue = startedAt;
@@ -276,7 +301,7 @@ public sealed class ActionEngine : IDisposable
                 History.Update(runId, e => e with { State = ActionRunState.Running, StartedAt = startedAt });
             }
             RunStarted?.Invoke(new ActionRunStart(runId, action, source, depth, queuedAt, startedAt, runArgs));
-            var context = new ActionRunContext(action, runArgs, this, _globals, _log, depth);
+            var context = new ActionRunContext(action, runArgs, this, _globals, _log, depth) { RunId = runId };
             await RunBodyAsync(context, action, linked.Token).ConfigureAwait(false);
             state = ActionRunState.Completed;
         }
@@ -566,6 +591,17 @@ public sealed class ActionEngine : IDisposable
         _shutdown.Cancel();
         _shutdown.Dispose();
         if (_ownsQueues) Queues.Dispose();
+    }
+
+    /// <summary>A run that has not ended yet.</summary>
+    private sealed class ActiveRun(CancellationTokenSource cancellation, Guid actionId, Guid? parentRunId)
+    {
+        public CancellationTokenSource Cancellation { get; } = cancellation;
+        public Guid ActionId { get; } = actionId;
+        public Guid? ParentRunId { get; } = parentRunId;
+
+        /// <summary>False while it waits in a queue.</summary>
+        public volatile bool Started;
     }
 
     /// <summary>A sub-action failed; carries "Display name: message" and is not re-wrapped by enclosing containers.</summary>

@@ -65,6 +65,9 @@ public sealed class InputTriggers(MouseClickService mouse) : ITriggerProvider
 /// <summary>Sends a key combination (or several, one after the other) to the focused application.</summary>
 public sealed class KeyboardPressSubAction(IKeyboardOutput keyboard) : ISubActionHandler
 {
+    /// <summary>The longest hold, so a mistyped value cannot keep a key down for hours.</summary>
+    public const int MaxHoldMs = 300_000;
+
     public string TypeId => "input.keyboardPress";
     public string Category => ExtrasCategories.System;
     public string DisplayName => "Keyboard press";
@@ -79,16 +82,22 @@ public sealed class KeyboardPressSubAction(IKeyboardOutput keyboard) : ISubActio
             Suggestions = () => ["Ctrl+Shift+F1", "Alt+Tab", "Ctrl+C, Ctrl+V", "MediaPlayPause", "{ENTER}"],
         },
         new("delay", "Pause between combos (ms)", ParameterKind.Number) { DefaultValue = "30" },
+        new("hold", "Hold for (ms)", ParameterKind.Number)
+        {
+            DefaultValue = "0",
+            Help = $"Keep each combination down this long, then let go. 0 is a normal press. At most {MaxHoldMs} (5 minutes).",
+        },
     ];
 
     public async Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
     {
         if (!KeyCombos.TryParse(p["keys"], out var combos, out var error)) throw new InvalidOperationException(error);
         var delay = Math.Clamp(p.GetInt("delay", 30), 0, 10_000);
+        var hold = TimeSpan.FromMilliseconds(Math.Clamp(p.GetInt("hold"), 0, MaxHoldMs));
         for (var i = 0; i < combos.Count; i++)
         {
             if (i > 0 && delay > 0) await Task.Delay(delay, ct);
-            await keyboard.PressAsync([combos[i]], ct);
+            await keyboard.HoldAsync([combos[i]], hold, ct);
         }
         context.Args["keysPressed"] = string.Join(", ", combos);
         return SubActionResult.Next;
@@ -100,12 +109,14 @@ public sealed class InputScriptFunctions(IKeyboardOutput keyboard, MouseClickSer
 {
     public IEnumerable<ScriptFunction> GetFunctions() =>
     [
-        new("input.keyPress", "Press keys in the focused application (\"Ctrl+Shift+F1\", \"Ctrl+C, Ctrl+V\" or SendKeys \"^c\")", ["keys"],
+        new("input.keyPress", "Press keys in the focused application (\"Ctrl+Shift+F1\", \"Ctrl+C, Ctrl+V\" or SendKeys \"^c\"), optionally held down for holdMs", ["keys", "holdMs"],
             async (_, a, ct) =>
             {
                 try
                 {
-                    await keyboard.PressAsync(a.GetString("keys"), ct);
+                    var holdMs = a.GetElement("holdMs") is { ValueKind: System.Text.Json.JsonValueKind.Number } value && value.TryGetInt32(out var ms) ? ms : 0;
+                    await keyboard.HoldAsync(KeyCombos.Parse(a.GetString("keys")),
+                        TimeSpan.FromMilliseconds(Math.Clamp(holdMs, 0, KeyboardPressSubAction.MaxHoldMs)), ct);
                     return true;
                 }
                 catch (Exception ex) when (ex is FormatException or InvalidOperationException)

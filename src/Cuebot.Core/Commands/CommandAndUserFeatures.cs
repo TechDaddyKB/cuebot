@@ -25,7 +25,7 @@ internal static class CommandAndUserFeatures
         services.AddSettingsFile<AccountLinksData>("account-links.json");
         services.AddSingleton(sp => new AccountLinks(sp.GetRequiredService<Storage.JsonFile<AccountLinksData>>(), sp.GetRequiredService<AppLog>()));
         services.AddSingleton(sp => new CommandService(sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<GroupStore>(),
-            sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
+            sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(), live: sp.GetRequiredService<Chat.StreamLiveState>()));
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<UserRegistry>());
         services.AddSingleton<IViewerDataStore>(sp => sp.GetRequiredService<UserRegistry>());
         services.AddSingleton<IViewerDataStore>(sp => sp.GetRequiredService<GroupStore>());
@@ -36,7 +36,7 @@ internal static class CommandAndUserFeatures
         services.AddSingleton<IPeriodicService>(sp => new Timers.CronClock(sp.GetRequiredService<EventBus>(), sp.GetRequiredService<ProfileService>()));
         services.AddSingleton<ITriggerProvider, Timers.CronTriggers>();
         services.AddSingleton(sp => new TimerService(sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<EventBus>(),
-            periodic: sp.GetServices<IPeriodicService>(), log: sp.GetRequiredService<AppLog>()));
+            periodic: sp.GetServices<IPeriodicService>(), log: sp.GetRequiredService<AppLog>(), live: sp.GetRequiredService<Chat.StreamLiveState>()));
 
         // Commands
         services.AddSingleton<ITriggerProvider, CommandTriggers>();

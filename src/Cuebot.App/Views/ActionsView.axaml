@@ -3,6 +3,7 @@
              xmlns:vm="using:Cuebot.App.ViewModels.Actions"
              xmlns:graph="using:Cuebot.App.Graph"
              xmlns:controls="using:Cuebot.App.Controls"
+             xmlns:gate="using:Cuebot.App.Views"
              x:Class="Cuebot.App.Views.ActionsView"
              x:DataType="vm:ActionsViewModel">
   <UserControl.DataTemplates>
@@ -194,6 +195,7 @@
                     <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" />
                     <CheckBox Content="Always run" IsChecked="{Binding AlwaysRun}" IsVisible="{Binding IsRangeTrigger}"
                               ToolTip.Tip="Run even when a narrower range trigger of the same type also matches the event" />
+                    <gate:LiveGateView DataContext="{Binding LiveGate}" />
                     <ItemsControl ItemsSource="{Binding Parameters}">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="12" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     </ItemsControl>

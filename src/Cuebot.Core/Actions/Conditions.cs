@@ -8,8 +8,15 @@ public static class Conditions
     public static readonly IReadOnlyList<string> Operators =
     [
         "equals", "not equals", "contains", "does not contain", "starts with", "ends with",
-        "greater than", "less than", "is empty", "is not empty", "matches regex",
+        "greater than", "less than", "at least", "at most", "is empty", "is not empty", "matches regex",
     ];
+
+    /// <summary>Friendlier words for the operators in the editor; the stored values stay as they are.</summary>
+    public static readonly IReadOnlyDictionary<string, string> Labels = new Dictionary<string, string>
+    {
+        ["at least"] = "at least (≥)",
+        ["at most"] = "at most (≤)",
+    };
 
     /// <summary>Compares two already-resolved values. Numeric comparison is used when both sides parse.</summary>
     public static bool Evaluate(string left, string op, string right)
@@ -25,6 +32,8 @@ public static class Conditions
             "ends with" => left.EndsWith(right, cmp),
             "greater than" => NumericOrText(left, right) > 0,
             "less than" => NumericOrText(left, right) < 0,
+            "at least" => NumericOrText(left, right) >= 0,
+            "at most" => NumericOrText(left, right) <= 0,
             "is empty" => string.IsNullOrWhiteSpace(left),
             "is not empty" => !string.IsNullOrWhiteSpace(left),
             "matches regex" => Regex.IsMatch(left, right, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1)),

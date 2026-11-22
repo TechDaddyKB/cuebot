@@ -31,8 +31,18 @@ Checks something, then runs different steps depending on the answer. Example: IF
 | Setting | What to put in |
 | --- | --- |
 | **Value** | The thing to look at, usually a %variable% like %user% or %message%. For "exists" and "does not exist" type only the variable's name, like targetUser. Starts as: `%message%`. |
-| **Operator** | How to compare. "equals" = the same. "contains" = has it inside. "greater than" and "less than" compare numbers. "is empty" = nothing there. "matches regex" is an advanced search pattern. Options: equals, not equals, contains, does not contain, starts with, ends with, greater than, less than, is empty, is not empty, matches regex, does not exist, exists. Starts as: `equals`. |
+| **Operator** | How to compare. "equals" = the same. "contains" = has it inside. "greater than" and "less than" compare numbers, and "at least" (≥) and "at most" (≤) also count an equal number. "is empty" = nothing there. "matches regex" is an advanced search pattern. Options: equals, not equals, contains, does not contain, starts with, ends with, greater than, less than, at least (≥), at most (≤), is empty, is not empty, matches regex, does not exist, exists. Starts as: `equals`. |
 | **Compare to** | What to compare with, like hello or 100. Capital letters do not matter. Not used for "is empty", "is not empty", "exists" and "does not exist". |
+| **Combine with** | Check more than one thing. All = every condition must be true (AND). Any = one true condition is enough (OR). Conditions set to "not used" are skipped. Options: Only this condition, All must be true (AND), Any can be true (OR). Starts as: `Only this condition`. |
+| **Value 2** | The second condition's value. |
+| **Operator 2** | How to compare the second condition, or "not used". Options: not used, equals, not equals, contains, does not contain, starts with, ends with, greater than, less than, at least (≥), at most (≤), is empty, is not empty, matches regex, does not exist, exists. Starts as: `not used`. |
+| **Compare to 2** | What the second condition compares with. |
+| **Value 3** | The third condition's value. |
+| **Operator 3** | How to compare the third condition, or "not used". Options: not used, equals, not equals, contains, does not contain, starts with, ends with, greater than, less than, at least (≥), at most (≤), is empty, is not empty, matches regex, does not exist, exists. Starts as: `not used`. |
+| **Compare to 3** | What the third condition compares with. |
+| **Value 4** | The fourth condition's value. |
+| **Operator 4** | How to compare the fourth condition, or "not used". Options: not used, equals, not equals, contains, does not contain, starts with, ends with, greater than, less than, at least (≥), at most (≤), is empty, is not empty, matches regex, does not exist, exists. Starts as: `not used`. |
+| **Compare to 4** | What the fourth condition compares with. |
 
 Paths it can take: **True**, **False**.
 
@@ -110,7 +120,7 @@ Like several Ifs in one. It looks at one value and runs the steps of the first c
 | --- | --- |
 | **Value** | The value to look at, usually a %variable% like %message% or %input0%. Starts as: `%message%`. |
 | **Cases** | One case per line, like red. Put several words on one line with \| between them (red\|crimson) for the same steps. The first match wins. |
-| **Match with** | How each case is compared with the value: "equals" = the same, "contains" = has it inside, and so on. Capital letters do not matter. Options: equals, not equals, contains, does not contain, starts with, ends with, greater than, less than, is empty, is not empty, matches regex. Starts as: `equals`. |
+| **Match with** | How each case is compared with the value: "equals" = the same, "contains" = has it inside, and so on. Capital letters do not matter. Options: equals, not equals, contains, does not contain, starts with, ends with, greater than, less than, at least (≥), at most (≤), is empty, is not empty, matches regex. Starts as: `equals`. |
 
 **Variables it adds**
 
@@ -127,7 +137,7 @@ Repeats the steps inside as long as a check is true, like "while the count is be
 | Setting | What to put in |
 | --- | --- |
 | **Value** | The thing to look at each round, usually a %variable%. The default %loopIteration% counts rounds starting at 0. Starts as: `%loopIteration%`. |
-| **Operator** | How to compare, like "less than" or "equals". "less than" with 10 repeats while the value is below 10. Options: equals, not equals, contains, does not contain, starts with, ends with, greater than, less than, is empty, is not empty, matches regex. Starts as: `less than`. |
+| **Operator** | How to compare, like "less than" or "equals". "less than" with 10 repeats while the value is below 10. Options: equals, not equals, contains, does not contain, starts with, ends with, greater than, less than, at least (≥), at most (≤), is empty, is not empty, matches regex. Starts as: `less than`. |
 | **Compare to** | What to compare with, like 10. The default repeats 10 times (rounds 0 to 9). Starts as: `10`. |
 | **Safety limit (iterations, 0 = none)** | The most rounds allowed, so a mistake can never loop forever. 0 = no limit (risky). Starts as: `10000`. |
 

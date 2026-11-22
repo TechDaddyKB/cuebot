@@ -15,6 +15,8 @@ happen by itself while you stream.
       post into an empty chat;
     - **Cron**: a schedule, like `0 20 * * 5` (every Friday at 20:00). Five parts: minute, hour, day, month, weekday,
       in your computer's time. When you fill it in, it is used instead of the seconds.
+    - **Only while live**: skip rounds while you are offline, so a reminder never posts to an empty channel. Tick
+      platforms to count only those; with none ticked, being live on any connected platform is enough.
 3. In your action, add the **Timer** trigger and pick the timer.
 
 ## A timer that goes off once

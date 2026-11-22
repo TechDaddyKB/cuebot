@@ -3,6 +3,25 @@
 
 ![Adding a sub-action: on the Actions page, click + Sub-action and search for it](../../assets/screens/actions-sub-action-picker.png)
 
+## Cancel running actions
+
+Stops runs of an action that are going on right now, and the ones waiting in its queue. A run stops at its next step or wait, so a step already in progress finishes. An action that is waiting for a cancelled run stops too.
+
+| Setting | What to put in |
+| --- | --- |
+| **Cancel runs of** | This action, or Chosen action to name another one. Options: This action, Chosen action. Starts as: `This action`. |
+| **Action** | With Chosen action: the action's name. |
+| **Also cancel queued runs** | Tick to also cancel runs still waiting in a queue. Untick to stop only the ones already running. Starts as: `true`. |
+| **Leave this run alone** | Tick to keep this run (and the action that started it) going. Untick to stop this run as well. Starts as: `true`. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%runsCancelled%` | How many runs were cancelled |
+
+<small>Type id: `core.cancelRuns`</small>
+
 ## Clear action queue
 
 Throws away the actions waiting in line in an action queue. Actions already running finish. Handy as an "emergency stop" button for a pile-up of alerts.

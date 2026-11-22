@@ -69,7 +69,7 @@ public static class StepRiskCatalog
         ["core.jsonGetValue"] = L1, ["core.getActionState"] = L1, ["core.getActionGroupState"] = L1,
         ["core.getInput"] = L3, ["core.getInputDialog"] = L3,
         ["core.setActionState"] = L3, ["core.setActionGroupState"] = L3, ["core.setTriggerState"] = L3,
-        ["core.setSubActionState"] = L3, ["core.setSubActionWeight"] = L3, ["core.clearActionQueue"] = L3,
+        ["core.setSubActionState"] = L3, ["core.setSubActionWeight"] = L3, ["core.clearActionQueue"] = L3, ["core.cancelRuns"] = L3,
         ["core.setActionQueuePause"] = L3, ["core.setActionQueueBlocking"] = L3,
         ["core.runAction"] = L4, ["core.triggerCustomEvent"] = L4, ["core.sendSignal"] = L4, ["core.waitForSignal"] = L4,
         ["core.httpRequest"] = L4, ["core.udpBroadcast"] = L4,

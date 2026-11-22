@@ -120,6 +120,38 @@ public sealed class ClearActionQueueSubAction(QueueService queues, ProfileServic
     }
 }
 
+/// <summary>
+/// Cancels the running and (optionally) queued runs of this action or a chosen one. A run stops at its next step or
+/// wait. Normally leaves the run doing the cancelling, and whatever started it, alone. Sets %runsCancelled%.
+/// </summary>
+public sealed class CancelRunsSubAction(ProfileService profile) : ISubActionHandler
+{
+    public const string ThisAction = "This action";
+    public const string ChosenAction = "Chosen action";
+
+    public string TypeId => "core.cancelRuns";
+    public string Category => Categories.Core;
+    public string DisplayName => "Cancel running actions";
+
+    public IReadOnlyList<ParameterDescriptor> Parameters => _parameters ??=
+    [
+        new("target", "Cancel runs of", ParameterKind.Choice) { DefaultValue = ThisAction, Choices = [ThisAction, ChosenAction] },
+        new("action", "Action") { Suggestions = () => profile.Snapshot.Actions.Select(a => a.Name), Help = "Used with Chosen action" },
+        new("includePending", "Also cancel queued runs", ParameterKind.Boolean) { DefaultValue = "true" },
+        new("keepThisRun", "Leave this run alone", ParameterKind.Boolean) { DefaultValue = "true" },
+    ];
+    private IReadOnlyList<ParameterDescriptor>? _parameters;
+
+    public Task<SubActionResult> ExecuteAsync(ActionRunContext context, ParameterValues p, CancellationToken ct)
+    {
+        var actionId = p["target"] == ChosenAction ? ActionPaths.RequireAction(profile, p["action"]).Id : context.Action.Id;
+        context.Args["runsCancelled"] = context.Engine.CancelRuns(actionId, p.GetBool("includePending", true),
+            keep: p.GetBool("keepThisRun", true) ? context.RunId : null, self: context.RunId);
+        ct.ThrowIfCancellationRequested(); // this run was among them
+        return Task.FromResult(SubActionResult.Next);
+    }
+}
+
 /// <summary>Turns a queue's blocking option on, off or toggles it (saved, like editing the queue).</summary>
 public sealed class SetActionQueueBlockingSubAction(ProfileService profile) : ISubActionHandler
 {

@@ -83,7 +83,7 @@ public sealed class RunActionSubAction(ProfileService profile) : ISubActionHandl
         var target = profile.Snapshot.FindAction(p["action"])
             ?? throw new InvalidOperationException($"No action named '{p["action"]}'");
         // The child receives a copy of the current arguments.
-        var run = context.Engine.RunAsync(target, context.Args, context.Depth + 1, $"Run from '{context.Action.Name}'", ct);
+        var run = context.Engine.RunAsync(target, context.Args, context.Depth + 1, $"Run from '{context.Action.Name}'", ct, context.RunId);
         if (p.GetBool("wait", true)) await run.ConfigureAwait(false);
         return SubActionResult.Next;
     }

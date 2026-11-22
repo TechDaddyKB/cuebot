@@ -243,8 +243,13 @@ public static class ActionCodeExporter
 
         private void If(SubActionDefinition step)
         {
-            var test = $"{Await()}{_cb}.{(CSharp ? "Check" : "check")}({Literal(Get(step, "left", "%message%"))}, " +
-                       $"{Literal(Get(step, "operator", "equals"))}, {Literal(Get(step, "right", ""))})";
+            var conditions = IfSubAction.ConditionKeys(key => step.Parameters.GetValueOrDefault(key));
+            var joiner = IfSubAction.IsAny(step.Parameters.GetValueOrDefault("combine"))
+                ? (CSharp ? " || " : " or ")
+                : (CSharp ? " && " : " and ");
+            var test = string.Join(joiner, conditions.Select(c =>
+                $"{Await()}{_cb}.{(CSharp ? "Check" : "check")}({Literal(Get(step, c.Left, c.Left == "left" ? "%message%" : ""))}, " +
+                $"{Literal(Get(step, c.Operator, "equals"))}, {Literal(Get(step, c.Right, ""))})"));
             var whenTrue = step.Branches.GetValueOrDefault(IfSubAction.True) ?? [];
             var whenFalse = step.Branches.GetValueOrDefault(IfSubAction.False) ?? [];
             Line(Comment("If"));

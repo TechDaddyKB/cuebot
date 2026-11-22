@@ -22,10 +22,13 @@ public sealed class CommandService : IPeriodicService, IDisposable
     private readonly GroupStore _groups;
     private readonly EventBus _bus;
     private readonly AppLog _log;
+    private readonly Chat.StreamLiveState _live;
     private readonly IDisposable _subscription;
 
-    public CommandService(CommandStore store, GroupStore groups, EventBus bus, AppLog log, TimeProvider? time = null)
+    public CommandService(CommandStore store, GroupStore groups, EventBus bus, AppLog log, TimeProvider? time = null,
+        Chat.StreamLiveState? live = null)
     {
+        _live = live ?? new Chat.StreamLiveState();
         _store = store;
         _groups = groups;
         _bus = bus;
@@ -53,6 +56,7 @@ public sealed class CommandService : IPeriodicService, IDisposable
             if (!command.Enabled || command.Commands.Count == 0) continue;
             if (command.IgnoreBotAccount && (args.GetBool("isBot") || args.GetBool("isBotAccount"))) continue;
             if (command.IgnoreInternal && args.GetBool("isInternal")) continue;
+            if (!_live.Allows(command.OnlyWhileLive, command.LivePlatforms)) continue;
             if (!SourceMatches(command, args)) continue;
 
             CommandMatch? match;

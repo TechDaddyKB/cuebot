@@ -83,6 +83,15 @@ public sealed partial class TriggerItemViewModel : EditorItemViewModel
         }
     }
 
+    /// <summary>The "Only while live" option.</summary>
+    public LiveGateViewModel LiveGate => _liveGate ??= new LiveGateViewModel(() => Definition.OnlyWhileLive, () => Definition.LivePlatforms, (on, platforms) =>
+    {
+        Definition.OnlyWhileLive = on;
+        Definition.LivePlatforms = platforms;
+        _changed(null);
+    });
+    private LiveGateViewModel? _liveGate;
+
     private void OnParameterChanged()
     {
         OnPropertyChanged(nameof(Summary));

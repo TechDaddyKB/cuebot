@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Cuebot.App.ViewModels"
+             xmlns:gate="using:Cuebot.App.Views"
              x:Class="Cuebot.App.Views.TimersView"
              x:DataType="vm:TimersViewModel"
              x:Name="Root">
@@ -50,6 +51,7 @@
                                    ToolTip.Tip="Skips a round unless at least this many chat messages came in since the timer last went off. This stops reminders from repeating in a quiet chat. 0 means it always goes off." />
                   </StackPanel>
                 </WrapPanel>
+                <gate:LiveGateView DataContext="{Binding LiveGate}" />
                 <TextBlock Classes="error" Text="{Binding IntervalError}"
                            IsVisible="{Binding IntervalError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 <Grid ColumnDefinitions="Auto,8,260,12,*">
