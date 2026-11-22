@@ -410,6 +410,12 @@ Runs when someone writes a message in your Twitch chat. Use it to react to words
 | `%emoteCount%` | How many emotes are in the message |
 | `%color%` | Their chat name colour |
 | `%isSharedChat%` | True if it came from another channel in a shared chat |
+| `%sourceBroadcaster%` | In a shared chat, the display name of the channel it was posted in |
+| `%sourceBroadcasterUserName%` | That channel's lowercase login name |
+| `%sourceBroadcasterId%` | That channel's user ID |
+| `%sourceBroadcasterProfileUrl%` | That channel's profile picture. Empty for a moment until Cuebot has looked it up |
+| `%sourceBadges%` | The chatter's badges in that channel, like moderator/1,subscriber/12 |
+| `%isSourceOnly%` | True if the message was only sent to the channel it was posted in |
 | `%hasGif%` | True when the message has a GIF in it |
 | `%gifUrls%` | The GIFs' web addresses, separated by spaces |
 | `%gifIds%` | The GIFs' ids, separated by commas |

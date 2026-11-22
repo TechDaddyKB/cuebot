@@ -433,6 +433,7 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable, Cuebot.Core.
         {
             var session = await Api.GetSharedChatSessionAsync(ct).ConfigureAwait(false);
             _router.SeedSharedChat(session is null ? null : session.HostBroadcasterId == Settings.UserId);
+            if (session is not null) await LoadSharedChatUsersAsync(session.ParticipantIds).ConfigureAwait(false);
         }).ConfigureAwait(false);
         if (Settings.Scopes.Contains(TwitchScopes.ReadHypeTrain))
             await SeedAsync("hype train", async () =>
@@ -484,7 +485,38 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable, Cuebot.Core.
     {
         if (e.Type == TwitchEventTypes.StreamOnline) SetStreamLive(true);
         else if (e.Type == TwitchEventTypes.StreamOffline) SetStreamLive(false);
-        foreach (var routed in _router.Route(e)) _bus.Publish(routed);
+        var routedEvents = _router.Route(e);   // first, so a session that just ended forgets its channels before the lookup below
+        LookUpSharedChatUsers(e);
+        foreach (var routed in routedEvents) _bus.Publish(routed);
+    }
+
+    /// <summary>Fetches the name and picture of shared chat channels Cuebot has not seen, without holding up the event.</summary>
+    private void LookUpSharedChatUsers(BotEvent e)
+    {
+        if (e.Args.GetValueOrDefault("isTest") is true) return;
+        IEnumerable<string>? ids = e.Type switch
+        {
+            TwitchEventTypes.SharedChatBegin or TwitchEventTypes.SharedChatUpdate =>
+                (e.Args.GetValueOrDefault("participantIds") as string ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries),
+            TwitchEventTypes.ChatMessage when e.Args.GetValueOrDefault("isSharedChat") is true =>
+                [e.Args.GetValueOrDefault("sourceBroadcasterId") as string ?? ""],
+            _ => null,
+        };
+        if (ids is not null) _ = LoadSharedChatUsersAsync(ids);
+    }
+
+    private async Task LoadSharedChatUsersAsync(IEnumerable<string> ids)
+    {
+        var missing = _router.ClaimSharedChatLookups(ids);
+        if (missing.Count == 0) return;
+        try
+        {
+            _router.SeedSharedChatUsers(await Api.GetUsersByIdAsync(missing).ConfigureAwait(false));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _log.Warn("Twitch", $"Could not look up the shared chat channels: {ex.Message}");
+        }
     }
 
     /// <summary>Twitch requires hourly validation of tokens used by a long-running connection.</summary>

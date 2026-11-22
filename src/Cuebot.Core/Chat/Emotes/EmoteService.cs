@@ -22,6 +22,7 @@ public sealed class EmoteService : IDisposable
     private const int IndexSize = 1000;
     private const int SeenLimit = 2000;
     private static readonly string[] ChannelKeys = ["broadcasterUserId", "broadcasterId", "roomId", "channelId"];
+    private static readonly IReadOnlyDictionary<string, Emote> NoEmotes = new Dictionary<string, Emote>();
     private static readonly string[] KnownPlatforms = [EmoteProviders.Twitch, EmoteProviders.YouTube, EmoteProviders.Kick, EmoteProviders.Rumble];
 
     private readonly EventBus _bus;
@@ -224,6 +225,7 @@ public sealed class EmoteService : IDisposable
     public IReadOnlyList<Emote> GetEmotes(string platform)
     {
         var all = new Dictionary<string, Emote>(GetThirdPartyEmotes(platform), StringComparer.Ordinal);
+        foreach (var (code, emote) in CustomEmotes(platform)) all[code] = emote;
         if (_seen.TryGetValue(platform, out var seen))
             foreach (var e in seen.Values) all.TryAdd(e.Code, e);
         return all.Values.OrderBy(e => e.Code, StringComparer.OrdinalIgnoreCase).ToArray();
@@ -260,8 +262,38 @@ public sealed class EmoteService : IDisposable
         if (string.Equals(platform, EmoteProviders.Kick, StringComparison.OrdinalIgnoreCase)) native.AddRange(EmoteParser.ParseKickTokens(text));
         var platformEmotes = EmoteParser.Merge(native);
         Remember(platform, platformEmotes);
-        var words = EmoteParser.FindWords(text, GetThirdPartyEmotes(platform), platformEmotes);
-        return EmoteParser.Merge(platformEmotes, words);
+        var custom = text.Contains(':') ? EmoteParser.FindColonCodes(text, CustomEmotes(platform), platformEmotes) : [];
+        var words = EmoteParser.FindWords(text, GetThirdPartyEmotes(platform), EmoteParser.Merge(platformEmotes, custom));
+        return EmoteParser.Merge(platformEmotes, custom, words);
+    }
+
+    /// <summary>The streamer's hand-added emotes for a platform (YouTube member emotes), by code.</summary>
+    private IReadOnlyDictionary<string, Emote> CustomEmotes(string platform)
+    {
+        if (!string.Equals(platform, EmoteProviders.YouTube, StringComparison.OrdinalIgnoreCase)) return NoEmotes;
+        var list = _settings().YouTubeEmotes;
+        if (list.Count == 0) return NoEmotes;
+        var result = new Dictionary<string, Emote>(StringComparer.Ordinal);
+        foreach (var item in list.ToArray())
+        {
+            var code = YouTubeEmotes.NormalizeCode(item.Code);
+            if (code.Length == 0 || !YouTubeEmotes.IsImageUrl(item.ImageUrl)) continue;
+            result[code] = new Emote(code, "custom:" + code, EmoteProviders.YouTube, item.ImageUrl.Trim())
+            {
+                Platform = EmoteProviders.YouTube,
+                Scope = "channel",
+                IsAnimated = item.ImageUrl.Trim().EndsWith(".gif", StringComparison.OrdinalIgnoreCase),
+            };
+        }
+        return result;
+    }
+
+    /// <summary>Tells the chat page and overlays' sources that the hand-added emotes changed.</summary>
+    public void NotifyCustomEmotesChanged()
+    {
+        var count = CustomEmotes(EmoteProviders.YouTube).Count;
+        try { EmotesChanged?.Invoke(new EmoteSetChange(EmoteProviders.YouTube, EmoteProviders.YouTube, "custom", [], [], count)); }
+        catch (Exception ex) { _log.Error("Emotes", "EmotesChanged handler failed", ex); }
     }
 
     /// <summary>Finds emotes in a combined-chat message, using the arguments of the platform event it came from.</summary>

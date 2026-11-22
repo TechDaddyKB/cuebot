@@ -24,12 +24,40 @@ tab **Discord bot**.
 There are two ways to post in your Discord server:
 
 - **Basic webhook** (no bot): the **Discord > Basic webhook** step posts a message in one channel through a webhook
-  address. Good for a simple "I'm live" post. See the
+  address. Good for an "I'm live" post, with embeds and link buttons if you want them. See
+  [Webhook embeds, threads and edits](#webhook-embeds-threads-and-edits) and the
   [Discord sub-actions](../../reference/sub-actions/discord.md#basic-webhook).
 - **Your own Discord bot**: posts and edits messages, gives roles, answers slash commands like `/socials`, and starts
   actions when someone joins or writes. The rest of this page sets it up.
 
-Make a bot when you want to edit posts, give roles or use slash commands.
+Make a bot when you want to give roles, use slash commands or start actions from Discord.
+
+## Webhook embeds, threads and edits
+
+To send an embed without a bot:
+
+1. Design the message on [Discohook](https://discohook.app), then copy its JSON. Discord webhook JSON you wrote yourself
+   works too.
+2. In the **Basic webhook** step, set **Message body** to **JSON** and paste it into **Message JSON**.
+3. Put variables inside quotes, like `"title": "%user% is live"`. Cuebot fills them in after reading the JSON, so a quote
+   in someone's name cannot break the message.
+
+```json
+{
+  "content": "@everyone we're live!",
+  "embeds": [{ "title": "%streamTitle%", "color": "#9146ff" }],
+  "components": [{ "type": 1, "components": [
+    { "type": 2, "style": 5, "label": "Watch", "url": "https://twitch.tv/yourname" }
+  ]}]
+}
+```
+
+- **Pings:** only mentions you typed in the JSON can ping, so a viewer whose name is `@everyone` pings nobody. To control
+  this yourself, add your own `allowed_mentions`.
+- **Buttons:** webhooks can only send **link** buttons. Buttons that run something need the bot.
+- **Threads:** fill in **Thread ID** to post in a thread, or **New forum post title** to start a forum post.
+- **Edit or delete later:** type a name like `live post` in **Remember it as**. Then use **Edit webhook message** or
+  **Delete webhook message** with the same webhook and that name. The name survives a restart.
 
 ## 1. Make the bot in the Developer Portal
 

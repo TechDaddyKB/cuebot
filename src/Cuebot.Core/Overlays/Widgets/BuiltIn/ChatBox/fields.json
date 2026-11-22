@@ -16,6 +16,7 @@
   "useNameColors": { "type": "checkbox", "label": "Use chatters' name colours", "value": true, "group": "Look" },
 
   "showPlatform": { "type": "checkbox", "label": "Show which platform each message is from", "value": true, "group": "Details" },
+  "showSharedSource": { "type": "checkbox", "label": "Show the source channel in Twitch Shared Chat", "value": true, "group": "Details" },
   "showBadges": { "type": "checkbox", "label": "Show badges", "value": true, "group": "Details" },
   "showAvatars": { "type": "checkbox", "label": "Show profile pictures (where the platform has them)", "value": false, "group": "Details" },
   "showPronouns": { "type": "checkbox", "label": "Show pronouns (Twitch chatters who set them)", "value": true, "group": "Details" },

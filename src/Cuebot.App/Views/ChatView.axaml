@@ -158,13 +158,22 @@
           <ListBox.ItemTemplate>
             <DataTemplate DataType="vm:ChatLineViewModel">
               <Border Background="{Binding HighlightBrush}" CornerRadius="4" Padding="4,1" ToolTip.Tip="{Binding HighlightReason}">
-                <Grid ColumnDefinitions="Auto,Auto,*">
+                <Grid ColumnDefinitions="Auto,Auto,Auto,*">
                   <Border Background="{Binding PlatformBrush}" CornerRadius="3" Padding="5,0" Margin="0,2,8,0" VerticalAlignment="Top"
                           ToolTip.Tip="{Binding Platform}">
                     <TextBlock Text="{Binding Platform}" FontSize="10" FontWeight="Bold" Foreground="#111" />
                   </Border>
                   <TextBlock Grid.Column="1" Text="{Binding Time}" Classes="muted" Margin="0,2,8,0" VerticalAlignment="Top" />
-                  <chat:ChatMessageText Grid.Column="2" Line="{Binding}" />
+                  <Border Grid.Column="2" IsVisible="{Binding ShowSharedSource}" BorderBrush="{Binding PlatformBrush}" BorderThickness="1"
+                          CornerRadius="8" Padding="2,0,5,0" Margin="0,2,6,0" VerticalAlignment="Top" ToolTip.Tip="{Binding SharedSourceTip}">
+                    <StackPanel Orientation="Horizontal" Spacing="3">
+                      <Border Width="14" Height="14" CornerRadius="7" ClipToBounds="True" IsVisible="{Binding HasSourceAvatar}">
+                        <Image Source="{Binding SourceAvatar}" Stretch="UniformToFill" />
+                      </Border>
+                      <TextBlock Text="{Binding SourceName}" FontSize="10" VerticalAlignment="Center" />
+                    </StackPanel>
+                  </Border>
+                  <chat:ChatMessageText Grid.Column="3" Line="{Binding}" />
                 </Grid>
               </Border>
             </DataTemplate>
@@ -588,6 +597,7 @@
             <TextBlock Text="Display" FontWeight="SemiBold" />
             <CheckBox x:Name="ShowEmotesBox" Content="Show emotes as images" IsChecked="{Binding ShowEmotes}" ToolTip.Tip="Ticked: emotes appear as little pictures. Unticked: you see just their names as text." />
             <CheckBox Content="Show pronouns (Twitch, alejo.io)" IsChecked="{Binding ShowPronouns}" ToolTip.Tip="Shows he/she/they next to a chatter when they have set it on alejo.io (a pronoun website)." />
+            <CheckBox Content="Show the source channel in Twitch Shared Chat" IsChecked="{Binding ShowSharedSource}" ToolTip.Tip="Shows the channel name and picture on messages posted in another channel of a shared chat." />
 
             <TextBlock Text="Highlights" FontWeight="SemiBold" Margin="0,8,0,0" />
             <CheckBox Content="Mentions of these names" IsChecked="{Binding HighlightMentions}" ToolTip.Tip="Colours a message when someone writes one of your names, so you do not miss it." />
@@ -637,6 +647,29 @@
               <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding KickChannelId}" ToolTip.Tip="The number that identifies your Kick channel. Leave it empty if Cuebot already knows it." />
             </Grid>
             <TextBlock x:Name="EmoteStatusText" Text="{Binding EmoteStatus}" Classes="muted" TextWrapping="Wrap" />
+
+            <DockPanel Margin="0,8,0,0">
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                <Button Content="Import images" Click="OnImportYouTubeEmotes" IsEnabled="{Binding CanImportEmotes}" ToolTip.Tip="Pick image files. Each becomes an emote named after its file: tamaDent.png becomes :_tamaDent:." />
+                <Button Content="+ Emote" Command="{Binding AddYouTubeEmoteCommand}" IsEnabled="{Binding HasEmoteService}" ToolTip.Tip="Adds an empty row to fill in by hand." />
+              </StackPanel>
+              <TextBlock Text="YouTube member emotes" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </DockPanel>
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="YouTube sends member emotes as text like :_tamaDent: and gives apps no picture. Add each code with its image, and Cuebot shows it in chat and overlays." />
+            <ItemsControl ItemsSource="{Binding YouTubeEmotes}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vmc:YouTubeEmoteEditViewModel">
+                  <Grid ColumnDefinitions="140,6,*,6,Auto" Margin="0,2">
+                    <TextBox Text="{Binding Code}" ToolTip.Tip="The code exactly as it appears in chat, like :_tamaDent:. Capital letters matter." />
+                    <TextBox Grid.Column="2" Text="{Binding ImageUrl}" PlaceholderText="https://... or Import images" ToolTip.Tip="A web address of the picture, or the file Cuebot stored when you imported it." />
+                    <Button Grid.Column="4" Content="Remove" Command="{Binding RemoveCommand}" ToolTip.Tip="Deletes this emote from the list." />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="{Binding YouTubeEmoteStatus}" Classes="muted" TextWrapping="Wrap"
+                       IsVisible="{Binding YouTubeEmoteStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           </StackPanel>
         </ScrollViewer>
       </DockPanel>

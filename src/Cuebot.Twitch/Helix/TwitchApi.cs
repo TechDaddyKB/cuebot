@@ -224,6 +224,17 @@ public sealed partial class TwitchApi
     public async Task<TwitchUser?> GetUserByIdAsync(string userId, CancellationToken ct = default) =>
         await GetUserAsync("id:" + userId, ct).ConfigureAwait(false);
 
+    /// <summary>Up to 100 users by id, in one request.</summary>
+    public async Task<IReadOnlyList<TwitchUser>> GetUsersByIdAsync(IEnumerable<string> userIds, CancellationToken ct = default)
+    {
+        RequireSignedIn();
+        var query = userIds.Where(id => id.Length > 0).Distinct(StringComparer.Ordinal).Take(100)
+            .Select(id => KeyValuePair.Create("id", id)).ToArray();
+        if (query.Length == 0) return [];
+        var json = await _helix.RequestAsync(HttpMethod.Get, "users", query, null, "Looking up users", ct).ConfigureAwait(false);
+        return json.Items("data").Select(HelixParse.User).ToArray();
+    }
+
     /// <summary>When <paramref name="userId"/> follows the channel; null when they do not.</summary>
     public async Task<TwitchFollow?> GetFollowAsync(string userId, CancellationToken ct = default)
     {
