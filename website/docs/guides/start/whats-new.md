@@ -4,6 +4,19 @@ What changed in each version of Cuebot, newest first. Each line links to the gui
 
 To get the newest version, see [Updating Cuebot](updating.md).
 
+## 1.0.5
+
+Fixes, safer webhooks and a signed Mac app. Update Cuebot, and update the phone app from Google Play or the App Store.
+
+- **Signed Mac app.** The Mac download is now signed and notarized by Apple, so it opens without a security warning. macOS treats it as a new app once, so allow the microphone, Accessibility and Input Monitoring again if Cuebot asks.
+
+Fixes:
+
+- **Acapela speech** no longer lets chat text change how a voice speaks.
+- **Discord webhooks** no longer ping people or roles through text that arrives in a variable.
+- **Saving settings** that fails now keeps your changes and no longer crashes Cuebot when it closes.
+- **iPhone and iPad pairing** now works with servers that use HTTPS.
+
 ## 1.0.4
 
 New options for actions, commands and chat, plus fixes. Update Cuebot, and update the phone app from Google Play or the App Store.
