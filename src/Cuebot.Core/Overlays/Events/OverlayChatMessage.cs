@@ -13,7 +13,8 @@ namespace Cuebot.Core.Overlays.Events;
 /// renderedText, service}</c>. Kick's "[emote:id:name]" tokens become the emote's name, so <c>text</c>, emote ranges
 /// and <c>renderedText</c> agree on every platform. Twitch-style <c>tags</c> are filled for all platforms, so widgets
 /// that read <c>tags.mod</c> or <c>tags.subscriber</c> work everywhere. Cuebot adds <c>data.avatar</c> (when the
-/// platform reports a picture) and <c>data.pronouns</c> (Twitch chatters with pronouns set on alejo.io, once looked up).
+/// platform reports a picture), <c>data.pronouns</c> (Twitch chatters with pronouns set on alejo.io, once looked up) and
+/// <c>data.source</c> (<c>{id, name, login, avatar}</c> of the other channel for a Twitch Shared Chat message, else null).
 /// </summary>
 public static class OverlayChatMessage
 {
@@ -104,9 +105,25 @@ public static class OverlayChatMessage
                 ["emotes"] = emoteArray,
                 ["avatar"] = OverlayAlerts.First(platformArgs, "userProfileUrl", "userProfilePicture", "profileImageUrl"),
                 ["pronouns"] = OverlayAlerts.Str(args, "pronouns"),
+                ["source"] = SharedChatSource(platformArgs),
             },
             ["renderedText"] = RenderHtml(text, ranges),
             ["service"] = service,
+        };
+    }
+
+    /// <summary>The channel a Twitch Shared Chat message was really posted in; null for the streamer's own chat.</summary>
+    private static JsonObject? SharedChatSource(IReadOnlyDictionary<string, object?> platformArgs)
+    {
+        if (!OverlayAlerts.Bool(platformArgs, "isSharedChat")) return null;
+        var login = OverlayAlerts.Str(platformArgs, "sourceBroadcasterUserName");
+        var name = OverlayAlerts.Str(platformArgs, "sourceBroadcaster");
+        return new JsonObject
+        {
+            ["id"] = OverlayAlerts.Str(platformArgs, "sourceBroadcasterId"),
+            ["name"] = name.Length > 0 ? name : login,
+            ["login"] = login,
+            ["avatar"] = OverlayAlerts.Str(platformArgs, "sourceBroadcasterProfileUrl"),
         };
     }
 

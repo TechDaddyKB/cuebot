@@ -18,6 +18,19 @@
     return node;
   }
 
+  // Twitch Shared Chat: which channel the message was posted in. On unless the box's setting is unticked.
+  function sharedSource(data) {
+    if (!data.source || settings.showSharedSource === false || settings.showSharedSource === "false") return null;
+    var tag = el("span", { class: "shared-source", title: "Shared chat: " + (data.source.name || "") });
+    if (data.source.avatar) tag.appendChild(el("img", { class: "shared-source-avatar", src: data.source.avatar, alt: "" }));
+    tag.appendChild(el("span", { class: "shared-source-name" }, data.source.name || ""));
+    return tag;
+  }
+
+  function markSource(node, data) {
+    if (data.source) node.setAttribute("data-source", data.source.login || data.source.name || "");
+  }
+
   function add(node, key) {
     node.dataset.key = key || "";
     node.classList.add("anim-" + (settings.animation || "slide"));
@@ -48,6 +61,9 @@
     var msg = el("div", { class: "msg " + service, "data-msgid": data.msgId || "", "data-user": data.userId || "" });
     var head = el("span", { class: "head" });
     if (bool(settings.showPlatform) && PLATFORM_NAMES[service]) head.appendChild(el("span", { class: "platform " + service }, PLATFORM_NAMES[service]));
+    var source = sharedSource(data);
+    if (source) head.appendChild(source);
+    markSource(msg, data);
     if (bool(settings.showAvatars) && data.avatar) head.appendChild(el("img", { class: "avatar", src: data.avatar, alt: "" }));
     if (bool(settings.showBadges) && data.badges && data.badges.length) {
       var badges = el("span", { class: "badges" });
@@ -88,6 +104,9 @@
     var content = el("div", { id: "content", class: "style-scope yt-live-chat-text-message-renderer" });
     content.appendChild(el("span", { id: "timestamp", class: "style-scope yt-live-chat-text-message-renderer" },
       new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })));
+    markSource(item, data);
+    var source = sharedSource(data);
+    if (source) content.appendChild(source);
     var chip = el("yt-live-chat-author-chip", { class: "style-scope yt-live-chat-text-message-renderer" });
     var name = el("span", { id: "author-name", dir: "auto", class: (type + " style-scope yt-live-chat-author-chip").trim() }, data.displayName || data.nick || "");
     name.appendChild(el("span", { id: "chip-badges", class: "style-scope yt-live-chat-author-chip" }));

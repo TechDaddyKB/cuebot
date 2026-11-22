@@ -64,6 +64,8 @@ internal sealed class TwitchEventRouter(
     private int? _viewers;
     private (string User, string UserName, string UserId, string Image)? _raidTarget;
     private bool? _sharedChatHost;
+    private readonly Dictionary<string, TwitchUser> _sharedChatUsers = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _sharedChatLookups = new(StringComparer.Ordinal);
     private int _hypeTrainLevel;
     private int _pyramidCount;
     private int _pyramidBrokenCount;
@@ -83,7 +85,31 @@ internal sealed class TwitchEventRouter(
     /// <summary>Whether the channel is in a shared chat session when connecting (null: not in one; true: hosting it).</summary>
     public void SeedSharedChat(bool? isHost)
     {
-        lock (_gate) _sharedChatHost = isHost;
+        lock (_gate)
+        {
+            _sharedChatHost = isHost;
+            if (isHost is null) ForgetSharedChatUsers();
+        }
+    }
+
+    /// <summary>The channels in a shared chat session, for the source name and picture on their messages.</summary>
+    public void SeedSharedChatUsers(IEnumerable<TwitchUser> users)
+    {
+        lock (_gate)
+            foreach (var user in users) _sharedChatUsers[user.Id] = user;
+    }
+
+    /// <summary>The ids nobody has looked up yet, marked as being looked up so each is fetched once per session.</summary>
+    public IReadOnlyList<string> ClaimSharedChatLookups(IEnumerable<string> ids)
+    {
+        lock (_gate)
+            return ids.Where(id => id.Length > 0 && !_sharedChatUsers.ContainsKey(id) && _sharedChatLookups.Add(id)).ToArray();
+    }
+
+    private void ForgetSharedChatUsers()
+    {
+        _sharedChatUsers.Clear();
+        _sharedChatLookups.Clear();
     }
 
     /// <summary>The broadcaster's account (read once per connection), for Streamer.bot's broadcastUser* and broadcaster* arguments.</summary>
@@ -203,7 +229,12 @@ internal sealed class TwitchEventRouter(
                         if (_messageOrder.Count > RememberedMessages) _messages.Remove(_messageOrder.Dequeue());
                     }
                     var inSharedChat = _sharedChatHost is not null;
-                    return Retype(e, e.Type, a => a.TryAdd("inSharedChat", inSharedChat));
+                    var sourceUser = Bool(e, "isSharedChat") ? _sharedChatUsers.GetValueOrDefault(source) : null;
+                    return Retype(e, e.Type, a =>
+                    {
+                        a.TryAdd("inSharedChat", inSharedChat);
+                        a["sourceBroadcasterProfileUrl"] = sourceUser?.ProfileImageUrl ?? "";
+                    });
                 case TwitchEventTypes.ChatMessageDeleted when !e.Args.ContainsKey("message"):
                     return _messages.TryGetValue(Str(e, "messageId"), out var deleted) ? Retype(e, e.Type, a => a["message"] = deleted) : e;
                 case TwitchEventTypes.RewardCreated or TwitchEventTypes.RewardUpdated:
@@ -282,6 +313,7 @@ internal sealed class TwitchEventRouter(
                     return e;
                 case TwitchEventTypes.SharedChatEnd:
                     _sharedChatHost = null;
+                    ForgetSharedChatUsers();
                     return e;
                 case TwitchEventTypes.HypeTrainStart or TwitchEventTypes.HypeTrainUpdate or TwitchEventTypes.HypeTrainEnd:
                     var host = _sharedChatHost;

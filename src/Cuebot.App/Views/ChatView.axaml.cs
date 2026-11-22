@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using Cuebot.App.ViewModels;
 
@@ -8,7 +9,21 @@ namespace Cuebot.App.Views;
 
 public partial class ChatView : UserControl
 {
+    private static readonly FilePickerFileType EmoteImages = new("Images") { Patterns = ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp"] };
+
     private ChatViewModel? _vm;
+
+    private async void OnImportYouTubeEmotes(object? sender, RoutedEventArgs e)
+    {
+        if (_vm is null || TopLevel.GetTopLevel(this)?.StorageProvider is not { } storage) return;
+        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Import YouTube member emotes", AllowMultiple = true, FileTypeFilter = [EmoteImages],
+        });
+        if (files.Count == 0) return;
+        await _vm.Options.ImportYouTubeEmotesAsync(files.Select(f => (f.Name, (Func<Task<Stream>>)f.OpenReadAsync)));
+        foreach (var file in files) file.Dispose();
+    }
 
     public ChatView()
     {

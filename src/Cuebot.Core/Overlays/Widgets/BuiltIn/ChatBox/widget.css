@@ -50,6 +50,8 @@
 }
 .layout-cuebot .platform.twitch, .layout-cuebot .platform.youtube { color: #fff; }
 .layout-cuebot .avatar { width: 1.4em; height: 1.4em; border-radius: 50%; object-fit: cover; }
+.shared-source { display: inline-flex; align-items: center; gap: 0.25em; margin-right: 0.35em; padding: 0 0.4em 0 0.15em; font-size: 0.7em; line-height: 1.6; vertical-align: middle; border: 1px solid currentColor; border-radius: 1em; opacity: 0.85; }
+.shared-source-avatar { width: 1.3em; height: 1.3em; border-radius: 50%; object-fit: cover; }
 .layout-cuebot .badges img { height: 1.1em; vertical-align: middle; margin-right: 2px; }
 .layout-cuebot .name { font-weight: 700; }
 .layout-cuebot .pronouns { font-size: 0.7em; opacity: 0.8; border: 1px solid currentColor; border-radius: 6px; padding: 0 4px; }

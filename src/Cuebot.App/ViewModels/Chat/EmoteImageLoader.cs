@@ -10,8 +10,10 @@ namespace Cuebot.App.ViewModels.Chat;
 /// Skia decoder reads PNG, JPEG, GIF and WebP; animated GIF/WebP show their first frame. Failures yield null so the
 /// view falls back to the emote's text.
 /// </summary>
-public sealed class EmoteImageLoader(HttpClient http, string? cacheDirectory = null)
+public sealed class EmoteImageLoader(HttpClient http, string? cacheDirectory = null, Func<string, string?>? assetFile = null)
 {
+    private const string AssetPrefix = "/assets/";
+
     private const int MaxBytes = 2 * 1024 * 1024;
     private readonly ConcurrentDictionary<string, Task<Bitmap?>> _images = new(StringComparer.Ordinal);
 
@@ -28,7 +30,13 @@ public sealed class EmoteImageLoader(HttpClient http, string? cacheDirectory = n
         {
             var file = cacheDirectory is null ? null : Path.Combine(cacheDirectory, Hash(url));
             byte[] bytes;
-            if (file is not null && File.Exists(file))
+            if (url.StartsWith(AssetPrefix, StringComparison.Ordinal))
+            {
+                // A file the streamer added: it is on this computer, so there is nothing to download or cache.
+                if (assetFile?.Invoke(url[AssetPrefix.Length..]) is not { } asset || new FileInfo(asset).Length > MaxBytes) return null;
+                bytes = await File.ReadAllBytesAsync(asset).ConfigureAwait(false);
+            }
+            else if (file is not null && File.Exists(file))
             {
                 bytes = await File.ReadAllBytesAsync(file).ConfigureAwait(false);
             }

@@ -422,6 +422,8 @@ internal static class EventSubMapper
         args["sourceBroadcasterUserName"] = e.Str("source_broadcaster_user_login");
         args["sourceBroadcaster"] = e.Str("source_broadcaster_user_name");
         args["sourceMessageId"] = e.Str("source_message_id");
+        args["sourceBadges"] = string.Join(",", e.Items("source_badges").Select(b => $"{b.Str("set_id")}/{b.Str("id")}"));
+        args["isSourceOnly"] = e.Bool("is_source_only");
         args["isSharedChat"] = source.Length > 0 && channel.Length > 0 && source != channel;
     }
 
@@ -503,6 +505,7 @@ internal static class EventSubMapper
         args["sessionId"] = e.Str("session_id");
         var participants = e.Items("participants").ToArray();
         args["participants"] = string.Join(",", participants.Select(p => p.Str("broadcaster_user_login")));
+        args["participantIds"] = string.Join(",", participants.Select(p => p.Str("broadcaster_user_id")));
         args["participantCount"] = participants.Length;
         args["isHost"] = e.Str("host_broadcaster_user_id") == e.Str("broadcaster_user_id");
         return new BotEvent(type, args);

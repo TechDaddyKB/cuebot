@@ -19,6 +19,12 @@ public sealed class EmoteSettings
     /// </summary>
     public Dictionary<string, string> Channels { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// YouTube member emotes the streamer added by hand: YouTube's API sends them as text such as ":_tamaDent:" and has
+    /// no images for them.
+    /// </summary>
+    public List<CustomEmote> YouTubeEmotes { get; set; } = [];
+
     public bool IsEnabled(string provider) => provider switch
     {
         EmoteProviders.SevenTv => SevenTv,
@@ -26,4 +32,13 @@ public sealed class EmoteSettings
         EmoteProviders.Ffz => Ffz,
         _ => true,
     };
+}
+
+/// <summary>One hand-added emote: the code as it appears in chat, and its picture.</summary>
+public sealed class CustomEmote
+{
+    public string Code { get; set; } = "";
+
+    /// <summary>An http(s) address, or an uploaded file as "/assets/{name}".</summary>
+    public string ImageUrl { get; set; } = "";
 }

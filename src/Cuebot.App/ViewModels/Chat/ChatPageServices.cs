@@ -4,6 +4,7 @@ using Cuebot.Core.Chat.Emotes;
 using Cuebot.Core.Chat.Moderation;
 using Cuebot.Core.Chat.Pronouns;
 using Cuebot.Core.Logging;
+using Cuebot.Core.Overlays;
 using Cuebot.Core.Storage;
 
 namespace Cuebot.App.ViewModels.Chat;
@@ -16,6 +17,9 @@ public sealed class ChatPageServices
 {
     public EmoteService? Emotes { get; init; }
     public EmoteImageLoader? Images { get; init; }
+
+    /// <summary>Where imported YouTube member emote images are kept.</summary>
+    public AssetStore? Assets { get; init; }
 
     /// <summary>emotes.json, for the channel ids and provider toggles on the options panel.</summary>
     public JsonFile<EmoteSettings>? EmoteSettings { get; init; }
@@ -46,11 +50,14 @@ public sealed class ChatPageServices
     {
         var paths = host.Get<AppPaths>();
         var log = host.Get<AppLog>();
+        var assets = host.GetAll<AssetStore>().FirstOrDefault();
         return new ChatPageServices
         {
+            Assets = assets,
             Emotes = host.GetAll<EmoteService>().FirstOrDefault(),
             EmoteSettings = host.GetAll<JsonFile<EmoteSettings>>().FirstOrDefault(),
-            Images = new EmoteImageLoader(host.Get<HttpClient>(), paths.GetSharedDirectory(Path.Combine("cache", "emote-images"))),
+            Images = new EmoteImageLoader(host.Get<HttpClient>(), paths.GetSharedDirectory(Path.Combine("cache", "emote-images")),
+                name => assets?.PathOf(name)),
             Pronouns = host.GetAll<PronounService>().FirstOrDefault(),
             Moderation = host.GetAll<ChatModerationService>().FirstOrDefault(),
             ModerationActions = host.GetAll<ModerationService>().FirstOrDefault(),
