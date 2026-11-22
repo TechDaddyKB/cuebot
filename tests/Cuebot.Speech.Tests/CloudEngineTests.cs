@@ -458,6 +458,23 @@ public class CloudEngineTests
             handler.Last.Uri.AbsoluteUri);
     }
 
+    [Theory]
+    [InlineData(@"\vce=speaker=Will\hello", " vce=speaker=Will hello")]
+    [InlineData(@"\pau=60000\", " pau=60000 ")]
+    [InlineData("#LAUGH01# ok", " LAUGH01# ok")]
+    [InlineData("##CAT##", "# CAT##")]
+    [InlineData("#A#B#", " A B#")]
+    [InlineData("we are #1 and #2 today", "we are #1 and #2 today")]
+    public void Acapela_text_cannot_carry_control_tags_or_smileys(string input, string expected) =>
+        Assert.Equal(expected, AcapelaEngine.BuildText(input));
+
+    [Fact]
+    public void Acapela_command_sends_the_neutralised_text()
+    {
+        var path = AcapelaEngine.BuildCommandPath(Say(@"\vct=50\ #CAT#", "Ella22k_NT"));
+        Assert.Contains("&text=%20vct%3D50%20%20%20CAT%23&", path, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task Acapela_logs_in_again_when_the_token_is_rejected()
     {

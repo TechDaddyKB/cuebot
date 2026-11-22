@@ -28,6 +28,9 @@ An **engine** is the thing that makes the voice. Open the **Engines** tab.
 Internet ("cloud") engines often sound nicer, but the company may charge you for each letter spoken. Cuebot only sends
 them the text to say. Your keys are hidden on screen and never written to the log.
 
+Acapela's own voice tags and sound codes, such as `\pau=500\` or `#LAUGH01#`, are not applied. Cuebot removes their
+markers so chat can't change the voice or play sounds.
+
 Click **Test** next to an engine to hear it.
 
 !!! warning "Experimental"

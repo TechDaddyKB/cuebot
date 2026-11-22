@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 namespace Cuebot.Speech;
 
@@ -10,7 +11,7 @@ namespace Cuebot.Speech;
 /// Acapela Cloud: logs in with the account email and password for a token, then renders through the command
 /// endpoint. Rate maps to "speed" and pitch to "shaping" (both 100 normal).
 /// </summary>
-internal sealed class AcapelaEngine(HttpClient http, Func<AcapelaSettings> settings, Func<DateTimeOffset>? clock = null) : ITtsEngine
+internal sealed partial class AcapelaEngine(HttpClient http, Func<AcapelaSettings> settings, Func<DateTimeOffset>? clock = null) : ITtsEngine
 {
     internal const string BaseUrl = "https://www.acapela-cloud.com/api/";
     private readonly TokenCache _tokens = new(TimeSpan.FromHours(12), clock);
@@ -46,7 +47,7 @@ internal sealed class AcapelaEngine(HttpClient http, Func<AcapelaSettings> setti
     internal static string BuildCommandPath(SynthesisRequest synthesis)
     {
         var builder = new StringBuilder("command/?voice=").Append(Uri.EscapeDataString(synthesis.VoiceId.Trim()))
-            .Append("&text=").Append(Uri.EscapeDataString(synthesis.Text))
+            .Append("&text=").Append(Uri.EscapeDataString(BuildText(synthesis.Text)))
             .Append("&output=stream&type=wav");
         if (synthesis.Rate != 0)
             builder.Append("&speed=").Append((100 + Prosody.RatePercent(synthesis.Rate)).ToString(CultureInfo.InvariantCulture));
@@ -54,6 +55,16 @@ internal sealed class AcapelaEngine(HttpClient http, Func<AcapelaSettings> setti
             builder.Append("&shaping=").Append((100 + Prosody.PitchPercent(synthesis.Pitch)).ToString(CultureInfo.InvariantCulture));
         return builder.ToString();
     }
+
+    /// <summary>
+    /// Keeps spoken text from acting as Acapela markup: backslashes open control tags (\vce=...\, \pau=...\) and
+    /// #NAME# plays a vocal smiley. Acapela documents no escape, so the delimiters become spaces.
+    /// </summary>
+    internal static string BuildText(string text) =>
+        SmileyDelimiter().Replace(text.Replace('\\', ' '), " ");
+
+    [GeneratedRegex(@"#(?=[\p{L}\p{N}_-]+#)")]
+    private static partial Regex SmileyDelimiter();
 
     internal static IReadOnlyList<VoiceInfo> ParseVoices(JsonElement root)
     {
