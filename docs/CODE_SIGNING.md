@@ -112,3 +112,64 @@ Without the `CUEBOT_NOTARY_*` variables the script signs but does not notarize.
 - When Apple rejects a submission, the build prints Apple's notarization log. The usual cause is a Mach-O file that is not
   signed with a secure timestamp.
 - The Developer ID certificate is valid for five years; renew it before it expires and replace the two certificate secrets.
+
+## iOS: TestFlight and the App Store
+
+`.github/workflows/ios-release.yml` releases Cuebot Companion for iOS without a Mac at hand. The Developer ID certificate
+and notarization above do not apply to iOS: App Store builds need an **Apple Distribution** certificate and an **App
+Store** provisioning profile.
+
+### Each release
+
+1. Add `clients/ios/release-notes/<version>.txt` (what users see under "What's New", at most 4000 characters). A release
+   tag without this file fails before anything is uploaded.
+2. Push the tag `vX.Y.Z`. CI builds, signs and uploads the build to TestFlight. Release candidates (`vX.Y.Z-rc.N`) do
+   not run this workflow.
+3. Approve the waiting `app-store-review` deployment on the workflow run in GitHub.
+4. CI waits for Apple to process the build, creates the App Store version, attaches the build, sets the notes and submits
+   it to App Review. The version releases automatically once Apple approves it.
+
+Only one version can be with Apple at a time: while another is waiting or in review, the submit job stops without
+changing anything. Re-run that job once the earlier version is live. Re-running is safe at every stage.
+
+Without the secrets, a tag skips this workflow's work with a warning. Screenshots and other store listing changes are
+still made in App Store Connect.
+
+### One-time setup
+
+1. Make a certificate request:
+
+   ```sh
+   clients/ios/ci/setup-secrets.sh request ~/cuebot-ios-signing
+   ```
+
+2. At developer.apple.com, under Certificates, create an **Apple Distribution** certificate from that `.csr` and download
+   the `.cer`.
+3. Under Profiles, create an **App Store Connect** distribution profile for `digital.techdaddy.cuebot.companion` with that
+   certificate and download it.
+4. In App Store Connect, under Users and Access, Integrations, create a **team key with the App Manager role**, used only
+   for this workflow. Download the `.p8` and note the issuer ID.
+5. Store everything (the script prints no secret values):
+
+   ```sh
+   clients/ios/ci/setup-secrets.sh install ~/cuebot-ios-signing/ios-distribution.key distribution.cer \
+     Cuebot.mobileprovision AuthKey_XXXXXXXXXX.p8 <issuer-id>
+   ```
+
+6. Test from `main`: run the workflow by hand with `build-only`, then with `testflight`.
+
+### Secrets
+
+| Environment | Name | Value |
+| --- | --- | --- |
+| `signing` | `IOS_DIST_CERT_P12_BASE64`, `IOS_DIST_CERT_PASSWORD` | The Apple Distribution certificate and private key |
+| `signing` | `IOS_APPSTORE_PROFILE_BASE64` | The App Store provisioning profile |
+| `signing`, `app-store-review` | `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8_BASE64` | The App Manager API key |
+
+The `app-store-review` environment must keep a required reviewer and allow only `v*` tags. The workflow refuses to run a
+release if the reviewer is gone, because GitHub would otherwise recreate a deleted environment with no protection.
+
+### Renewal
+
+The certificate and the profile each last one year, and the workflow warns 30 days before the profile expires. Repeat
+steps 1 to 3 and 5. A Mac is not needed.
