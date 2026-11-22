@@ -1,0 +1,1 @@
+Pairing with a Cuebot served over HTTPS now works, and stability improvements.
