@@ -80,6 +80,7 @@ public sealed class AppHost : IAsyncDisposable
         services.AddSingleton<Cuebot.Core.Desktop.Clipboard.IClipboardService, Cuebot.App.Views.Extras.Desktop.AvaloniaClipboardService>();
         services.AddSingleton<Cuebot.Core.Desktop.Notifications.IToastPresenter, Cuebot.App.Views.Extras.Desktop.AvaloniaToastPresenter>();
         services.AddSingleton(settings);
+        services.AddSettingsFile<ViewModels.Chat.ChatPageSettings>("chat-page.json");
         services.AddSingleton(_ => new BackupService(paths, () => settings.Settings.Backups.Keep));
         // Its own client: uploads of big backups outlast the shared client's 30 s timeout.
         services.AddSingleton(_ => new GoogleDriveClient(new HttpClient { Timeout = TimeSpan.FromMinutes(30) },

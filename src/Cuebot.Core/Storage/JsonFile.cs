@@ -26,11 +26,17 @@ public static class Json
 public sealed class JsonFile<T> : IDisposable where T : class, new()
 {
     private static readonly TimeSpan Debounce = TimeSpan.FromMilliseconds(500);
+    private static readonly TimeSpan FirstRetry = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan MaxRetry = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan CloseAttemptGap = TimeSpan.FromMilliseconds(100);
+    private const int CloseAttempts = 3;
     private readonly string _path;
     private readonly AppLog _log;
     private readonly Timer _timer;
     private readonly object _gate = new();
     private string? _pending;
+    private TimeSpan _retryDelay;   // zero while saves are succeeding
+    private bool _disposed;
 
     public JsonFile(string path, AppLog log)
     {
@@ -46,8 +52,12 @@ public sealed class JsonFile<T> : IDisposable where T : class, new()
     public void ScheduleSave()
     {
         var text = SecretJson.Serialize(Value, _path);
-        lock (_gate) _pending = text;
-        _timer.Change(Debounce, Timeout.InfiniteTimeSpan);
+        lock (_gate)
+        {
+            _pending = text;
+            if (_disposed) Flush();   // no timer any more: a late edit during shutdown is written straight away
+            else _timer.Change(Debounce, Timeout.InfiniteTimeSpan);
+        }
     }
 
     public void SaveNow()
@@ -56,25 +66,37 @@ public sealed class JsonFile<T> : IDisposable where T : class, new()
         Flush();
     }
 
+    /// <summary>
+    /// Writes the pending save. Never throws, because it runs on a timer thread where an exception ends the process.
+    /// A failed save stays pending and is retried with a growing delay until it succeeds or a newer edit replaces it.
+    /// </summary>
     public void Flush()
     {
-        string? text;
         lock (_gate)
         {
-            text = _pending;
-            _pending = null;
-            if (text is null) return;
+            if (_pending is not { } text) return;
             try
             {
                 var temp = _path + ".tmp";
                 File.WriteAllText(temp, text);
                 File.Move(temp, _path, overwrite: true);
+                _pending = null;
+                if (_retryDelay > TimeSpan.Zero) TryLog(LogLevel.Info, $"Saved {Path.GetFileName(_path)} after an earlier failure");
+                _retryDelay = TimeSpan.Zero;
             }
             catch (Exception ex)
             {
-                _log.Error("Storage", $"Failed to save {Path.GetFileName(_path)}", ex);
+                if (_retryDelay == TimeSpan.Zero) TryLog(LogLevel.Error, $"Failed to save {Path.GetFileName(_path)}, will retry: {ex.Message}");
+                _retryDelay = _retryDelay == TimeSpan.Zero ? FirstRetry : TimeSpan.FromTicks(Math.Min(_retryDelay.Ticks * 2, MaxRetry.Ticks));
+                if (!_disposed) _timer.Change(_retryDelay, Timeout.InfiniteTimeSpan);
             }
         }
+    }
+
+    private void TryLog(LogLevel level, string message)
+    {
+        try { _log.Write(level, "Storage", message); }
+        catch (Exception) { /* a log listener must not turn a storage problem into a crash */ }
     }
 
     private T Load(out bool needsSave)
@@ -127,9 +149,24 @@ public sealed class JsonFile<T> : IDisposable where T : class, new()
         return null;
     }
 
+    /// <summary>Stops the timer and makes a few quick last attempts, since a brief file lock is the usual cause of a failure.</summary>
     public void Dispose()
     {
-        Flush();
-        _timer.Dispose();
+        lock (_gate)
+        {
+            if (_disposed) return;
+            _disposed = true;
+            _timer.Dispose();
+        }
+        for (var attempt = 0; attempt < CloseAttempts; attempt++)
+        {
+            if (attempt > 0) Thread.Sleep(CloseAttemptGap);
+            Flush();
+            lock (_gate)
+            {
+                if (_pending is null) return;
+            }
+        }
+        TryLog(LogLevel.Error, $"Could not save {Path.GetFileName(_path)} before closing; its latest changes were not written");
     }
 }

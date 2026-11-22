@@ -65,7 +65,7 @@ public sealed class ChatPageServices
             Engine = host.Get<ActionEngine>(),
             Profile = host.Get<ProfileService>(),
             ActionNames = () => host.Get<ProfileService>().Snapshot.Actions.Select(a => a.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase),
-            Settings = new JsonFile<ChatPageSettings>(paths.File("chat-page.json"), log),
+            Settings = host.Get<JsonFile<ChatPageSettings>>(),   // owned by the host, so it is saved at shutdown
         };
     }
 }
