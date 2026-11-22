@@ -108,6 +108,7 @@ public sealed partial class CommandEditorViewModel : ObservableObject
     private string _sourcesText;
     private string _allowedUsersText;
     private string _deniedUsersText;
+    private string _argumentsText;
 
     public CommandEditorViewModel(CommandStore store, GroupStore groups, CommandDefinition command,
         Func<CommandDefinition, string>? findDuplicates = null)
@@ -120,6 +121,7 @@ public sealed partial class CommandEditorViewModel : ObservableObject
         _sourcesText = string.Join('\n', command.Sources);
         _allowedUsersText = string.Join('\n', command.AllowedUsers);
         _deniedUsersText = string.Join('\n', command.DeniedUsers);
+        _argumentsText = ArgumentLines(command.Arguments);
         RebuildGroupChoices();
         Validate();
     }
@@ -130,6 +132,9 @@ public sealed partial class CommandEditorViewModel : ObservableObject
     public static IReadOnlyList<CommandMode> Modes { get; } = Enum.GetValues<CommandMode>();
     public static IReadOnlyList<CommandLocation> Locations { get; } = Enum.GetValues<CommandLocation>();
     public static IReadOnlyList<ChatPermission> Roles { get; } = Enum.GetValues<ChatPermission>();
+    public static IReadOnlyList<CommandReplyMode> ReplyModes { get; } = Enum.GetValues<CommandReplyMode>();
+    public static IReadOnlyList<CommandReplyAccount> ReplyAccounts { get; } = Enum.GetValues<CommandReplyAccount>();
+    public static IReadOnlyList<CommandReplyTarget> ReplyTargets { get; } = Enum.GetValues<CommandReplyTarget>();
 
     public IReadOnlyList<string> GroupSuggestions => _store.Groups;
 
@@ -163,6 +168,7 @@ public sealed partial class CommandEditorViewModel : ObservableObject
         _sourcesText = string.Join('\n', stored.Sources);
         _allowedUsersText = string.Join('\n', stored.AllowedUsers);
         _deniedUsersText = string.Join('\n', stored.DeniedUsers);
+        _argumentsText = ArgumentLines(stored.Arguments);
         RebuildGroupChoices();
         Validate();
         OnPropertyChanged(string.Empty);
@@ -209,6 +215,63 @@ public sealed partial class CommandEditorViewModel : ObservableObject
     {
         get => _c.Include;
         set { if (_c.Include != value) Save(() => _c.Include = value); }
+    }
+
+    public string Description
+    {
+        get => _c.Description;
+        set { if (_c.Description != (value ?? "")) Save(() => _c.Description = value ?? ""); }
+    }
+
+    public string Reply
+    {
+        get => _c.Reply;
+        set { if (_c.Reply != (value ?? "")) Save(() => _c.Reply = value ?? ""); }
+    }
+
+    public CommandReplyMode ReplyMode
+    {
+        get => _c.ReplyMode;
+        set { if (_c.ReplyMode != value) Save(() => _c.ReplyMode = value); }
+    }
+
+    public CommandReplyAccount ReplyAs
+    {
+        get => _c.ReplyAs;
+        set { if (_c.ReplyAs != value) Save(() => _c.ReplyAs = value); }
+    }
+
+    public CommandReplyTarget ReplyTo
+    {
+        get => _c.ReplyTo;
+        set { if (_c.ReplyTo != value) Save(() => _c.ReplyTo = value); }
+    }
+
+    /// <summary>Preset arguments, one "name=value" per line.</summary>
+    public string ArgumentsText
+    {
+        get => _argumentsText;
+        set
+        {
+            if (_argumentsText == value) return;
+            _argumentsText = value;
+            Save(() => _c.Arguments = ParseArguments(value));
+        }
+    }
+
+    internal static string ArgumentLines(Dictionary<string, string> arguments) =>
+        string.Join('\n', arguments.Select(a => $"{a.Key}={a.Value}"));
+
+    internal static Dictionary<string, string> ParseArguments(string text)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var line in Lines(text))
+        {
+            var equals = line.IndexOf('=');
+            if (equals <= 0) continue;
+            result[line[..equals].Trim()] = line[(equals + 1)..].Trim();
+        }
+        return result;
     }
 
     public CommandMode Mode
@@ -356,8 +419,9 @@ public sealed partial class CommandEditorViewModel : ObservableObject
         void Fill(ObservableCollection<GroupChoiceViewModel> target, List<string> selected, Action<GroupChoiceViewModel> changed)
         {
             target.Clear();
-            var names = _groups.Names.Concat(selected).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase);
-            foreach (var name in names)
+            var own = _groups.Names.Concat(selected).Where(n => !BuiltInGroups.IsBuiltIn(n)).Distinct(StringComparer.OrdinalIgnoreCase)
+                .Order(StringComparer.OrdinalIgnoreCase);
+            foreach (var name in BuiltInGroups.All.Concat(own))
                 target.Add(new GroupChoiceViewModel(name, selected.Contains(name, StringComparer.OrdinalIgnoreCase), changed));
         }
     }

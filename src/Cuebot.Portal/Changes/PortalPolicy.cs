@@ -101,7 +101,22 @@ public static class PortalPolicy
         });
         foreach (var c in new[] { before, after })
             if (c is not null && !InScope(role, c.Group)) problems.Add($"Your role cannot use the group '{c.Group}'.");
+        if (after is not null) problems.AddRange(CheckReply(before, after));
         return [.. problems.Distinct()];
+    }
+
+    /// <summary>
+    /// A reply is posted by Cuebot, so a mod must not be able to use it to read stored values into chat (~global~ or
+    /// $functions$), speak as another account, or feed preset variables to the actions behind a command.
+    /// </summary>
+    private static IEnumerable<string> CheckReply(CommandDefinition? before, CommandDefinition after)
+    {
+        if (after.Reply != (before?.Reply ?? "") && (after.Reply.Contains('~') || after.Reply.Contains('$')))
+            yield return "Replies edited here cannot use ~global~ variables or $functions$. Use %variables%, or edit it on the streamer's computer.";
+        if (after.ReplyAs != (before?.ReplyAs ?? CommandReplyAccount.Default))
+            yield return "Only the streamer can change which account a reply is sent from.";
+        if (!Same(after.Arguments, before?.Arguments ?? []))
+            yield return "Only the streamer can change a command's preset arguments.";
     }
 
     /// <summary>Marks the steps of <paramref name="after"/> that are new or changed as edited by the member.</summary>

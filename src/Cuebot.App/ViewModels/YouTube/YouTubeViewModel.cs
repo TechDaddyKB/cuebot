@@ -157,7 +157,7 @@ public sealed partial class YouTubeViewModel : PageViewModel
             var budget = _youtube.Settings.DailyQuota;
             var hours = live > 0 ? budget / live : 0;
             return string.Format(CultureInfo.CurrentCulture,
-                "Reading YouTube costs about {0:N0} units/hour while live and {1:N0} units/hour while waiting, so {2:N0} units last about {3:0.#} hours of streaming{4}. Sending a message, moderating or changing the title costs 50 units each.",
+                "Reading YouTube costs about {0:N0} units/hour while live and {1:N0} units/hour while waiting, so {2:N0} units last about {3:0.#} hours of streaming{4}. Sending or deleting a message costs 20 units, a ban, timeout or unban 200, and changing the title 50.",
                 live, idle, budget, hours,
                 _youtube.Settings.StreamChat ? " (estimated: streamed chat costs 5 units each time it reconnects)" : "");
         }

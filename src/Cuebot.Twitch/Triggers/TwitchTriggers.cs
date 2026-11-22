@@ -14,13 +14,16 @@ internal sealed class TwitchTriggers : ITriggerProvider
     private readonly CommandTriggerType _command;
     private readonly Func<IEnumerable<string>>? _powerUpTitles;
     private readonly Func<IEnumerable<string>>? _rewardTitles;
+    private readonly Func<Cuebot.Core.Chat.AccountStandings?>? _standings;
 
     public TwitchTriggers() : this(TimeProvider.System)
     {
     }
 
-    internal TwitchTriggers(TimeProvider time, Func<IEnumerable<string>>? powerUpTitles = null, Func<IEnumerable<string>>? rewardTitles = null)
+    internal TwitchTriggers(TimeProvider time, Func<IEnumerable<string>>? powerUpTitles = null, Func<IEnumerable<string>>? rewardTitles = null,
+        Func<Cuebot.Core.Chat.AccountStandings?>? standings = null)
     {
+        _standings = standings;
         _command = new CommandTriggerType(new CooldownTracker(time));
         _powerUpTitles = powerUpTitles;
         _rewardTitles = rewardTitles;
@@ -72,7 +75,8 @@ internal sealed class TwitchTriggers : ITriggerProvider
             (e, s) => s["status"] is "" or "Any" || Equal(e, "status", s["status"])),
 
         // Channel
-        Event(T.Follow, "Follow"),
+        new EventTriggerType(T.Follow, Category, "Follow", T.Follow, [Cuebot.Core.Chat.FollowTriggerFilter.Parameter()],
+            (e, s, args) => Cuebot.Core.Chat.FollowTriggerFilter.Allows(_standings?.Invoke(), "Twitch", e, s, args)),
         Event(T.StreamOnline, "Stream online"),
         Event(T.StreamOffline, "Stream offline"),
         Event(T.StreamUpdate, "Stream update (title / category)",

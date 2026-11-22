@@ -116,7 +116,7 @@ public static class TwitchScopes
         [ReadChat, WriteChat, ReadFollowers, ReadSubscriptions, ReadBits, ReadRedemptions];
 
     /// <summary>What the optional bot account needs: send chat, send and receive whispers.</summary>
-    public static IReadOnlyList<string> Bot { get; } = [ReadChat, WriteChat, ManageWhispers];
+    public static IReadOnlyList<string> Bot { get; } = [ReadChat, WriteChat, ManageWhispers, ManageBannedUsers];
 
     /// <summary>
     /// Scopes to request for the broadcaster: <paramref name="requested"/> limited to known scopes (empty means

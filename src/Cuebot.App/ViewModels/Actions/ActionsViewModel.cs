@@ -43,6 +43,7 @@ public sealed partial class ActionsViewModel : PageViewModel
         ApplyFilter();
         SelectedAction = Actions.FirstOrDefault();
         profile.Changed += () => OnUi(OnProfileChanged);
+        profile.ActionRenamed += (_, _) => OnUi(RefreshStepValues);
     }
 
     public ObservableCollection<ActionItemViewModel> Actions { get; } = [];
@@ -69,6 +70,12 @@ public sealed partial class ActionsViewModel : PageViewModel
     /// "Set action state" toggles Enabled, the Queues page adds or renames queues. Re-sync the list, then re-read what
     /// each action shows.
     /// </summary>
+    /// <summary>A rename rewrote the steps that name the action; open editors show the new name.</summary>
+    private void RefreshStepValues()
+    {
+        foreach (var parameter in _all.SelectMany(a => a.Steps.Descendants()).SelectMany(s => s.Parameters)) parameter.RefreshValue();
+    }
+
     private void OnProfileChanged()
     {
         SyncWithProfile();

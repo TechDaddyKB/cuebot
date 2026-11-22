@@ -16,6 +16,35 @@ public sealed class PortalPolicyTests
     private static readonly PortalRole Lead = Role(DefaultRoles.LeadModId);
     private static readonly PortalRole Tech = Role(DefaultRoles.TechLeadId);
 
+    [Theory]
+    [InlineData("Hi %user%", true)]
+    [InlineData("Key: ~apiKey~", false)]
+    [InlineData("$readfile(secret.txt)$", false)]
+    public void A_mod_can_write_a_reply_but_not_read_stored_values_into_chat(string reply, bool allowed)
+    {
+        var before = new CommandDefinition { Name = "c", Commands = ["!c"] };
+        var after = new CommandDefinition { Id = before.Id, Name = "c", Commands = ["!c"], Reply = reply };
+        Assert.Equal(allowed, PortalPolicy.CheckCommand(Standard, before, after).Count == 0);
+    }
+
+    [Fact]
+    public void A_reply_the_streamer_wrote_with_a_global_survives_a_mods_other_edits()
+    {
+        var before = new CommandDefinition { Name = "c", Commands = ["!c"], Reply = "~discord~" };
+        var after = new CommandDefinition { Id = before.Id, Name = "renamed", Commands = ["!c"], Reply = "~discord~" };
+        Assert.Empty(PortalPolicy.CheckCommand(Standard, before, after));
+    }
+
+    [Fact]
+    public void A_mod_cannot_change_the_reply_account_or_preset_arguments()
+    {
+        var before = new CommandDefinition { Name = "c", Commands = ["!c"] };
+        var account = new CommandDefinition { Id = before.Id, Name = "c", Commands = ["!c"], ReplyAs = CommandReplyAccount.Broadcaster };
+        var preset = new CommandDefinition { Id = before.Id, Name = "c", Commands = ["!c"], Arguments = new() { ["a"] = "b" } };
+        Assert.NotEmpty(PortalPolicy.CheckCommand(Standard, before, account));
+        Assert.NotEmpty(PortalPolicy.CheckCommand(Standard, before, preset));
+    }
+
     private static SubActionDefinition Step(string type) => new() { Type = type, Parameters = { ["text"] = "hi" } };
 
     private static ActionDefinition Action(params SubActionDefinition[] steps) => new() { Name = "a", SubActions = [.. steps] };

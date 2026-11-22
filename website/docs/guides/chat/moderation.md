@@ -43,7 +43,7 @@ Not every platform can do everything. Hold the mouse over a button to see what i
 
 | Button | Twitch | YouTube | Kick | Rumble |
 | --- | --- | --- | --- | --- |
-| Delete message | Works | Works (costs 50 quota units) | Works | Website (or see below) |
+| Delete message | Works | Works (costs 20 quota units) | Works | Website (or see below) |
 | Timeout | Works, 1 second to 14 days | Works, while you are live | Whole minutes, 1 minute to 7 days | Website (or see below) |
 | Ban | Works | Works, while you are live | Works | Website (or see below) |
 | Unban | Works | Only bans made from Cuebot | Works | Website |
@@ -156,7 +156,7 @@ and `BanMonthsAfterEnd`.
 ## YouTube quota
 
 YouTube gives every app a daily allowance, called **quota**. It resets at midnight Pacific time. Every YouTube action
-uses some of it: a ban, a timeout or a deletion each cost 50 units. The chat page shows how much is left when you work
+uses some of it: deleting a message costs 20 units; a ban, a timeout or an unban costs 200. The chat page shows how much is left when you work
 on YouTube.
 
 Cuebot keeps some quota back so your chat keeps arriving. Moderation stops when less than **Units moderation must
@@ -191,6 +191,23 @@ The list next to the platform picker in the send box chooses who posts your mess
 - **Broadcaster**: your channel.
 - **Bot**: your bot account. It is offered only when a bot account is signed in on that platform (Twitch, YouTube or
   Kick).
+
+## Banned accounts and bots
+
+Banned accounts sometimes follow again and again because they know it gets announced. The **Banned accounts and bots**
+options (in the chat page's options, under **Moderation**) keep them off your stream:
+
+- **Ignore follows from banned accounts** (on): no alert, speech, credit, feed entry or subathon time.
+- **Ignore channel point redemptions from banned accounts** (off). Subs, cheers and tips are never ignored, so your
+  totals stay right.
+- **Keep banned accounts out of the credits** (on): also removes someone from this stream's credits when they are banned.
+- **Treat known bots like banned accounts** (off): applies these options to common bots like Nightbot, plus any names
+  you add under **Your own bots**, and stops their chat being read aloud.
+- **Read the Twitch ban list once a day** (on): so people you banned before installing Cuebot count too.
+
+Timeouts do not count as bans. On other platforms Cuebot knows only the bans it saw. A viewer who chats again is treated
+as unbanned. **Follow** triggers on Twitch and Kick skip these accounts too. Untick **Skip banned accounts and known
+bots** on a trigger to run it anyway; `%isBanned%` and `%isKnownBot%` tell you which it was.
 
 ## Mods and safety
 

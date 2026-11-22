@@ -31,20 +31,21 @@ Tokens and the client secret are stored in `youtube.json` in the data folder and
 
 | Call | Units | When |
 | --- | --- | --- |
-| `liveBroadcasts.list` (active) | 5 | every *broadcast check* (default 120 s), always while connected |
-| `liveBroadcasts.list` (upcoming) | 5 | same interval, only with "Watch scheduled broadcasts" |
+| `liveBroadcasts.list` (active) | 1 | every *broadcast check* (default 120 s), always while connected |
+| `liveBroadcasts.list` (upcoming) | 1 | same interval, only with "Watch scheduled broadcasts" |
 | `liveChatMessages.streamList` (gRPC) | 5 | per chat stream connection while live (*Stream live chat*, on by default); reconnects resume from the last page token |
 | `liveChatMessages.list` | 5 | per chat poll while live, only when chat is polled: YouTube's `pollingIntervalMillis`, but at least *minimum chat seconds* (default 8 s) |
 | `videos.list` (statistics, title, end) | 1 | every *statistics* interval (default 60 s) while live |
 | `subscriptions.list` (myRecentSubscribers) | 1 | every *subscriber* interval (default 300 s), optional |
 | `channels.list` | 1 | on connect/sign-in, and resolving an `@handle` |
-| `liveChatMessages.insert` / `.delete`, `liveChatBans.insert` / `.delete`, `liveChatModerators.insert` / `.delete`, poll create/end | 50 each | on demand (sending, moderation, polls) |
+| `liveChatMessages.insert` / `.delete`, poll create/end | 20 each | on demand (sending, deleting, polls) |
+| `liveChatBans.insert` / `.delete`, `liveChatModerators.insert` / `.delete` | 200 each | on demand (bans, timeouts, unbans, moderators) |
 | `liveChatModerators.list` | 50 | removing a moderator |
 | `videos.update` (+ one `videos.list`) | 50 + 1 | set title / description / category / tags / privacy |
 
-With the defaults and a streamed chat that is roughly **280 units per hour live** and **160 per hour idle**; the page's
+With the defaults and a streamed chat that is roughly **160 units per hour live** and **40 per hour idle**; the page's
 estimate assumes the chat stream reconnects every 5 minutes, since YouTube does not document how long it keeps a
-stream open. With chat polled every 8 s it is roughly **2,500 units per hour live** (chat dominates), i.e. about four
+stream open. With chat polled every 8 s it is roughly **2,350 units per hour live** (chat dominates), i.e. about four
 hours of streaming per default daily quota; raise *minimum chat seconds* to stream longer. The page shows the
 estimate for the current settings and the units Cuebot has spent today (Cuebot's own count; Google's console is
 authoritative).
@@ -86,4 +87,4 @@ exponentially (5 s up to 5 min). `rateLimitExceeded` (polling too fast) is treat
   the current session; lift others in YouTube Studio.
 - New Subscriber only sees subscribers whose subscriptions are public.
 - Jewels gifts (`giftEvent`) have little public documentation; the amount is read best-effort.
-- Messages longer than YouTube's 200-character limit are split into several messages (50 units each).
+- Messages longer than YouTube's 200-character limit are split into several messages (20 units each).

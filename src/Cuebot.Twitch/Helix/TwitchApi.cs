@@ -38,11 +38,13 @@ public sealed partial class TwitchApi
     private readonly Func<bool> _isConnected;
     private readonly Action<BotEvent> _publish;
     private readonly SentMessageTracker _sent;
+    private readonly Action<string> _warn;
 
     internal TwitchApi(HelixClient helix, TwitchTokenManager tokens, HelixClient botHelix, TwitchTokenManager botTokens,
         Func<TwitchSettings> settings, Func<bool> isConnected, Action<BotEvent> publish, SentMessageTracker sent,
-        TwitchCounters? counters = null)
+        TwitchCounters? counters = null, Action<string>? warn = null)
     {
+        _warn = warn ?? (_ => { });
         Counters = counters ?? new TwitchCounters(settings, () => { });
         _helix = helix;
         _tokens = tokens;
@@ -510,30 +512,74 @@ public sealed partial class TwitchApi
 
     // ---------------------------------------------------------------- moderation
 
-    public Task BanAsync(string userId, string reason = "", CancellationToken ct = default) => BanCoreAsync(userId, null, reason, ct);
+    public Task BanAsync(string userId, string reason = "", CancellationToken ct = default) => BanCoreAsync(userId, null, reason, false, ct);
+
+    /// <summary>Bans as the bot when <paramref name="useBot"/> is set and it can; otherwise as the broadcaster (logged).</summary>
+    public Task BanAsync(string userId, string reason, bool useBot, CancellationToken ct = default) =>
+        BanCoreAsync(userId, null, reason, useBot, ct);
 
     /// <summary>Times a user out for 1 second up to 14 days.</summary>
     public Task TimeoutAsync(string userId, int seconds, string reason = "", CancellationToken ct = default) =>
-        BanCoreAsync(userId, Math.Clamp(seconds, 1, 1_209_600), reason, ct);
+        BanCoreAsync(userId, Math.Clamp(seconds, 1, 1_209_600), reason, false, ct);
 
-    private Task BanCoreAsync(string userId, int? duration, string reason, CancellationToken ct)
+    /// <summary>Times out as the bot when <paramref name="useBot"/> is set and it can; otherwise as the broadcaster (logged).</summary>
+    public Task TimeoutAsync(string userId, int seconds, string reason, bool useBot, CancellationToken ct = default) =>
+        BanCoreAsync(userId, Math.Clamp(seconds, 1, 1_209_600), reason, useBot, ct);
+
+    private Task BanCoreAsync(string userId, int? duration, string reason, bool useBot, CancellationToken ct)
     {
-        Require(TwitchScopes.ManageBannedUsers);
         RequireUser(userId);
         object data = duration is { } d
             ? new { user_id = userId, duration = d, reason }
             : new { user_id = userId, reason };
-        return _helix.RequestAsync(HttpMethod.Post, "moderation/bans", Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId)),
-            new { data }, duration is null ? "Banning user" : "Timing out user", ct);
+        var what = duration is null ? "Banning user" : "Timing out user";
+        return AsBanModeratorAsync(useBot, what, (helix, moderatorId) => helix.RequestAsync(HttpMethod.Post, "moderation/bans",
+            Q(("broadcaster_id", BroadcasterId), ("moderator_id", moderatorId)), new { data }, what, ct));
+    }
+
+    /// <summary>
+    /// Runs a ban-type call as the bot when asked and possible. Without a signed-in bot, without the scope, or when
+    /// Twitch refuses the bot (it is not a moderator here), the broadcaster does it and the log says why.
+    /// </summary>
+    private async Task AsBanModeratorAsync(bool useBot, string what, Func<HelixClient, string, Task> send)
+    {
+        RequireSignedIn();
+        if (useBot)
+        {
+            if (!IsBotReady)
+            {
+                _warn($"{what}: no Twitch bot account is signed in, so the broadcaster did this instead.");
+            }
+            else if (!HasScope(_botTokens, TwitchScopes.ManageBannedUsers))
+            {
+                _warn($"{what}: the Twitch bot has not allowed banning users, so the broadcaster did this instead. Sign the bot in again on the Twitch page.");
+            }
+            else
+            {
+                try
+                {
+                    await send(_botHelix, _botTokens.UserId).ConfigureAwait(false);
+                    return;
+                }
+                catch (TwitchApiException ex) when (ex.StatusCode is 401 or 403)
+                {
+                    _warn($"{what}: Twitch refused the bot account (is it a moderator of this channel?), so the broadcaster did this instead.");
+                }
+            }
+        }
+        Require(TwitchScopes.ManageBannedUsers);
+        await send(_helix, BroadcasterId).ConfigureAwait(false);
     }
 
     /// <summary>Lifts a ban or a timeout.</summary>
-    public Task UnbanAsync(string userId, CancellationToken ct = default)
+    public Task UnbanAsync(string userId, CancellationToken ct = default) => UnbanAsync(userId, false, ct);
+
+    /// <summary>Lifts a ban or timeout as the bot when <paramref name="useBot"/> is set and it can; otherwise as the broadcaster (logged).</summary>
+    public Task UnbanAsync(string userId, bool useBot, CancellationToken ct = default)
     {
-        Require(TwitchScopes.ManageBannedUsers);
         RequireUser(userId);
-        return _helix.RequestAsync(HttpMethod.Delete, "moderation/bans",
-            Q(("broadcaster_id", BroadcasterId), ("moderator_id", BroadcasterId), ("user_id", userId)), null, "Unbanning user", ct);
+        return AsBanModeratorAsync(useBot, "Unbanning user", (helix, moderatorId) => helix.RequestAsync(HttpMethod.Delete, "moderation/bans",
+            Q(("broadcaster_id", BroadcasterId), ("moderator_id", moderatorId), ("user_id", userId)), null, "Unbanning user", ct));
     }
 
     public Task WarnAsync(string userId, string reason, CancellationToken ct = default)

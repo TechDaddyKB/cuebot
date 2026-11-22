@@ -309,6 +309,19 @@ public class CloudEngineTests
     }
 
     [Fact]
+    public async Task Watson_escapes_chat_text_so_it_cannot_inject_ssml()
+    {
+        var handler = new FakeHttpHandler(_ => FakeHttpHandler.Bytes(WavBytes));
+        var engine = new WatsonEngine(handler.Client(),
+            () => new WatsonSettings { ApiKey = "wkey", Url = "https://api.us-south.text-to-speech.watson.cloud.ibm.com/instances/abc/" });
+
+        await engine.SynthesizeAsync(Say("<break time=\"10s\"/> Tom & Jerry", "en-US_AllisonV3Voice"), default);
+
+        var text = System.Text.Json.JsonDocument.Parse(handler.Last.Body!).RootElement.GetProperty("text").GetString();
+        Assert.Equal("&lt;break time=&quot;10s&quot;/&gt; Tom &amp; Jerry", text);
+    }
+
+    [Fact]
     public async Task Watson_reads_the_credentials_file_and_lists_voices()
     {
         var file = Path.Combine(Path.GetTempPath(), $"ibm-credentials-{Guid.NewGuid():N}.env");
