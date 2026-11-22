@@ -16,8 +16,9 @@ public sealed class StreamerBotEventCatalogTests : IAsyncDisposable
     /// Cuebot events under a documented Streamer.bot source that Streamer.bot itself does not document. They keep the
     /// generic name (the module's event, PascalCased) so clients can still subscribe to them.
     /// </summary>
-    internal static readonly HashSet<string> CuebotExtras = new("Command.Denied", StringComparer.Ordinal)
+    internal static readonly HashSet<string> CuebotExtras = new(StringComparer.Ordinal)
     {
+        "Command.Denied",
         "CrowdControl.Connected", "CrowdControl.Disconnected", "CrowdControl.EffectRefund", "CrowdControl.EffectRetry",
         "CrowdControl.GameSessionPaused",
         "DonorDrive.Connected", "DonorDrive.Disconnected",
