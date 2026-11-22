@@ -1,0 +1,153 @@
+name: ios-release
+
+# Cuebot Companion for iOS to TestFlight and the App Store (docs/CODE_SIGNING.md). A release tag (v1.2.3) builds, signs
+# and uploads to TestFlight, then waits for a person to approve the app-store-review environment before it submits the
+# version to App Review. Release candidates (v1.2.3-rc.1) do not run. It is a workflow of its own so that an Apple
+# problem never holds back the desktop release.
+#
+# Run it by hand from main to test the setup: build-only signs an .ipa and stops, testflight also uploads it.
+on:
+  push:
+    tags: ['v*', '!v*-*']
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: How far to go (neither submits to App Review)
+        type: choice
+        options: [build-only, testflight]
+        default: build-only
+
+concurrency:
+  group: ios-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  testflight:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    environment: signing
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build: ${{ steps.version.outputs.build }}
+      uploaded: ${{ steps.upload.outputs.uploaded }}
+    env:
+      IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+      IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+      IOS_APPSTORE_PROFILE_BASE64: ${{ secrets.IOS_APPSTORE_PROFILE_BASE64 }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the signing secrets
+        id: secrets
+        run: |
+          missing=()
+          for name in IOS_DIST_CERT_P12_BASE64 IOS_DIST_CERT_PASSWORD IOS_APPSTORE_PROFILE_BASE64 \
+                      ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8_BASE64; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          elif [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            echo "::error::Missing on the signing environment: ${missing[*]}"
+            exit 1
+          else
+            echo "::warning::iOS release skipped. Missing on the signing environment: ${missing[*]}"
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Run the release script tests
+        if: steps.secrets.outputs.configured == 'true'
+        run: python3 -I clients/ios/ci/tests/test_ci.py
+      # GitHub creates a missing environment with no protection, so a deleted or edited environment would otherwise
+      # submit to App Review with nobody approving it. Fails closed.
+      - name: Check that App Review submission needs an approval
+        if: steps.secrets.outputs.configured == 'true' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          reviewers=$(gh api "repos/$GITHUB_REPOSITORY/environments/app-store-review" \
+            --jq '[.protection_rules[] | select(.type == "required_reviewers") | .reviewers[]] | length')
+          if [ "${reviewers:-0}" -lt 1 ]; then
+            echo "::error::The app-store-review environment has no required reviewer."
+            exit 1
+          fi
+      - name: Work out the version and build number
+        id: version
+        if: steps.secrets.outputs.configured == 'true'
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          case "$GITHUB_REF" in
+            refs/tags/v*) version="${GITHUB_REF_NAME#v}" ;;
+            *) version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props) ;;
+          esac
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$version' is not an App Store version (x.y.z)."
+            exit 1
+          fi
+          # Apple never accepts the same build number twice for a version, and a re-run has the same run number.
+          build="$((RUN_NUMBER + 100)).$RUN_ATTEMPT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+          echo "Cuebot Companion $version ($build)"
+      - name: Check the release notes
+        if: steps.secrets.outputs.configured == 'true' && github.event_name == 'push'
+        run: python3 -I clients/ios/ci/asc_submit.py --check-notes "clients/ios/release-notes/${{ steps.version.outputs.version }}.txt"
+      - name: Use the newest stable Xcode
+        if: steps.secrets.outputs.configured == 'true'
+        run: |
+          # App Store uploads reject beta and release-candidate Xcodes, whose folder names carry a suffix.
+          xcode=$(find /Applications -maxdepth 1 -type d -name 'Xcode_*.app' | grep -E '/Xcode_[0-9]+(\.[0-9]+)*\.app$' | sort -V | tail -1)
+          [ -n "$xcode" ] || { echo "::error::No stable Xcode on this runner."; exit 1; }
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
+      - name: Import the certificate and the profile
+        id: signing
+        if: steps.secrets.outputs.configured == 'true'
+        run: clients/ios/ci/import-signing.sh
+      - name: Build and sign the .ipa
+        if: steps.secrets.outputs.configured == 'true'
+        run: clients/ios/ci/build-ipa.sh "${{ steps.version.outputs.version }}" "${{ steps.version.outputs.build }}"
+      - name: Upload to TestFlight
+        id: upload
+        if: steps.secrets.outputs.configured == 'true' && (github.event_name == 'push' || inputs.mode == 'testflight')
+        run: |
+          install -d -m 700 "$HOME/.appstoreconnect/private_keys"
+          key="$HOME/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8"
+          (umask 077; printf '%s' "$ASC_KEY_P8_BASE64" | base64 --decode > "$key")
+          xcrun altool --upload-app --type ios --file "$RUNNER_TEMP/export/Cuebot Companion.ipa" \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+          echo "uploaded=true" >> "$GITHUB_OUTPUT"
+      - name: Remove the signing material
+        if: ${{ always() }}
+        run: |
+          [ -z "${CUEBOT_IOS_KEYCHAIN:-}" ] || security delete-keychain "$CUEBOT_IOS_KEYCHAIN" || true
+          [ -z "${CUEBOT_IOS_PROFILE_UUID:-}" ] || rm -f \
+            "$HOME/Library/MobileDevice/Provisioning Profiles/$CUEBOT_IOS_PROFILE_UUID.mobileprovision" \
+            "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/$CUEBOT_IOS_PROFILE_UUID.mobileprovision"
+          rm -rf "$HOME/.appstoreconnect/private_keys" "$RUNNER_TEMP/export" "$RUNNER_TEMP/ios-dist.p12"
+
+  # Pauses here until a required reviewer approves the app-store-review environment.
+  submit:
+    needs: testflight
+    if: github.event_name == 'push' && needs.testflight.outputs.uploaded == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: app-store-review
+    steps:
+      - uses: actions/checkout@v7
+      - name: Submit to App Review
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          VERSION: ${{ needs.testflight.outputs.version }}
+          BUILD: ${{ needs.testflight.outputs.build }}
+        run: |
+          python3 -I clients/ios/ci/asc_submit.py --version "$VERSION" --build "$BUILD" \
+            --notes "clients/ios/release-notes/$VERSION.txt"
