@@ -54,8 +54,8 @@ platform. Hover over it to see:
 The timeout list shows what a platform really applies. On Kick it says **14 days (applies 7 days)**, because Kick's
 longest timeout is 7 days.
 
-On YouTube each action uses some of your daily YouTube allowance (quota): a deletion, a timeout or a ban costs 50
-units. The tool notes say how much. See [YouTube quota](../chat/moderation.md#youtube-quota).
+On YouTube each action uses some of your daily YouTube allowance (quota): a deletion costs 20 units; a timeout, a ban or an
+unban costs 200. The tool notes say how much. See [YouTube quota](../chat/moderation.md#youtube-quota).
 
 **Chat modes and clear chat** (slow mode, followers-only, subscribers-only, emote-only, and Shield Mode on Twitch)
 are in a fold-out bar above the chat, one row per platform, for roles that have them.

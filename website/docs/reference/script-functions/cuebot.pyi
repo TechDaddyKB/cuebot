@@ -2565,11 +2565,12 @@ class Cuebot:
         Gives back: Nothing.
         Same as cb.call(\"twitch.assignGuestStarSlot\", ...).
         """
-    def twitch_ban(self, *, user: Any = None, reason: Any = None) -> Any:
+    def twitch_ban(self, *, user: Any = None, reason: Any = None, use_bot: Any = None) -> Any:
         """Bans a viewer from your Twitch chat for good. Fails when the user is not found. Fails when Twitch is not connected.
 
         user: Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.
         reason: Optional. Why, like \"Spam\".
+        use_bot: Optional. true to do this as your bot account. It must be signed in and a moderator here; if it cannot, your main account does it and the log says why. Leave it out for your main account.
         Gives back: An object with bannedUser (display name), bannedUserName (login), bannedUserId, bannedUserType (\"twitch\") and banResult (true).
         Same as cb.call(\"twitch.ban\", ...).
         """
@@ -3457,19 +3458,21 @@ class Cuebot:
         Gives back: Nothing.
         Same as cb.call(\"twitch.subscriberMode\", ...).
         """
-    def twitch_timeout(self, *, user: Any = None, duration: Any = None, reason: Any = None) -> Any:
+    def twitch_timeout(self, *, user: Any = None, duration: Any = None, reason: Any = None, use_bot: Any = None) -> Any:
         """Times out a viewer in your Twitch chat, so they cannot chat for a while. Fails when Twitch is not connected.
 
         user: Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.
         duration: Optional. How long, in seconds (1 second to 14 days). Leave it out for 600 (10 minutes).
         reason: Optional. Why, like \"Calm down\".
+        use_bot: Optional. true to do this as your bot account. It must be signed in and a moderator here; if it cannot, your main account does it and the log says why. Leave it out for your main account.
         Gives back: An object with timedOutUser (display name), timedOutUserName (login), timedOutUserId, timedOutUserType (\"twitch\") and timeoutResult (true).
         Same as cb.call(\"twitch.timeout\", ...).
         """
-    def twitch_unban(self, *, user: Any = None) -> Any:
+    def twitch_unban(self, *, user: Any = None, use_bot: Any = None) -> Any:
         """Lets a banned viewer chat in your Twitch channel again. Fails when Twitch is not connected.
 
         user: Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.
+        use_bot: Optional. true to do this as your bot account. It must be signed in and a moderator here; if it cannot, your main account does it and the log says why. Leave it out for your main account.
         Gives back: An object with unbannedUser (display name), unbannedUserName (login), unbannedUserId, unbannedUserType (\"twitch\") and unbanResult (true).
         Same as cb.call(\"twitch.unban\", ...).
         """

@@ -87,6 +87,9 @@ public abstract partial class ParameterViewModel : ObservableObject
         }
     }
 
+    /// <summary>Re-reads the stored value after something outside this editor changed it.</summary>
+    public void RefreshValue() => OnPropertyChanged(string.Empty);
+
     public static ParameterViewModel Create(ParameterDescriptor d, Dictionary<string, string> store, Action changed) => d.Kind switch
     {
         ParameterKind.Boolean => new BoolParameterViewModel(d, store, changed),

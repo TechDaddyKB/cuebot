@@ -44,10 +44,13 @@ internal sealed class WatsonEngine(HttpClient http, Func<WatsonSettings> setting
     {
         using var request = CreateRequest(HttpMethod.Post, BuildSynthesizePath(synthesis));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("audio/wav"));
-        request.Content = JsonContent.Create(new JsonObject { ["text"] = synthesis.Text });
+        request.Content = JsonContent.Create(new JsonObject { ["text"] = BuildText(synthesis.Text) });
         var audio = await CloudHttp.GetBytesAsync(http, request, DisplayName, ct).ConfigureAwait(false);
         return SynthesizedAudio.Wav(TryNormalize(audio));
     }
+
+    /// <summary>Watson reads <c>text</c> as plain text or SSML, so chat text is escaped and can never act as markup.</summary>
+    internal static string BuildText(string text) => Ssml.Escape(text);
 
     internal static string BuildSynthesizePath(SynthesisRequest synthesis)
     {

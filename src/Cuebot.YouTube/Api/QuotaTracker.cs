@@ -9,18 +9,18 @@ internal static class QuotaCosts
     public const int ChannelsList = 1;
     public const int VideosList = 1;
     public const int SubscriptionsList = 1;
-    public const int LiveBroadcastsList = 5;
+    public const int LiveBroadcastsList = 1;
     public const int LiveChatMessagesList = 5;
     /// <summary>liveChatMessages.streamList: per call, however long the stream stays open.</summary>
     public const int LiveChatMessagesStream = 5;
     public const int LiveChatModeratorsList = 50;
-    public const int LiveChatMessagesInsert = 50;
-    public const int LiveChatMessagesDelete = 50;
-    public const int LiveChatMessagesTransition = 50;
-    public const int LiveChatBansInsert = 50;
-    public const int LiveChatBansDelete = 50;
-    public const int LiveChatModeratorsInsert = 50;
-    public const int LiveChatModeratorsDelete = 50;
+    public const int LiveChatMessagesInsert = 20;
+    public const int LiveChatMessagesDelete = 20;
+    public const int LiveChatMessagesTransition = 20;
+    public const int LiveChatBansInsert = 200;
+    public const int LiveChatBansDelete = 200;
+    public const int LiveChatModeratorsInsert = 200;
+    public const int LiveChatModeratorsDelete = 200;
     public const int VideosUpdate = 50;
 
     /// <summary>

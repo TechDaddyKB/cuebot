@@ -1,5 +1,6 @@
 using Cuebot.Core.Logging;
 using Cuebot.Core.Storage;
+using Cuebot.Core.Transfer;
 
 namespace Cuebot.Core.Actions;
 
@@ -32,6 +33,9 @@ public sealed class ProfileService : IDisposable
     private readonly JsonFile<BotProfile>? _file;
     private BotProfile _profile;
 
+    /// <summary>Per action, the name references to it currently use (lags the action's name while that name is unusable).</summary>
+    private readonly Dictionary<Guid, string> _referenceNames = [];
+
     public ProfileService(AppPaths? paths, AppLog log)
     {
         if (paths is not null)
@@ -44,6 +48,7 @@ public sealed class ProfileService : IDisposable
         {
             _profile = new BotProfile();
         }
+        foreach (var action in _profile.Actions) _referenceNames[action.Id] = action.Name;
         Snapshot = CreateSnapshot();
     }
 
@@ -54,6 +59,12 @@ public sealed class ProfileService : IDisposable
     public event Action? Changed;
 
     /// <summary>
+    /// An action's name changed (old, new) and the steps naming it were updated. Stores outside the profile that name
+    /// actions (deck buttons, hotkeys, chat quick actions) follow it here. Raised before <see cref="Changed"/>.
+    /// </summary>
+    public event Action<string, string>? ActionRenamed;
+
+    /// <summary>
     /// Marshals edits that originate outside the UI (e.g. the "Set action state" sub-action) onto the thread that
     /// owns <see cref="Profile"/>. The app sets it to post to its UI thread; when null, edits run inline.
     /// </summary>
@@ -61,9 +72,46 @@ public sealed class ProfileService : IDisposable
 
     public void NotifyChanged()
     {
+        var renames = FollowActionRenames();
         Snapshot = CreateSnapshot();
         _file?.ScheduleSave();
+        foreach (var (oldName, newName) in renames) ActionRenamed?.Invoke(oldName, newName);
         Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// Every edit path (editor, API, assistant, portal, import) ends here, so renames are detected by id. The editor
+    /// publishes each keystroke: while the typed name is empty, dynamic or another action's, references wait at the last
+    /// usable name, so typing past another action's name never captures its references.
+    /// </summary>
+    private List<(string Old, string New)> FollowActionRenames()
+    {
+        var renames = new List<(string Old, string New)>();
+        var actions = _profile.Actions;
+        bool HeldByOther(string name, ActionDefinition self) =>
+            actions.Any(a => a != self && string.Equals(a.Name.Trim(), name.Trim(), StringComparison.OrdinalIgnoreCase));
+        foreach (var action in actions)
+        {
+            if (!_referenceNames.TryGetValue(action.Id, out var oldName))
+            {
+                _referenceNames[action.Id] = action.Name;
+                continue;
+            }
+            var newName = action.Name;
+            if (oldName == newName || !TransferReferences.IsLiteral(newName) || HeldByOther(newName, action)) continue;
+            _referenceNames[action.Id] = newName;
+            if (HeldByOther(oldName, action)) continue;   // the old name now means that other action
+            foreach (var owner in actions)
+                TransferReferences.Rewrite(owner, (kind, value) =>
+                    kind == TransferKind.Action && string.Equals(value, oldName.Trim(), StringComparison.OrdinalIgnoreCase) ? newName : null);
+            renames.Add((oldName, newName));
+        }
+        if (_referenceNames.Count > actions.Count)
+        {
+            var live = actions.Select(a => a.Id).ToHashSet();
+            foreach (var id in _referenceNames.Keys.Where(id => !live.Contains(id)).ToArray()) _referenceNames.Remove(id);
+        }
+        return renames;
     }
 
     /// <summary>Applies <paramref name="edit"/> to the live profile on the owning thread, then publishes the change.</summary>

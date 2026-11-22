@@ -12,8 +12,13 @@ public static class DeckFeatures
     public static IServiceCollection AddDeckFeatures(this IServiceCollection services)
     {
         services.AddSettingsFile<DeckSettings>("decks.json");
-        services.AddSingleton(sp => new DeckService(sp.GetRequiredService<Storage.JsonFile<DeckSettings>>(),
-            sp.GetRequiredService<EventBus>(), sp.GetRequiredService<Logging.AppLog>(), sp.GetRequiredService<ActionEngine>));
+        services.AddSingleton(sp =>
+        {
+            var decks = new DeckService(sp.GetRequiredService<Storage.JsonFile<DeckSettings>>(),
+                sp.GetRequiredService<EventBus>(), sp.GetRequiredService<Logging.AppLog>(), sp.GetRequiredService<ActionEngine>);
+            sp.GetRequiredService<ProfileService>().ActionRenamed += decks.RenameAction;
+            return decks;
+        });
         services.AddSingleton<ITriggerProvider, DeckTriggers>();
         services.AddSingleton<ISubActionHandler, DeckNotifySubAction>();
         services.AddSingleton<ISubActionHandler, DeckItemSetBackgroundSubAction>();

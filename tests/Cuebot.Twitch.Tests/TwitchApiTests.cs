@@ -137,6 +137,63 @@ public sealed class TwitchApiTests : IDisposable
         Assert.Throws<InvalidOperationException>(() => TwitchApi.ChooseSender(TwitchSender.Bot, botReady: false, preferBot: true));
 
     [Fact]
+    public async Task Ban_timeout_and_unban_act_as_the_bot_when_asked()
+    {
+        _h.SignInBot();
+
+        await _h.Api.BanAsync("42", "spam", useBot: true);
+        Assert.Contains("moderator_id=777", _h.Last.Query);
+        Assert.Contains("broadcaster_id=1337", _h.Last.Query);
+        await _h.Api.TimeoutAsync("42", 60, "calm", useBot: true);
+        Assert.Contains("moderator_id=777", _h.Last.Query);
+        await _h.Api.UnbanAsync("42", useBot: true);
+        Assert.Contains("moderator_id=777", _h.Last.Query);
+    }
+
+    [Fact]
+    public async Task Ban_stays_with_the_broadcaster_unless_the_bot_is_asked_for()
+    {
+        _h.SignInBot();
+
+        await _h.Api.BanAsync("42", "spam");
+
+        Assert.Contains("moderator_id=1337", _h.Last.Query);
+    }
+
+    [Fact]
+    public async Task Ban_as_bot_falls_back_to_the_broadcaster_without_a_bot()
+    {
+        await _h.Api.BanAsync("42", "spam", useBot: true);
+
+        Assert.Single(_h.Http.Requests);
+        Assert.Contains("moderator_id=1337", _h.Last.Query);
+    }
+
+    [Fact]
+    public async Task Ban_as_bot_falls_back_when_the_bot_lacks_the_scope()
+    {
+        _h.SignInBot(TwitchScopes.ReadChat, TwitchScopes.WriteChat);
+
+        await _h.Api.BanAsync("42", "spam", useBot: true);
+
+        Assert.Single(_h.Http.Requests);
+        Assert.Contains("moderator_id=1337", _h.Last.Query);
+    }
+
+    [Fact]
+    public async Task Ban_as_bot_retries_as_the_broadcaster_when_twitch_refuses_the_bot()
+    {
+        _h.SignInBot();
+        _h.On("POST /helix/moderation/bans", """{"error":"Forbidden","status":403,"message":"not a moderator"}""", HttpStatusCode.Forbidden);
+
+        await Assert.ThrowsAsync<TwitchApiException>(() => _h.Api.BanAsync("42", "spam", useBot: true));
+
+        Assert.Equal(2, _h.Http.Requests.Count);
+        Assert.Contains("moderator_id=777", _h.Http.Requests[0].Query);
+        Assert.Contains("moderator_id=1337", _h.Http.Requests[1].Query);
+    }
+
+    [Fact]
     public async Task Chat_and_whispers_go_out_from_the_bot_when_it_is_signed_in()
     {
         _h.SignInBot();
