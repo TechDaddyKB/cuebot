@@ -272,6 +272,9 @@ jobs:
   macos-package:
     needs: [test-macos, ffmpeg]
     runs-on: macos-latest
+    # Developer ID signing and notarization (docs/CODE_SIGNING.md): the secrets live in this environment, which pull
+    # requests do not get, so forks and pull requests still build ad-hoc signed images.
+    environment: ${{ github.event_name != 'pull_request' && 'signing' || '' }}
     # The OAuth apps registered for Cuebot (docs/BUILT_IN_APPS.md), compiled into the packages. Empty in builds without
     # the secrets (forks, pull requests): those packages ask users for their own apps instead.
     env:
@@ -304,7 +307,42 @@ jobs:
             mkdir -p artifacts/ffmpeg && mv "artifacts/ffmpeg-download/ffmpeg-$rid" "artifacts/ffmpeg/$rid"
             chmod +x artifacts/ffmpeg/$rid/ff*
           done
-      # Ad-hoc signed (not notarized yet): Gatekeeper asks before the first start on another Mac.
+      # Signing material, only where the signing environment's secrets exist. The certificate goes into a temporary
+      # keychain that is deleted at the end; the notary key is a file in the runner's temp folder.
+      - name: Import the Developer ID certificate and the notary key
+        env:
+          MACOS_CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          MACOS_SIGN_ID: ${{ secrets.MACOS_SIGN_ID }}
+          NOTARY_KEY_P8_BASE64: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+        run: |
+          if [ -z "$MACOS_CERT_P12_BASE64" ] || [ -z "$MACOS_SIGN_ID" ]; then
+            echo "No Developer ID secrets: the disk images are ad-hoc signed and not notarized."
+            exit 0
+          fi
+          keychain="$RUNNER_TEMP/cuebot-signing.keychain-db"
+          keychain_password="$(uuidgen)"
+          echo "::add-mask::$keychain_password"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          printf '%s' "$MACOS_CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/devid.p12"
+          security import "$RUNNER_TEMP/devid.p12" -k "$keychain" -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
+          rm -f "$RUNNER_TEMP/devid.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$keychain_password" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          echo "CUEBOT_MACOS_SIGN_IDENTITY=$MACOS_SIGN_ID" >> "$GITHUB_ENV"
+          echo "CUEBOT_SIGNING_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+          if [ -n "$NOTARY_KEY_P8_BASE64" ] && [ -n "$NOTARY_KEY_ID" ] && [ -n "$NOTARY_ISSUER_ID" ]; then
+            printf '%s' "$NOTARY_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/notary-key.p8"
+            echo "CUEBOT_NOTARY_KEY_PATH=$RUNNER_TEMP/notary-key.p8" >> "$GITHUB_ENV"
+            echo "CUEBOT_NOTARY_KEY_ID=$NOTARY_KEY_ID" >> "$GITHUB_ENV"
+            echo "CUEBOT_NOTARY_ISSUER_ID=$NOTARY_ISSUER_ID" >> "$GITHUB_ENV"
+          fi
+      # Developer ID signed and notarized when the secrets above exist, ad-hoc signed otherwise (Gatekeeper then asks
+      # before the first start on another Mac).
       - name: Build Cuebot.app disk images (Apple silicon and Intel)
         run: |
           case "$GITHUB_REF" in
@@ -327,6 +365,11 @@ jobs:
           kill $pid || true
           cat "$RUNNER_TEMP/cuebot.out"
           grep -q "listening on" "$RUNNER_TEMP/cuebot.out"
+      - name: Remove the signing material
+        if: ${{ always() }}
+        run: |
+          [ -z "${CUEBOT_SIGNING_KEYCHAIN:-}" ] || security delete-keychain "$CUEBOT_SIGNING_KEYCHAIN" || true
+          rm -f "$RUNNER_TEMP/devid.p12" "$RUNNER_TEMP/notary-key.p8"
       - uses: actions/upload-artifact@v7
         with:
           retention-days: 7   # build outputs only; the account's artifact quota filled up at the 90-day default

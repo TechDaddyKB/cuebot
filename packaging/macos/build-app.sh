@@ -3,8 +3,9 @@
 # the version, so the releases page always has the same file names).
 #   packaging/macos/build-app.sh <version> [osx-arm64|osx-x64]
 # Signs ad hoc by default (runs on the Mac that built it; elsewhere Gatekeeper asks first). With
-# CUEBOT_MACOS_SIGN_IDENTITY set to a "Developer ID Application: ..." identity it signs with the hardened runtime instead;
-# notarizing is a separate step.
+# CUEBOT_MACOS_SIGN_IDENTITY set to a "Developer ID Application: ..." identity it signs with the hardened runtime instead.
+# With CUEBOT_NOTARY_KEY_PATH (an App Store Connect API key .p8), CUEBOT_NOTARY_KEY_ID and CUEBOT_NOTARY_ISSUER_ID set as
+# well, it also notarizes and staples the app and the disk image (docs/CODE_SIGNING.md).
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 version="$1"
@@ -63,6 +64,44 @@ else
 fi
 codesign --verify --deep --strict "$app"
 
+notarize=0
+if [ -n "${CUEBOT_MACOS_SIGN_IDENTITY:-}" ] && [ -n "${CUEBOT_NOTARY_KEY_PATH:-}" ]; then
+  : "${CUEBOT_NOTARY_KEY_ID:?CUEBOT_NOTARY_KEY_ID is required to notarize}" "${CUEBOT_NOTARY_ISSUER_ID:?CUEBOT_NOTARY_ISSUER_ID is required to notarize}"
+  notarize=1
+fi
+
+# Submits a file to Apple's notary service and waits; prints Apple's log when it is rejected. The key is only passed as a
+# file path, never printed.
+notarize_file() {
+  local result
+  result="$(xcrun notarytool submit "$1" --key "$CUEBOT_NOTARY_KEY_PATH" --key-id "$CUEBOT_NOTARY_KEY_ID" \
+    --issuer "$CUEBOT_NOTARY_ISSUER_ID" --wait --timeout 30m --output-format json)" || { echo "$result" >&2; return 1; }
+  echo "$result"
+  if ! echo "$result" | grep -q '"status" *: *"Accepted"'; then
+    id="$(echo "$result" | sed -n 's/.*"id" *: *"\([^"]*\)".*/\1/p' | head -n1)"
+    [ -n "$id" ] && xcrun notarytool log "$id" --key "$CUEBOT_NOTARY_KEY_PATH" --key-id "$CUEBOT_NOTARY_KEY_ID" \
+      --issuer "$CUEBOT_NOTARY_ISSUER_ID" >&2 || true
+    return 1
+  fi
+}
+
+if [ "$notarize" = 1 ]; then
+  ditto -c -k --keepParent "$app" "$stage/Cuebot-notarize.zip"
+  notarize_file "$stage/Cuebot-notarize.zip"
+  rm -f "$stage/Cuebot-notarize.zip"
+  xcrun stapler staple "$app"
+  xcrun stapler validate "$app"
+  spctl -a -vv -t exec "$app"
+fi
+
 ln -s /Applications "$stage/Applications"
-hdiutil create -quiet -volname "Cuebot $version" -srcfolder "$stage" -fs HFS+ -format UDZO -ov "$root/artifacts/$name.dmg"
+dmg="$root/artifacts/$name.dmg"
+hdiutil create -quiet -volname "Cuebot $version" -srcfolder "$stage" -fs HFS+ -format UDZO -ov "$dmg"
+if [ "$notarize" = 1 ]; then
+  codesign --force --timestamp --sign "$CUEBOT_MACOS_SIGN_IDENTITY" "$dmg"
+  notarize_file "$dmg"
+  xcrun stapler staple "$dmg"
+  xcrun stapler validate "$dmg"
+  spctl -a -vv -t open --context context:primary-signature "$dmg"
+fi
 echo "$root/artifacts/$name.dmg"
