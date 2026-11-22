@@ -197,8 +197,9 @@ public sealed class PortalAssistant(PortalDirectory directory, ScopedAssistant? 
                 Schema([]), read, Op("commands.list")),
             new("save_command", "Save command",
                 "Creates (no id) or replaces (with id) a chat command: {\"id\"?, \"name\", \"group\", \"enabled\", \"commands\": [\"!text\"], "
-                + "\"globalCooldownSeconds\", \"userCooldownSeconds\", \"minimumRole\"}. Copy the rest from list_commands. An action runs it "
-                + "through a trigger: see how an existing command's action is set up.",
+                + "\"globalCooldownSeconds\", \"userCooldownSeconds\", \"minimumRole\", \"description\", \"reply\"}. Copy the rest from list_commands. "
+                + "A \"reply\" text is sent to chat when it runs, with no action needed. Otherwise an action runs it through a trigger: see how an "
+                + "existing command's action is set up.",
                 Schema(["command"], ("command", new JsonObject { ["type"] = "object", ["description"] = "The whole command" })), write,
                 Op("commands.save", a => new JsonObject { ["command"] = a["command"]?.DeepClone() })),
             new("delete_command", "Delete command", "Deletes a chat command (the mod is asked first).",

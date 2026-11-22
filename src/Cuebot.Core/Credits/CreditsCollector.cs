@@ -24,8 +24,11 @@ public sealed class CreditsCollector : ICreditsSource, IPeriodicService, IDispos
     private readonly object _gate = new();
     private readonly StreamStartDetector _streams;
 
-    public CreditsCollector(AppPaths? paths, EventBus bus, AppLog log, TimeProvider? time = null)
+    private readonly AccountStandings? _standings;
+
+    public CreditsCollector(AppPaths? paths, EventBus bus, AppLog log, TimeProvider? time = null, AccountStandings? standings = null)
     {
+        _standings = standings;
         _time = time ?? TimeProvider.System;
         _log = log;
         if (paths is not null)
@@ -92,6 +95,7 @@ public sealed class CreditsCollector : ICreditsSource, IPeriodicService, IDispos
         bool changed;
         if (e.Type == ChatHub.MessageEvent) changed = OnMessage(e.Args);
         else if (e.Type == ChatHub.ActivityEvent) changed = OnActivity(e.Args);
+        else if (e.Type == ChatHub.UserBannedEvent) changed = OnBanned(e.Args);
         else return;
         if (changed) Changed?.Invoke();
     }
@@ -110,11 +114,39 @@ public sealed class CreditsCollector : ICreditsSource, IPeriodicService, IDispos
         if (reset) Reset();
     }
 
+    /// <summary>Takes a viewer who was just banned off this stream's credits (when that option is on).</summary>
+    private bool OnBanned(IReadOnlyDictionary<string, object?> args)
+    {
+        if (_standings is null) return false;
+        var platform = args.GetString("platform");
+        var user = args.GetString("user").Trim();
+        if (user.Length == 0) user = args.GetString("userName").Trim();
+        if (user.Length == 0 || !_standings.HidesFromCredits(platform, args.GetString("userId"), user)) return false;
+        var login = args.GetString("userName").Trim();
+        lock (_gate)
+        {
+            var removed = 0;
+            foreach (var section in _data.Current.Sections)
+                removed += section.Entries.RemoveAll(x => string.Equals(x.Platform, platform, StringComparison.OrdinalIgnoreCase)
+                    && (string.Equals(x.User, user, StringComparison.OrdinalIgnoreCase)
+                        || (login.Length > 0 && string.Equals(x.User, login, StringComparison.OrdinalIgnoreCase))));
+            if (removed == 0) return false;
+            Save();
+        }
+        return true;
+    }
+
     private bool OnActivity(IReadOnlyDictionary<string, object?> args)
     {
         var kind = Enum.TryParse<FeedKind>(args.GetString("kind"), ignoreCase: true, out var k) ? k : FeedKind.Other;
         var platform = args.GetString("platform");
         var user = args.GetString("user").Trim();
+        if (kind is not (FeedKind.StreamOnline or FeedKind.StreamOffline) && user.Length > 0
+            && _standings?.HidesFromCredits(platform, args.GetString("userId"), user) == true)
+        {
+            _streams.IsNewStream(kind.ToString(), platform);
+            return false;
+        }
         var title = args.GetString("title");
         var amountText = args.GetString("amount").Trim();
         // Every platform's live/offline goes through the detector, so only a real stream start resets the credits.
@@ -159,6 +191,7 @@ public sealed class CreditsCollector : ICreditsSource, IPeriodicService, IDispos
         bool ignoreBroadcaster;
         lock (_gate) ignoreBroadcaster = _data.Settings.IgnoreBroadcaster;
         if (ignoreBroadcaster && args.GetBool("isBroadcaster")) return false;
+        if (_standings?.HidesChatterFromCredits(user) == true) return false;
 
         var changed = false;
         if (args.GetBool("isModerator")) changed |= Record(CreditsSections.Moderators, platform, user, 0, "", countRepeat: false);

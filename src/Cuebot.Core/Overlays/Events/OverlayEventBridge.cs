@@ -30,10 +30,12 @@ public sealed class OverlayEventBridge : IDisposable
     private readonly IDisposable _subscription;
 
     private readonly Chat.Pronouns.PronounService? _pronouns;
+    private readonly AccountStandings? _standings;
 
     public OverlayEventBridge(EventBus bus, OverlayFeed feed, IEnumerable<IOverlayEventAdapter> adapters, AppLog log, EmoteService? emotes = null,
-        Chat.Pronouns.PronounService? pronouns = null)
+        Chat.Pronouns.PronounService? pronouns = null, AccountStandings? standings = null)
     {
+        _standings = standings;
         _feed = feed;
         _emotes = emotes;
         _pronouns = pronouns;
@@ -79,6 +81,7 @@ public sealed class OverlayEventBridge : IDisposable
         foreach (var adapter in _adapters)
         {
             if (adapter.ToAlert(e) is not { } alert) continue;
+            if (IsHidden(adapter, alert, e)) return ([], null, null);
             if (Commands.ChatArgs.GetBool(e.Args, "isTest")) alert = alert with { IsTest = true };
             // Which platform it came from, like chat messages' "service" (alert box variations can match on it).
             alert.Event["service"] = adapter.Service;
@@ -93,6 +96,22 @@ public sealed class OverlayEventBridge : IDisposable
             return ([(alert.Listener, alert.Event), ("event", raw)], alert, adapter.Service);
         }
         return ([], null, null);
+    }
+
+    /// <summary>Alerts come straight from the platform event, so the banned-account options are applied here too.</summary>
+    private bool IsHidden(IOverlayEventAdapter adapter, OverlayAlert alert, BotEvent e)
+    {
+        if (_standings is null) return false;
+        FeedKind? kind = (string?)alert.Event["type"] switch
+        {
+            "follower" or "follow" => FeedKind.Follow,
+            "channelPointsRedemption" => FeedKind.Redemption,
+            _ => null,
+        };
+        if (kind is null) return false;
+        var user = OverlayAlerts.First(e.Args, "userName", "user");
+        return _standings.HidesActivity(kind.Value, false, adapter.Platform, OverlayAlerts.Str(e.Args, "userId"), user,
+            Commands.ChatArgs.GetBool(e.Args, "isTest"));
     }
 
     private JsonObject ChatMessage(BotEvent e)

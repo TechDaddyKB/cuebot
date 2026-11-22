@@ -24,8 +24,21 @@ internal static class CommandAndUserFeatures
             sp.GetRequiredService<AppLog>(), presentViewersArgs: sp.GetServices<IPresentViewersArgs>));
         services.AddSettingsFile<AccountLinksData>("account-links.json");
         services.AddSingleton(sp => new AccountLinks(sp.GetRequiredService<Storage.JsonFile<AccountLinksData>>(), sp.GetRequiredService<AppLog>()));
+        services.AddSingleton(sp => new ViewerStatusCache(sp.GetServices<IViewerStatusSource>(), sp.GetRequiredService<EventBus>()));
+        services.AddSingleton(sp =>
+        {
+            var settings = sp.GetRequiredService<Storage.JsonFile<Chat.Moderation.ModerationSettings>>();
+            return new Chat.AccountStandings(sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(), () => settings.Value,
+                sp.GetService<Chat.Moderation.ModLog>(), sp.GetServices<Chat.IBanListSource>());
+        });
+        services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<Chat.AccountStandings>());
         services.AddSingleton(sp => new CommandService(sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<GroupStore>(),
-            sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>()));
+            sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(), status: sp.GetRequiredService<ViewerStatusCache>(),
+            standings: sp.GetRequiredService<Chat.AccountStandings>()));
+        // Created at start-up with the other periodic services, so replies work before any page is opened.
+        services.AddSingleton<IPeriodicService>(sp => new CommandReplier(sp.GetRequiredService<CommandStore>(),
+            sp.GetRequiredService<Chat.ChatHub>(), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(),
+            sp.GetRequiredService<GlobalVariables>().Get));
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<UserRegistry>());
         services.AddSingleton<IViewerDataStore>(sp => sp.GetRequiredService<UserRegistry>());
         services.AddSingleton<IViewerDataStore>(sp => sp.GetRequiredService<GroupStore>());

@@ -443,12 +443,16 @@ public sealed class SpeechService : IAsyncDisposable
         return request;
     }
 
+    /// <summary>The shared banned-account and known-bot filter (the event speech side is applied by the chat hub).</summary>
+    internal Cuebot.Core.Chat.AccountStandings? Standings { get; init; }
+
     private void OnEvent(BotEvent e)
     {
         switch (e.Type)
         {
             case SpeechEvents.ChatMessage:
-                if (ChatContext.FromEvent(e) is { } chat) _ = HandleChatSafelyAsync(chat);
+                if (ChatContext.FromEvent(e) is { } chat && Standings?.SilencesChatter(chat.User) != true)
+                    _ = HandleChatSafelyAsync(chat);
                 return;
             case SpeechEvents.ChatActivity:
                 HandleActivity(e.Args);

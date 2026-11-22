@@ -25,7 +25,7 @@ public class CommandActionTests : IDisposable
     public void Triggers_filter_by_command_name_or_id()
     {
         var triggers = new CommandTriggers(_store).GetTriggers().ToArray();
-        Assert.Equal(["command.triggered", "command.cooldown"], triggers.Select(t => t.TypeId));
+        Assert.Equal(["command.triggered", "command.cooldown", "command.denied"], triggers.Select(t => t.TypeId));
         var trigger = triggers[0];
         Assert.Contains("Hello", trigger.Parameters[0].Suggestions!());
 

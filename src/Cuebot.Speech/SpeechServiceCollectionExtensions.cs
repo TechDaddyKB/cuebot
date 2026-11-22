@@ -38,7 +38,10 @@ public static class SpeechServiceCollectionExtensions
             sp.GetService<ISpeechChatReplier>(),
             sp.GetService<IAudioInput>(),
             sp.GetServices<IEmoteNameProvider>(),
-            roles: sp.GetServices<Cuebot.Core.Chat.Moderation.IChannelRoles>()));
+            roles: sp.GetServices<Cuebot.Core.Chat.Moderation.IChannelRoles>())
+        {
+            Standings = sp.GetService<Cuebot.Core.Chat.AccountStandings>(),
+        });
 
         services.AddSingleton<ISubActionHandler, SpeakSubAction>();
         services.AddSingleton<ISubActionHandler, SkipSpeechSubAction>();

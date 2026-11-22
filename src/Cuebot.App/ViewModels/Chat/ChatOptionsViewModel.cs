@@ -57,6 +57,12 @@ public sealed partial class ChatOptionsViewModel : ObservableObject
         _moderation = moderation;
         _identityLinks = moderation?.Value.IdentityLinksEnabled ?? false;
         _automaticMirroring = moderation?.Value.AutomaticMirroring ?? false;
+        _ignoreBannedFollows = moderation?.Value.IgnoreBannedFollows ?? true;
+        _ignoreBannedRedemptions = moderation?.Value.IgnoreBannedRedemptions ?? false;
+        _keepBannedOutOfCredits = moderation?.Value.KeepBannedOutOfCredits ?? true;
+        _treatKnownBotsAsBanned = moderation?.Value.TreatKnownBotsAsBanned ?? false;
+        _syncBanList = moderation?.Value.SyncBanList ?? true;
+        _extraBots = string.Join(", ", moderation?.Value.ExtraBots ?? []);
         _settings = settings;
         _persist = persist;
         _emotes = emotes;
@@ -121,6 +127,21 @@ public sealed partial class ChatOptionsViewModel : ObservableObject
     }
 
     partial void OnAutomaticMirroringChanged(bool value) => SaveModeration(s => s.AutomaticMirroring = value && IdentityLinks);
+
+    [ObservableProperty] private bool _ignoreBannedFollows;
+    [ObservableProperty] private bool _ignoreBannedRedemptions;
+    [ObservableProperty] private bool _keepBannedOutOfCredits;
+    [ObservableProperty] private bool _treatKnownBotsAsBanned;
+    [ObservableProperty] private bool _syncBanList;
+    [ObservableProperty] private string _extraBots = "";
+
+    partial void OnIgnoreBannedFollowsChanged(bool value) => SaveModeration(s => s.IgnoreBannedFollows = value);
+    partial void OnIgnoreBannedRedemptionsChanged(bool value) => SaveModeration(s => s.IgnoreBannedRedemptions = value);
+    partial void OnKeepBannedOutOfCreditsChanged(bool value) => SaveModeration(s => s.KeepBannedOutOfCredits = value);
+    partial void OnTreatKnownBotsAsBannedChanged(bool value) => SaveModeration(s => s.TreatKnownBotsAsBanned = value);
+    partial void OnSyncBanListChanged(bool value) => SaveModeration(s => s.SyncBanList = value);
+    partial void OnExtraBotsChanged(string value) => SaveModeration(s => s.ExtraBots =
+        [.. value.Split([',', ';', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]);
 
     private void SaveModeration(Action<ModerationSettings> change)
     {

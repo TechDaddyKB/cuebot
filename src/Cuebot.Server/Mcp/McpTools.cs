@@ -362,6 +362,13 @@ public static partial class McpTools
         ("globalCooldownSeconds", Num("Cooldown for everyone")),
         ("userCooldownSeconds", Num("Cooldown per user")),
         ("minimumRole", Enum("Everyone", "Subscriber", "Vip", "Moderator", "Broadcaster")),
+        ("allowedGroups", StrArray("Groups that may always run it, including built-in @Moderators, @VIPs, @Subscribers, @Subscribers T2+, @Subscribers T3, @Followers")),
+        ("deniedGroups", StrArray("Groups that may never run it, including built-in @Banned and @KnownBots")),
+        ("description", Str("What the command does")),
+        ("reply", Str("Text sent to chat when it runs (variables allowed, one option per line); no action needed")),
+        ("replyMode", Enum("First", "Random", "Rotate")),
+        ("replyAs", Enum("Default", "Bot", "Broadcaster")),
+        ("replyTo", Enum("SamePlatform", "AllPlatforms")),
         ("sources", StrArray("Platforms it listens on (empty = all)")));
 
     private static JsonObject TimerSchema() => Schema(["name"],
