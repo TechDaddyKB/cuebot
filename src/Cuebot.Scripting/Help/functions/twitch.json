@@ -324,7 +324,8 @@
       "description": "Bans a viewer from your Twitch chat for good. Fails when the user is not found. Fails when Twitch is not connected.",
       "parameters": {
         "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.",
-        "reason": "Optional. Why, like \"Spam\"."
+        "reason": "Optional. Why, like \"Spam\".",
+        "useBot": "Optional. true to do this as your bot account. It must be signed in and a moderator here; if it cannot, your main account does it and the log says why. Leave it out for your main account."
       },
       "returns": "An object with bannedUser (display name), bannedUserName (login), bannedUserId, bannedUserType (\"twitch\") and banResult (true).",
       "example": {
@@ -337,7 +338,8 @@
       "parameters": {
         "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.",
         "duration": "Optional. How long, in seconds (1 second to 14 days). Leave it out for 600 (10 minutes).",
-        "reason": "Optional. Why, like \"Calm down\"."
+        "reason": "Optional. Why, like \"Calm down\".",
+        "useBot": "Optional. true to do this as your bot account. It must be signed in and a moderator here; if it cannot, your main account does it and the log says why. Leave it out for your main account."
       },
       "returns": "An object with timedOutUser (display name), timedOutUserName (login), timedOutUserId, timedOutUserType (\"twitch\") and timeoutResult (true).",
       "example": {
@@ -349,7 +351,8 @@
     "twitch.unban": {
       "description": "Lets a banned viewer chat in your Twitch channel again. Fails when Twitch is not connected.",
       "parameters": {
-        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action."
+        "user": "Optional. A Twitch login name (a leading @ is fine) or \"id:12345\". Leave it out for the user who triggered the action.",
+        "useBot": "Optional. true to do this as your bot account. It must be signed in and a moderator here; if it cannot, your main account does it and the log says why. Leave it out for your main account."
       },
       "returns": "An object with unbannedUser (display name), unbannedUserName (login), unbannedUserId, unbannedUserType (\"twitch\") and unbanResult (true).",
       "example": {

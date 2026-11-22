@@ -18,7 +18,7 @@ tab, select the group and type the name under **Add a member**. **Clear members*
 removes it.
 
 !!! note "Renaming a group"
-    If you rename a group, commands that allow or deny it by name are not updated. Check them on the Commands page.
+    If you rename a group, commands that allow or deny it follow the new name by themselves.
 
 ## First words
 

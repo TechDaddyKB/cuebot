@@ -156,6 +156,22 @@ public sealed class HotkeyService : IPeriodicService, IDisposable
         return Task.CompletedTask;
     }
 
+    /// <summary>Points the hotkeys that run <paramref name="oldName"/> at its new name.</summary>
+    public void RenameAction(string oldName, string newName)
+    {
+        var changed = false;
+        lock (_gate)
+        {
+            foreach (var hotkey in _settings.Hotkeys.Where(h => string.Equals(h.Action.Trim(), oldName.Trim(), StringComparison.OrdinalIgnoreCase)))
+            {
+                hotkey.Action = newName;
+                changed = true;
+            }
+            if (changed) _file?.ScheduleSave();
+        }
+        if (changed) Changed?.Invoke();
+    }
+
     /// <summary>Renames a group and moves its hotkeys along.</summary>
     public Task RenameGroupAsync(string name, string newName)
     {

@@ -170,14 +170,14 @@ public sealed partial class CphProxy
     /// <summary>Times a user out for <paramref name="duration"/> seconds. False when Twitch refused.</summary>
     public bool TwitchTimeoutUser(string userName, int duration, string? reason = null, bool useBot = false) =>
         !string.IsNullOrWhiteSpace(userName)
-        && Try(() => Call("twitch.timeout", new { user = Login(userName), duration = Math.Max(1, duration), reason = reason ?? "" }));
+        && Try(() => Call("twitch.timeout", new { user = Login(userName), duration = Math.Max(1, duration), reason = reason ?? "", useBot }));
 
     public bool TwitchBanUser(string userName, string? reason = null, bool useBot = false) =>
-        !string.IsNullOrWhiteSpace(userName) && Try(() => Call("twitch.ban", new { user = Login(userName), reason = reason ?? "" }));
+        !string.IsNullOrWhiteSpace(userName) && Try(() => Call("twitch.ban", new { user = Login(userName), reason = reason ?? "", useBot }));
 
     /// <summary>Lifts a ban or timeout.</summary>
     public bool TwitchUnbanUser(string userName, bool useBot = false) =>
-        !string.IsNullOrWhiteSpace(userName) && Try(() => Call("twitch.unban", new { user = Login(userName) }));
+        !string.IsNullOrWhiteSpace(userName) && Try(() => Call("twitch.unban", new { user = Login(userName), useBot }));
 
     // ---- Twitch stream --------------------------------------------------------------------------------------------
 

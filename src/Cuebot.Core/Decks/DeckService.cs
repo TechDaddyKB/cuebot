@@ -75,6 +75,23 @@ public sealed class DeckService : IDisposable
     }
 
     /// <summary>Adds or replaces a deck's design (matched by id) and refreshes its open pages.</summary>
+    /// <summary>Points the buttons that run <paramref name="oldName"/> at its new name.</summary>
+    public void RenameAction(string oldName, string newName)
+    {
+        var changed = false;
+        lock (_gate)
+        {
+            foreach (var item in Settings.Decks.SelectMany(d => d.Pages).SelectMany(p => p.Items)
+                         .Where(i => string.Equals(i.Action.Trim(), oldName.Trim(), StringComparison.OrdinalIgnoreCase)))
+            {
+                item.Action = newName;
+                changed = true;
+            }
+            if (changed) _file?.ScheduleSave();
+        }
+        if (changed) Changed?.Invoke();
+    }
+
     public void Save(DeckDefinition deck)
     {
         lock (_gate)
