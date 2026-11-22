@@ -134,7 +134,10 @@ Besides the tabs, these work from any action (sub-actions in the **Twitch** grou
 - **Schedule**: **Get stream schedule** answers a `!schedule` command; you can also add, cancel or remove scheduled
   streams and turn vacation on or off.
 - **Other channels**: **Get videos** (a channel's latest broadcast, handy for shoutouts) and **Search channels**.
-- **Shared chat**: **Get shared chat session** tells you whether your chat is shared right now.
+- **Shared chat**: **Get shared chat session** tells you whether your chat is shared right now. Messages from a partner's
+  channel show that channel's name and picture on the Chat page and in the chat box overlay. Turn this off with **Show
+  the source channel in Twitch Shared Chat** in either place. In actions, use `%sourceBroadcaster%`,
+  `%sourceBroadcasterProfileUrl%` and `%sourceBadges%`.
 
 New triggers: **Subscription ended**, **Drops gifted to chat**, **Cuebot's message held by AutoMod** and **Cuebot's held
 message reviewed** (when AutoMod holds something your bot sent), **AutoMod settings changed**, and the watched channel

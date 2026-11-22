@@ -104,7 +104,7 @@ public static class StepRiskCatalog
         ["youtube.setTitle"] = L3, ["youtube.setDescription"] = L3, ["youtube.setCategory"] = L3,
         ["youtube.setTitleAndDescription"] = L3, ["youtube.setPrivacy"] = L3,
         ["discord.*"] = L2, ["discord.sendMessage"] = L1, ["discord.replyToSlashCommand"] = L1,
-        ["discord.addRole"] = L3, ["discord.removeRole"] = L3, ["discord.setStatus"] = L3, ["discord.basicWebhook"] = L4,
+        ["discord.addRole"] = L3, ["discord.removeRole"] = L3, ["discord.setStatus"] = L3, ["discord.basicWebhook"] = L4, ["discord.editWebhookMessage"] = L4, ["discord.deleteWebhookMessage"] = L4,
 
         // Alerts, sound, speech.
         ["audio.*"] = L1, ["overlays.*"] = L1,

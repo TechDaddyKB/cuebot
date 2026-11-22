@@ -95,19 +95,50 @@
       }
     },
     "discord.basicWebhook": {
-      "description": "Posts a message in a Discord channel through a webhook (a private address Discord gives you for that channel). To edit posts, give roles or answer slash commands, use the Discord bot instead.",
+      "description": "Posts a message in a Discord channel through a webhook (a private address Discord gives you for that channel). It can send embeds and link buttons, post in a thread or start a forum post. To give roles or answer slash commands, use the Discord bot instead.",
       "fields": {
         "name": "A name for you to remember this webhook by. It is not sent to Discord.",
         "webhookUrl": "The webhook link. Copy it in Discord: Server Settings, Integrations, Webhooks, then Copy Webhook URL. Keep it private.",
         "content": "The message text. Up to 2000 letters. To ping someone use <@USER_ID>, for a role use <@&ROLE_ID>.",
         "username": "The name shown as the sender. Empty uses the webhook's own name.",
         "avatarUrl": "Web link to a picture for the sender. Empty uses the webhook's own picture.",
-        "textToSpeech": "Tick to let Discord read the message out loud to people watching that channel."
+        "textToSpeech": "Tick to let Discord read the message out loud to people watching that channel.",
+        "bodyMode": "Simple sends the Content text. JSON sends the Message JSON instead, for embeds and link buttons.",
+        "json": "Used when Message body is JSON. Paste Discord webhook JSON or a Discohook export. Put %variables% inside quotes. Only mentions you typed here can ping people, so a viewer's name cannot ping @everyone.",
+        "threadId": "Optional. The ID of a thread or forum post to post in.",
+        "threadName": "Optional, for forum channels: starts a new post with this title. Use this or Thread ID, not both.",
+        "rememberAs": "A name like \"live post\", so a later step can edit or delete this message, even after a restart."
       },
       "variables": {
         "discordMessageId": "ID of the Discord message that was posted",
-        "messageId": "The same ID. This replaces the chat message ID from the trigger, so use %discordMessageId% when you need both"
+        "messageId": "The same ID. This replaces the chat message ID from the trigger, so use %discordMessageId% when you need both",
+        "discordChannelId": "ID of the channel it was posted in (the thread's ID for a thread or forum post)",
+        "discordThreadId": "ID of the thread or forum post, empty for a normal channel"
       }
+    },
+    "discord.editWebhookMessage": {
+      "description": "Changes a message that a webhook posted earlier, such as turning \"we're live\" into \"thanks for watching\". Only the same webhook can edit it.",
+      "fields": {
+        "webhookUrl": "The link of the webhook that posted the message.",
+        "message": "Which message: the name you typed in \"Remember it as\", a message ID, or a message link.",
+        "bodyMode": "Simple replaces the text with Content. JSON sends the Message JSON, for embeds and link buttons.",
+        "content": "The new text, used when Message body is Simple. Up to 2000 letters.",
+        "json": "Used when Message body is JSON. Paste Discord webhook JSON or a Discohook export. Parts you leave out stay as they are. Put %variables% inside quotes.",
+        "threadId": "The thread or forum post the message is in. Not needed when you use a remembered name."
+      },
+      "variables": {
+        "discordMessageId": "ID of the message that was edited",
+        "discordChannelId": "ID of its channel or thread"
+      }
+    },
+    "discord.deleteWebhookMessage": {
+      "description": "Deletes a message that a webhook posted earlier. Only the same webhook can delete it.",
+      "fields": {
+        "webhookUrl": "The link of the webhook that posted the message.",
+        "message": "Which message: the name you typed in \"Remember it as\", a message ID, or a message link.",
+        "threadId": "The thread or forum post the message is in. Not needed when you use a remembered name."
+      },
+      "variables": {}
     },
     "pronouns.addForUser": {
       "description": "Looks up a Twitch user's pronouns (from alejo.io) and saves them as variables, so you can say \"he/him\" correctly in chat.",

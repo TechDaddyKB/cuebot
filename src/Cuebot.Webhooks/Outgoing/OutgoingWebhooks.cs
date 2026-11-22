@@ -1,45 +1,203 @@
 using System.Globalization;
+using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 namespace Cuebot.Webhooks.Outgoing;
 
 /// <summary>A failed outgoing webhook call. Messages never contain the webhook URL or key.</summary>
 public sealed class OutgoingWebhookException(string message, Exception? inner = null) : Exception(message, inner);
 
+/// <summary>What Discord answered about a webhook message.</summary>
+/// <param name="MessageId">The message id (empty if Discord did not return one).</param>
+/// <param name="ChannelId">The channel, or the thread when the message is in one.</param>
+/// <param name="InThread">The message went to a thread or started a forum post.</param>
+public sealed record DiscordWebhookResult(string MessageId, string ChannelId, bool InThread);
+
 /// <summary>
-/// Posts messages to a Discord channel webhook (the same payload as <c>CPH.DiscordPostTextToWebhook</c>:
-/// content, tts, optional username and avatar_url). Sent with <c>wait=true</c> so Discord answers with the message id.
+/// Posts, edits and deletes messages through a Discord channel webhook. A plain message is the same payload as
+/// <c>CPH.DiscordPostTextToWebhook</c> (content, tts, optional username and avatar_url); JSON bodies add embeds and
+/// link buttons. Sent with <c>wait=true</c> so Discord answers with the message id.
 /// </summary>
-public sealed class DiscordWebhookClient(HttpClient http)
+public sealed partial class DiscordWebhookClient(HttpClient http, Func<TimeSpan, CancellationToken, Task>? delay = null)
 {
     /// <summary>Discord's limit for <c>content</c>.</summary>
     public const int MaxContentLength = 2000;
 
+    /// <summary>Discord's limit for a new forum post's title.</summary>
+    public const int MaxThreadNameLength = 100;
+
+    private const int MaxRateLimitRetries = 2;
+    private static readonly TimeSpan MaxRateLimitWait = TimeSpan.FromSeconds(10);
+
     /// <summary>Posts and returns the new message's id (empty if Discord did not return one).</summary>
     public async Task<string> PostAsync(string webhookUrl, string content, string? username = null, string? avatarUrl = null,
-        bool textToSpeech = false, CancellationToken ct = default)
+        bool textToSpeech = false, CancellationToken ct = default) =>
+        (await PostAsync(webhookUrl, SimpleBody(content, username, avatarUrl, textToSpeech), null, null, ct).ConfigureAwait(false)).MessageId;
+
+    /// <summary>The body of a plain text message, exactly as <c>CPH.DiscordPostTextToWebhook</c> sends it.</summary>
+    public static DiscordWebhookBody SimpleBody(string content, string? username, string? avatarUrl, bool textToSpeech)
     {
-        var url = ParseUrl(webhookUrl);
         if (string.IsNullOrWhiteSpace(content)) throw new ArgumentException("Content is required.");
         if (content.Length > MaxContentLength) throw new ArgumentException($"Discord messages are limited to {MaxContentLength} characters (got {content.Length}).");
+        var payload = new JsonObject();
+        foreach (var (key, value) in BuildPayload(content, username, avatarUrl, textToSpeech))
+            payload[key] = value is bool flag ? JsonValue.Create(flag) : JsonValue.Create(value as string);
+        return new DiscordWebhookBody(payload, null, false);
+    }
 
-        var payload = BuildPayload(content, username, avatarUrl, textToSpeech);
-        HttpResponseMessage response;
+    /// <summary>Posts a message, optionally into a thread or as a new forum post.</summary>
+    public async Task<DiscordWebhookResult> PostAsync(string webhookUrl, DiscordWebhookBody body, string? threadId, string? threadName,
+        CancellationToken ct = default)
+    {
+        var url = ParseUrl(webhookUrl);
+        var thread = ThreadOf(url, threadId, body.ThreadId);
+        var title = threadName?.Trim() ?? "";
+        if (title.Length > MaxThreadNameLength) throw new ArgumentException($"A forum post title is limited to {MaxThreadNameLength} characters (got {title.Length}).");
+        if (title.Length > 0 && thread is not null) throw new ArgumentException("Use a thread ID or a new forum post title, not both.");
+        if (title.Length > 0) body.Payload["thread_name"] = title;
+
+        var response = await SendAsync(HttpMethod.Post, WithOptions(WithWait(url), thread, body.HasComponents), body.Payload.ToJsonString(), ct).ConfigureAwait(false);
+        return new DiscordWebhookResult(MessageId(response), Field(response, "channel_id"), thread is not null || title.Length > 0);
+    }
+
+    /// <summary>Edits a message this webhook sent.</summary>
+    public async Task<DiscordWebhookResult> EditAsync(string webhookUrl, string messageId, DiscordWebhookBody body, string? threadId,
+        CancellationToken ct = default)
+    {
+        var url = ParseUrl(webhookUrl);
+        var thread = ThreadOf(url, threadId, body.ThreadId);
+        var response = await SendAsync(HttpMethod.Patch, MessageEndpoint(url, messageId, thread, body.HasComponents), body.Payload.ToJsonString(), ct)
+            .ConfigureAwait(false);
+        var id = MessageId(response);
+        return new DiscordWebhookResult(id.Length > 0 ? id : messageId, Field(response, "channel_id"), thread is not null);
+    }
+
+    /// <summary>Deletes a message this webhook sent.</summary>
+    public async Task DeleteAsync(string webhookUrl, string messageId, string? threadId, CancellationToken ct = default)
+    {
+        var url = ParseUrl(webhookUrl);
+        await SendAsync(HttpMethod.Delete, MessageEndpoint(url, messageId, ThreadOf(url, threadId, null), false), null, ct).ConfigureAwait(false);
+    }
+
+    private async Task<string> SendAsync(HttpMethod method, Uri uri, string? json, CancellationToken ct)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            using var request = new HttpRequestMessage(method, uri);
+            if (json is not null) request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            HttpResponseMessage response;
+            try
+            {
+                response = await http.SendAsync(request, ct).ConfigureAwait(false);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new OutgoingWebhookException($"Could not reach Discord: {ex.HttpRequestError}.");   // inner left out: it may name the host
+            }
+            using (response)
+            {
+                var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+                if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    var wait = RetryAfter(response, body);
+                    if (attempt < MaxRateLimitRetries && wait is { } pause && pause <= MaxRateLimitWait)
+                    {
+                        await (delay ?? Task.Delay)(pause, ct).ConfigureAwait(false);
+                        continue;
+                    }
+                    throw new OutgoingWebhookException(wait is { } longer
+                        ? $"Discord is rate limiting this webhook. Try again in {Math.Ceiling(longer.TotalSeconds):0} seconds."
+                        : "Discord is rate limiting this webhook. Try again shortly.");
+                }
+                if (!response.IsSuccessStatusCode)
+                {
+                    var reason = Field(body, "message");
+                    throw new OutgoingWebhookException($"Discord refused the webhook message: HTTP {(int)response.StatusCode} {response.ReasonPhrase}." +
+                                                       (reason.Length > 0 ? $" {reason[..Math.Min(reason.Length, 200)]}" : ""));
+                }
+                return body;
+            }
+        }
+    }
+
+    /// <summary>How long Discord asked to wait: <c>retry_after</c> in the body (seconds), else the Retry-After header.</summary>
+    internal static TimeSpan? RetryAfter(HttpResponseMessage response, string body)
+    {
         try
         {
-            response = await http.PostAsJsonAsync(WithWait(url), payload, ct).ConfigureAwait(false);
+            using var document = JsonDocument.Parse(body);
+            if (document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty("retry_after", out var value)
+                && value.TryGetDouble(out var seconds) && seconds >= 0)
+                return TimeSpan.FromSeconds(seconds);
         }
-        catch (HttpRequestException ex)
+        catch (JsonException)
         {
-            throw new OutgoingWebhookException($"Could not reach Discord: {ex.HttpRequestError}.");   // inner left out: it may name the host
+            // Not JSON: fall back to the header.
         }
-        using (response)
+        return response.Headers.RetryAfter?.Delta;
+    }
+
+    /// <summary>The thread to use: the step's, then a Discohook export's, then one already in the webhook URL.</summary>
+    private static string? ThreadOf(Uri url, string? threadId, string? fromBody)
+    {
+        var thread = threadId?.Trim() is { Length: > 0 } typed ? typed : fromBody?.Trim() is { Length: > 0 } exported ? exported : QueryValue(url, "thread_id");
+        if (thread is not null && !DiscordWebhookJson.IdPattern().IsMatch(thread)) throw new ArgumentException("Thread ID must be a number.");
+        return thread;
+    }
+
+    private static string? QueryValue(Uri url, string name)
+    {
+        foreach (var part in url.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
         {
-            if (!response.IsSuccessStatusCode)
-                throw new OutgoingWebhookException($"Discord refused the webhook message: HTTP {(int)response.StatusCode} {response.ReasonPhrase}.");
-            var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-            return MessageId(body);
+            var equals = part.IndexOf('=');
+            if (equals > 0 && part[..equals].Equals(name, StringComparison.OrdinalIgnoreCase) && part[(equals + 1)..] is { Length: > 0 } value)
+                return Uri.UnescapeDataString(value);
+        }
+        return null;
+    }
+
+    /// <summary>Sets <c>thread_id</c> and, when the body has components, <c>with_components=true</c>.</summary>
+    internal static Uri WithOptions(Uri url, string? threadId, bool withComponents)
+    {
+        var parts = url.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Where(p => !p.StartsWith("thread_id=", StringComparison.OrdinalIgnoreCase) && !p.StartsWith("with_components=", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (threadId is not null) parts.Add("thread_id=" + threadId);
+        if (withComponents) parts.Add("with_components=true");
+        return new UriBuilder(url) { Query = string.Join('&', parts) }.Uri;
+    }
+
+    /// <summary><c>/webhooks/{id}/{token}/messages/{message}</c>, from a plain webhook URL.</summary>
+    internal static Uri MessageEndpoint(Uri url, string messageId, string? threadId, bool withComponents)
+    {
+        if (!DiscordWebhookJson.IdPattern().IsMatch(messageId)) throw new ArgumentException("Message must be a Discord message id.");
+        var path = url.AbsolutePath.TrimEnd('/');
+        if (!WebhookPath().IsMatch(path))
+            throw new ArgumentException("Webhook URL must be a plain Discord webhook URL (https://discord.com/api/webhooks/...).");
+        var plain = new UriBuilder(url) { Path = $"{path}/messages/{messageId}", Query = "" }.Uri;
+        return WithOptions(plain, threadId, withComponents);
+    }
+
+    [GeneratedRegex(@"^/api(/v\d+)?/webhooks/\d+/[^/]+$", RegexOptions.IgnoreCase)]
+    private static partial Regex WebhookPath();
+
+    private static string Field(string body, string name)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            return document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty(name, out var value)
+                   && value.ValueKind == JsonValueKind.String
+                ? value.GetString() ?? ""
+                : "";
+        }
+        catch (JsonException)
+        {
+            return "";
         }
     }
 

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Cuebot.Core.Chat.Emotes;
 using Cuebot.Core.Chat.Moderation;
+using Cuebot.Core.Overlays;
 using Cuebot.Core.Storage;
 
 namespace Cuebot.App.ViewModels.Chat;
@@ -41,6 +42,33 @@ public sealed partial class QuickActionEditViewModel : ObservableObject
     private void Remove() => _remove(this);
 }
 
+/// <summary>One YouTube member emote row: the code from chat and its picture.</summary>
+public sealed partial class YouTubeEmoteEditViewModel : ObservableObject
+{
+    private readonly Action _save;
+    private readonly Action<YouTubeEmoteEditViewModel> _remove;
+
+    public YouTubeEmoteEditViewModel(CustomEmote definition, Action save, Action<YouTubeEmoteEditViewModel> remove)
+    {
+        Definition = definition;
+        _save = save;
+        _remove = remove;
+        _code = definition.Code;
+        _imageUrl = definition.ImageUrl;
+    }
+
+    public CustomEmote Definition { get; }
+
+    [ObservableProperty] private string _code;
+    [ObservableProperty] private string _imageUrl;
+
+    partial void OnCodeChanged(string value) { Definition.Code = value ?? ""; _save(); }
+    partial void OnImageUrlChanged(string value) { Definition.ImageUrl = value ?? ""; _save(); }
+
+    [RelayCommand]
+    private void Remove() => _remove(this);
+}
+
 /// <summary>The chat page's options panel: display toggles, highlight rules, quick actions and emote sources.</summary>
 public sealed partial class ChatOptionsViewModel : ObservableObject
 {
@@ -49,11 +77,14 @@ public sealed partial class ChatOptionsViewModel : ObservableObject
     private readonly EmoteService? _emotes;
     private readonly JsonFile<EmoteSettings>? _emoteSettings;
     private readonly JsonFile<ModerationSettings>? _moderation;
+    private readonly AssetStore? _assets;
     private readonly bool _loading = true;
 
     public ChatOptionsViewModel(ChatPageSettings settings, Action persist, EmoteService? emotes,
-        JsonFile<EmoteSettings>? emoteSettings, Func<IEnumerable<string>> actionNames, JsonFile<ModerationSettings>? moderation = null)
+        JsonFile<EmoteSettings>? emoteSettings, Func<IEnumerable<string>> actionNames, JsonFile<ModerationSettings>? moderation = null,
+        AssetStore? assets = null)
     {
+        _assets = assets;
         _moderation = moderation;
         _identityLinks = moderation?.Value.IdentityLinksEnabled ?? false;
         _automaticMirroring = moderation?.Value.AutomaticMirroring ?? false;
@@ -73,6 +104,7 @@ public sealed partial class ChatOptionsViewModel : ObservableObject
         ChatTextSize = double.IsFinite(settings.TextSize)
             ? (decimal)Math.Clamp(settings.TextSize, ChatPageSettings.MinTextSize, ChatPageSettings.MaxTextSize)
             : (decimal)ChatPageSettings.DefaultTextSize;
+        ShowSharedSource = settings.ShowSharedSource;
         HighlightMentions = settings.Highlights.Mentions;
         HighlightFirstTime = settings.Highlights.FirstTimeChatters;
         MentionNames = string.Join(", ", settings.Highlights.MentionNames);
@@ -86,6 +118,7 @@ public sealed partial class ChatOptionsViewModel : ObservableObject
             SevenTv = e.SevenTv;
             Bttv = e.Bttv;
             Ffz = e.Ffz;
+            foreach (var emote in e.YouTubeEmotes) YouTubeEmotes.Add(new YouTubeEmoteEditViewModel(emote, SaveYouTubeEmotes, RemoveYouTubeEmote));
         }
         _loading = false;
         UpdateEmoteStatus();
@@ -157,9 +190,16 @@ public sealed partial class ChatOptionsViewModel : ObservableObject
     public Func<IEnumerable<string>> ActionNames { get; }
     public ObservableCollection<QuickActionEditViewModel> QuickActions { get; } = [];
     public bool HasEmoteService => _emotes is not null;
+    public ObservableCollection<YouTubeEmoteEditViewModel> YouTubeEmotes { get; } = [];
+
+    /// <summary>Image files can be imported (the overlay file store is available).</summary>
+    public bool CanImportEmotes => _assets is not null && _emoteSettings is not null;
+
+    [ObservableProperty] private string _youTubeEmoteStatus = "";
 
     [ObservableProperty] private bool _showEmotes;
     [ObservableProperty] private bool _showPronouns;
+    [ObservableProperty] private bool _showSharedSource = true;
     [ObservableProperty] private bool _highlightMentions;
     [ObservableProperty] private bool _highlightFirstTime;
     [ObservableProperty] private string _mentionNames = "";
@@ -190,6 +230,7 @@ public sealed partial class ChatOptionsViewModel : ObservableObject
         Save();
     }
 
+    partial void OnShowSharedSourceChanged(bool value) { _settings.ShowSharedSource = value; Save(); }
     partial void OnHighlightMentionsChanged(bool value) { _settings.Highlights.Mentions = value; Save(); }
     partial void OnHighlightFirstTimeChanged(bool value) { _settings.Highlights.FirstTimeChatters = value; Save(); }
     partial void OnMentionNamesChanged(string value) { _settings.Highlights.MentionNames = SplitList(value); Save(); }
@@ -217,6 +258,59 @@ public sealed partial class ChatOptionsViewModel : ObservableObject
         _settings.QuickActions.Remove(item.Definition);
         QuickActions.Remove(item);
         Save();
+    }
+
+    [RelayCommand]
+    private void AddYouTubeEmote()
+    {
+        if (_emoteSettings is null) return;
+        var emote = new CustomEmote { Code = ":_name:" };
+        _emoteSettings.Value.YouTubeEmotes.Add(emote);
+        YouTubeEmotes.Add(new YouTubeEmoteEditViewModel(emote, SaveYouTubeEmotes, RemoveYouTubeEmote));
+        SaveYouTubeEmotes();
+    }
+
+    private void RemoveYouTubeEmote(YouTubeEmoteEditViewModel item)
+    {
+        if (_emoteSettings is null) return;
+        _emoteSettings.Value.YouTubeEmotes.Remove(item.Definition);
+        YouTubeEmotes.Remove(item);
+        SaveYouTubeEmotes();
+    }
+
+    private void SaveYouTubeEmotes()
+    {
+        if (_loading || _emoteSettings is null) return;
+        _emoteSettings.ScheduleSave();
+        _emotes?.NotifyCustomEmotesChanged();
+        Changed?.Invoke();
+    }
+
+    /// <summary>Adds image files as emotes, each named after its file; a file that cannot be used is skipped and counted.</summary>
+    public async Task ImportYouTubeEmotesAsync(IEnumerable<(string Name, Func<Task<Stream>> Open)> files)
+    {
+        if (_assets is null || _emoteSettings is null) return;
+        int added = 0, skipped = 0;
+        string? problem = null;
+        foreach (var (name, open) in files)
+        {
+            try
+            {
+                await using var stream = await open();
+                await Cuebot.Core.Chat.Emotes.YouTubeEmotes.ImportAsync(_emoteSettings.Value, _assets, name, stream);
+                added++;
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidDataException or IOException or UnauthorizedAccessException)
+            {
+                skipped++;
+                problem = ex.Message;
+            }
+        }
+        YouTubeEmotes.Clear();
+        foreach (var emote in _emoteSettings.Value.YouTubeEmotes)
+            YouTubeEmotes.Add(new YouTubeEmoteEditViewModel(emote, SaveYouTubeEmotes, RemoveYouTubeEmote));
+        SaveYouTubeEmotes();
+        YouTubeEmoteStatus = skipped == 0 ? $"Imported {added} emotes." : $"Imported {added} emotes, skipped {skipped}. {problem}";
     }
 
     [RelayCommand]

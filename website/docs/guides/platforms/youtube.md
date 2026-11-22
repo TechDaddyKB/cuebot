@@ -25,6 +25,19 @@ in bot with the browser** (or **Sign in bot with a code**). See
 
 Tick **Connect automatically on startup** so Cuebot connects every time it starts.
 
+## Member emotes
+
+YouTube's API sends member emotes as text, like `:_tamaDent:`, and gives apps no picture for them. To show them, tell
+Cuebot which picture goes with each code:
+
+1. On the **Chat** page, open the options and find **YouTube member emotes**.
+2. Click **Import images** and pick your emote files. Each becomes an emote named after its file, so `tamaDent.png`
+   becomes `:_tamaDent:`. Or click **+ Emote** and type a code and a picture's web address.
+3. Check that each code matches chat exactly, because capital letters matter.
+
+The emotes then show on the Chat page and in the chat box overlay. Images can be PNG, JPEG, GIF or WebP, up to 2 MB each.
+7TV emotes already work on YouTube without this list.
+
 ## Quota: YouTube's daily limit
 
 YouTube gives every app a daily allowance of "units", and every request Cuebot makes uses some. The **Polling and

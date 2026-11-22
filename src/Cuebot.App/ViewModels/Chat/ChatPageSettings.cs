@@ -19,6 +19,9 @@ public sealed class ChatPageSettings
     public const double MinTextSize = 10;
     public const double MaxTextSize = 28;
 
+    /// <summary>Show which channel a Twitch Shared Chat message came from.</summary>
+    public bool ShowSharedSource { get; set; } = true;
+
     public HighlightRules Highlights { get; set; } = new();
 
     public List<QuickActionDefinition> QuickActions { get; set; } = [];

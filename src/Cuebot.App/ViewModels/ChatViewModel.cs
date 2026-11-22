@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Cuebot.App.ViewModels.Chat;
@@ -77,6 +78,26 @@ public sealed partial class ChatLineViewModel : ObservableObject
     private string? _pronouns;
 
     public bool HasPronouns => !string.IsNullOrEmpty(Pronouns);
+
+    /// <summary>The message was posted in another channel of a Twitch Shared Chat.</summary>
+    public bool IsSharedSource => RawArgs?.GetValueOrDefault("isSharedChat") is true;
+
+    /// <summary>The other channel's display name (its login when Twitch sent no display name).</summary>
+    public string SourceName => RawArgs?.GetValueOrDefault("sourceBroadcaster") as string is { Length: > 0 } name
+        ? name
+        : RawArgs?.GetValueOrDefault("sourceBroadcasterUserName") as string ?? "";
+
+    public string SourceAvatarUrl => RawArgs?.GetValueOrDefault("sourceBroadcasterProfileUrl") as string ?? "";
+    public string SharedSourceTip => $"Shared chat: posted in {SourceName}'s channel";
+
+    /// <summary>The source tag is showing (a shared message, and the option is on).</summary>
+    [ObservableProperty] private bool _showSharedSource;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSourceAvatar))]
+    private Bitmap? _sourceAvatar;
+
+    public bool HasSourceAvatar => SourceAvatar is not null;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsHighlighted), nameof(HighlightBrush), nameof(HighlightReason))]
@@ -183,7 +204,7 @@ public sealed partial class ChatViewModel : PageViewModel
         PlatformChips.Add(ChatHub.AllPlatforms);
         SendTargets = [ChatHub.AllPlatforms, .. hub.Platforms];
         Options = new ChatOptionsViewModel(_settings, () => _services.Settings?.ScheduleSave(), _services.Emotes,
-            _services.EmoteSettings, _services.ActionNames ?? (() => []), _services.ModerationSettings);
+            _services.EmoteSettings, _services.ActionNames ?? (() => []), _services.ModerationSettings, _services.Assets);
         Options.Changed += OnOptionsChanged;
         if (_services.Profile is { } profile) profile.ActionRenamed += (from, to) => OnUi(() => FollowActionRename(from, to));
         RebuildQuickActions();
@@ -668,8 +689,24 @@ public sealed partial class ChatViewModel : PageViewModel
             SuspiciousNote = SuspiciousNote(message.Platform, message.UserId),
         };
         LoadImages(line);
+        ApplySharedSource(line);
         LookUpPronouns(line);
         return line;
+    }
+
+    private void ApplySharedSource(ChatLineViewModel line)
+    {
+        line.ShowSharedSource = _settings.ShowSharedSource && line.IsSharedSource;
+        if (!line.ShowSharedSource || line.SourceAvatar is not null || _services.Images is not { } images || line.SourceAvatarUrl.Length == 0) return;
+        if (images.TryGet(line.SourceAvatarUrl) is { } ready)
+        {
+            line.SourceAvatar = ready;
+            return;
+        }
+        _ = images.LoadAsync(line.SourceAvatarUrl).ContinueWith(t =>
+        {
+            if (t.IsCompletedSuccessfully && t.Result is { } bitmap) OnUi(() => line.SourceAvatar = bitmap);
+        }, TaskScheduler.Default);
     }
 
     private IReadOnlyList<ChatSegment> Segment(ChatMessage message, IReadOnlyDictionary<string, object?>? raw)
@@ -721,6 +758,7 @@ public sealed partial class ChatViewModel : PageViewModel
             line.Segments = Segment(line.Message, line.RawArgs);
             line.Highlight = ChatHighlighter.Evaluate(line.Message, line.RawArgs, _settings.Highlights);
             LoadImages(line);
+            ApplySharedSource(line);
             LookUpPronouns(line);
         }
         RebuildQuickActions();

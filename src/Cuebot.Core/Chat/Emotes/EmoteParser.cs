@@ -112,6 +112,32 @@ public static partial class EmoteParser
         return matches;
     }
 
+    /// <summary>
+    /// Finds ":code:" emotes, which YouTube writes with no space between them (":_a::_b:"), so a word search misses them.
+    /// </summary>
+    public static IReadOnlyList<EmoteMatch> FindColonCodes(string text, IReadOnlyDictionary<string, Emote> emotes, IReadOnlyList<EmoteMatch>? taken = null)
+    {
+        if (emotes.Count == 0 || text.Length == 0) return [];
+        var matches = new List<EmoteMatch>();
+        var start = text.IndexOf(':');
+        while (start >= 0 && start < text.Length - 1)
+        {
+            var close = text.IndexOf(':', start + 1);
+            if (close < 0) break;
+            var code = text[start..(close + 1)];
+            if (!code.Any(char.IsWhiteSpace) && emotes.TryGetValue(code, out var emote) && !Overlaps(taken, start, close + 1))
+            {
+                matches.Add(new EmoteMatch(start, code.Length, code, emote));
+                start = close + 1 < text.Length ? text.IndexOf(':', close + 1) : -1;
+            }
+            else
+            {
+                start = close;   // this colon may open the next code
+            }
+        }
+        return matches;
+    }
+
     /// <summary>Merges match lists: sorted by position, overlapping later entries dropped.</summary>
     public static IReadOnlyList<EmoteMatch> Merge(params IReadOnlyList<EmoteMatch>[] lists) =>
         Normalize(lists.SelectMany(l => l));

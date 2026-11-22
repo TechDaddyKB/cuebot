@@ -5,7 +5,7 @@
 
 ## Basic webhook
 
-Posts a message in a Discord channel through a webhook (a private address Discord gives you for that channel). To edit posts, give roles or answer slash commands, use the Discord bot instead.
+Posts a message in a Discord channel through a webhook (a private address Discord gives you for that channel). It can send embeds and link buttons, post in a thread or start a forum post. To give roles or answer slash commands, use the Discord bot instead.
 
 | Setting | What to put in |
 | --- | --- |
@@ -15,6 +15,11 @@ Posts a message in a Discord channel through a webhook (a private address Discor
 | **Username** | The name shown as the sender. Empty uses the webhook's own name. |
 | **Avatar URL** | Web link to a picture for the sender. Empty uses the webhook's own picture. |
 | **Text to speech** | Tick to let Discord read the message out loud to people watching that channel. Starts as: `false`. |
+| **Message body** | Simple sends the Content text. JSON sends the Message JSON instead, for embeds and link buttons. Options: Simple, JSON. Starts as: `Simple`. |
+| **Message JSON** | Used when Message body is JSON. Paste Discord webhook JSON or a Discohook export. Put %variables% inside quotes. Only mentions you typed here can ping people, so a viewer's name cannot ping @everyone. |
+| **Thread ID** | Optional. The ID of a thread or forum post to post in. |
+| **New forum post title** | Optional, for forum channels: starts a new post with this title. Use this or Thread ID, not both. |
+| **Remember it as** | A name like "live post", so a later step can edit or delete this message, even after a restart. |
 
 **Variables it adds**
 
@@ -22,6 +27,8 @@ Posts a message in a Discord channel through a webhook (a private address Discor
 | --- | --- |
 | `%discordMessageId%` | ID of the Discord message that was posted |
 | `%messageId%` | The same ID. This replaces the chat message ID from the trigger, so use %discordMessageId% when you need both |
+| `%discordChannelId%` | ID of the channel it was posted in (the thread's ID for a thread or forum post) |
+| `%discordThreadId%` | ID of the thread or forum post, empty for a normal channel |
 
 <small>Type id: `discord.basicWebhook`</small>
 
@@ -34,6 +41,18 @@ Deletes a message your bot posted earlier.
 | **Message** | Which message: the name you typed in "Remember it as" when posting it, like "live post". A message link works too. Starts as: `%discordMessageLink%`. |
 
 <small>Type id: `discord.deleteMessage`</small>
+
+## Delete webhook message
+
+Deletes a message that a webhook posted earlier. Only the same webhook can delete it.
+
+| Setting | What to put in |
+| --- | --- |
+| **Webhook URL** | The link of the webhook that posted the message. |
+| **Message** | Which message: the name you typed in "Remember it as", a message ID, or a message link. Starts as: `%discordMessageId%`. |
+| **Thread ID** | The thread or forum post the message is in. Not needed when you use a remembered name. |
+
+<small>Type id: `discord.deleteWebhookMessage`</small>
 
 ## Edit message (bot)
 
@@ -51,6 +70,28 @@ Changes a message your bot posted earlier. Handy to turn your "I'm live!" post i
 | **Remove the embed** | Tick to take the embed off the message (when you leave the embed boxes empty). Starts as: `false`. |
 
 <small>Type id: `discord.editMessage`</small>
+
+## Edit webhook message
+
+Changes a message that a webhook posted earlier, such as turning "we're live" into "thanks for watching". Only the same webhook can edit it.
+
+| Setting | What to put in |
+| --- | --- |
+| **Webhook URL** | The link of the webhook that posted the message. |
+| **Message** | Which message: the name you typed in "Remember it as", a message ID, or a message link. Starts as: `%discordMessageId%`. |
+| **Message body** | Simple replaces the text with Content. JSON sends the Message JSON, for embeds and link buttons. Options: Simple, JSON. Starts as: `Simple`. |
+| **Content** | The new text, used when Message body is Simple. Up to 2000 letters. |
+| **Message JSON** | Used when Message body is JSON. Paste Discord webhook JSON or a Discohook export. Parts you leave out stay as they are. Put %variables% inside quotes. |
+| **Thread ID** | The thread or forum post the message is in. Not needed when you use a remembered name. |
+
+**Variables it adds**
+
+| Variable | What it holds |
+| --- | --- |
+| `%discordMessageId%` | ID of the message that was edited |
+| `%discordChannelId%` | ID of its channel or thread |
+
+<small>Type id: `discord.editWebhookMessage`</small>
 
 ## Give a role
 
