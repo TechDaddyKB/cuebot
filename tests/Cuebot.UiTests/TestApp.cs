@@ -6,6 +6,11 @@ using Avalonia.Media.Imaging;
 using Cuebot.UiTests;
 
 [assembly: AvaloniaTestApplication(typeof(TestApp))]
+// Avalonia resets its dispatcher before every test, and the first thread to read Dispatcher.UIThread after that owns
+// it. A plain [Fact] running alongside can take it from the headless session, which fails the next [AvaloniaFact] with
+// "a different thread owns it". Parallel classes also stalled the thread pool for seconds on a loaded machine, past
+// the timeouts of the sign-in, watchdog and single-instance tests. BindingErrors is process-wide too.
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace Cuebot.UiTests;
 
