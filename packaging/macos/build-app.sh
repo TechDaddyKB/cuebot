@@ -49,17 +49,19 @@ cp "$root/LICENSE" "$root/THIRD-PARTY-NOTICES.md" "$app/Contents/Resources/"
 if [ -n "${CUEBOT_MACOS_SIGN_IDENTITY:-}" ]; then
   # Inside out: every native library and helper program (such as .NET's createdump), then the executable, then the
   # bundle. Notarization rejects any unsigned Mach-O file.
-  find "$app/Contents/MacOS" -type f \( -name '*.dylib' -o -name '*.so' -o -perm -u+x \) ! -path "$app/Contents/MacOS/Cuebot" -print0 |
+  # Every other file next to the executable (the managed .dll files, json, pdb) counts as code too: codesign treats
+  # everything in Contents/MacOS as a subcomponent, and "verify --deep --strict" fails on an unsigned one.
+  find "$app/Contents/MacOS" -type f ! -path "$app/Contents/MacOS/Cuebot" -print0 |
     while IFS= read -r -d '' file; do
       if file -b "$file" | grep -q Mach-O; then
         codesign --force --timestamp --options runtime --sign "$CUEBOT_MACOS_SIGN_IDENTITY" "$file"
+      else
+        codesign --force --timestamp --sign "$CUEBOT_MACOS_SIGN_IDENTITY" "$file"
       fi
     done
   codesign --force --timestamp --options runtime --entitlements "$root/packaging/macos/Cuebot.entitlements" \
     --sign "$CUEBOT_MACOS_SIGN_IDENTITY" "$app/Contents/MacOS/Cuebot"
-  # --deep also seals the managed .dll files next to the executable: codesign treats everything in Contents/MacOS as
-  # code and "verify --deep --strict" fails on an unsigned one.
-  codesign --force --deep --timestamp --options runtime --entitlements "$root/packaging/macos/Cuebot.entitlements" \
+  codesign --force --timestamp --options runtime --entitlements "$root/packaging/macos/Cuebot.entitlements" \
     --sign "$CUEBOT_MACOS_SIGN_IDENTITY" "$app"
 else
   codesign --force --deep --sign - "$app"
