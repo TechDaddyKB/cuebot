@@ -206,6 +206,7 @@ public sealed partial class ChatViewModel : PageViewModel
         Options = new ChatOptionsViewModel(_settings, () => _services.Settings?.ScheduleSave(), _services.Emotes,
             _services.EmoteSettings, _services.ActionNames ?? (() => []), _services.ModerationSettings, _services.Assets);
         Options.Changed += OnOptionsChanged;
+        if (_services.Profile is { } profile) profile.ActionRenamed += (from, to) => OnUi(() => FollowActionRename(from, to));
         RebuildQuickActions();
 
         foreach (var message in hub.RecentMessages()) AddLine(message);
@@ -760,6 +761,15 @@ public sealed partial class ChatViewModel : PageViewModel
             ApplySharedSource(line);
             LookUpPronouns(line);
         }
+        RebuildQuickActions();
+    }
+
+    private void FollowActionRename(string oldName, string newName)
+    {
+        var renamed = _settings.QuickActions.Where(q => string.Equals(q.ActionName.Trim(), oldName.Trim(), StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (renamed.Length == 0) return;
+        foreach (var quick in renamed) quick.ActionName = newName;
+        _services.Settings?.ScheduleSave();
         RebuildQuickActions();
     }
 

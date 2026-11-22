@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Cuebot.Core.Logging;
@@ -88,9 +89,42 @@ public sealed class JsonFile<T> : IDisposable where T : class, new()
         {
             var backup = $"{_path}.corrupt-{DateTime.Now:yyyyMMddHHmmss}";
             File.Copy(_path, backup, overwrite: true);
+            // Only damaged content is replaced: a file that could not be read (locked, no access) may still be fine.
+            if (ex is not (IOException or UnauthorizedAccessException) && RestoreFromBackup() is { } restored)
+            {
+                _log.Error("Storage", $"{Path.GetFileName(_path)} was damaged and has been restored from {restored.Zip}. "
+                    + $"The damaged file is kept as {Path.GetFileName(backup)}.", ex);
+                needsSave = true;
+                return restored.Value;
+            }
             _log.Error("Storage", $"{Path.GetFileName(_path)} was unreadable and has been backed up to {Path.GetFileName(backup)}", ex);
             return new T();
         }
+    }
+
+    /// <summary>
+    /// The newest copy of this file that parses, from the automatic backups next to it (<c>backups/cuebot-*.zip</c>, whose
+    /// names sort by time). A backup taken after the damage holds the same bad file, so older ones are tried too.
+    /// </summary>
+    private (T Value, string Zip)? RestoreFromBackup()
+    {
+        var folder = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(_path))!, "backups");
+        if (!Directory.Exists(folder)) return null;
+        foreach (var zip in Directory.EnumerateFiles(folder, "cuebot-*.zip").OrderDescending(StringComparer.Ordinal))
+        {
+            try
+            {
+                using var archive = ZipFile.OpenRead(zip);
+                if (archive.GetEntry(Path.GetFileName(_path)) is not { } entry) continue;
+                using var reader = new StreamReader(entry.Open());
+                if (SecretJson.Deserialize<T>(reader.ReadToEnd(), _path, out _) is { } value) return (value, Path.GetFileName(zip));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or JsonException or NotSupportedException)
+            {
+                _log.Warn("Storage", $"Backup {Path.GetFileName(zip)} has no usable {Path.GetFileName(_path)}: {ex.Message}");
+            }
+        }
+        return null;
     }
 
     public void Dispose()

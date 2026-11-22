@@ -116,7 +116,7 @@ A bigger example, for `rowdy_guy`:
 | --- | --- | --- | --- | --- |
 | ☑ | Twitch: `rowdy_guy` | (the one clicked) | Ban | |
 | ☑ | Kick: `rowdyguy` | verified 2026-10-02 | Ban | |
-| ☐ | YouTube: `Rowdy Guy` | suggested by Sam, not confirmed | Ban, 50 quota units (7,400 left today) | Unticked: not confirmed |
+| ☐ | YouTube: `Rowdy Guy` | suggested by Sam, not confirmed | Ban, 200 quota units (7,400 left today) | Unticked: not confirmed |
 | — | Rumble: `RowdyG` | confirmed by Kris and Sam | By hand: open Rumble | No API |
 
 - **Suggested** links start unticked. You can tick one yourself if you are sure; a mod cannot tick one for a ban.

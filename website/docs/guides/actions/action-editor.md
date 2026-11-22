@@ -74,7 +74,7 @@ At the top of the editor:
 
 | Part | What it does |
 | --- | --- |
-| Name box | The action's name. Other steps find it by this name (like **Run action**), so keep it unique. |
+| Name box | The action's name. Other steps find it by this name (like **Run action**), so keep it unique. When you rename it, those steps, deck buttons, hotkeys and chat quick actions follow. A name stored in a variable or a script does not. |
 | **Group** box | The folder it sits in. Type a new name to make a new folder. |
 | **On** / **Off** switch | The whole action on or off. An action that is off never starts from its triggers. |
 | **Run** | Starts the action now, with no trigger values. |

@@ -126,6 +126,7 @@ Bans a viewer from your channel for good. They can no longer chat or watch in ch
 | --- | --- |
 | **User** | Who to pick: a Twitch login name like "coolviewer" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action. |
 | **Reason** | Why they are banned, like "Spam". Moderators can see it. Can be empty. |
+| **Act as the bot account** | Tick to do this as your bot account. The bot must be signed in and a moderator here. If it cannot, your main account does it and the log says why. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -1840,6 +1841,7 @@ Stops a viewer from chatting for a while (a timeout).
 | **User** | Who to pick: a Twitch login name like "coolviewer" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action. |
 | **Duration (seconds)** | How long the timeout lasts, in seconds. From 1 second up to 14 days (1209600). 600 is ten minutes. Starts as: `600`. |
 | **Reason** | Why they are timed out. Can be empty. |
+| **Act as the bot account** | Tick to do this as your bot account. The bot must be signed in and a moderator here. If it cannot, your main account does it and the log says why. Starts as: `false`. |
 
 **Variables it adds**
 
@@ -1859,6 +1861,7 @@ Lifts a ban so the viewer can chat again.
 | Setting | What to put in |
 | --- | --- |
 | **User** | Who to pick: a Twitch login name like "coolviewer" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action. |
+| **Act as the bot account** | Tick to do this as your bot account. The bot must be signed in and a moderator here. If it cannot, your main account does it and the log says why. Starts as: `false`. |
 
 **Variables it adds**
 

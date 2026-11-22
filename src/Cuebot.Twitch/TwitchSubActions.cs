@@ -54,6 +54,9 @@ internal static partial class TwitchSubActions
             Help = "Default uses the bot account when it is signed in (see the Twitch page), otherwise the broadcaster",
         };
 
+    private static ParameterDescriptor UseBotParam() =>
+        Bool("useBot", "Act as the bot account", false) with { Help = "Needs a signed-in bot that is a moderator here. Otherwise the broadcaster does it and the log says why." };
+
     private static ParameterDescriptor Bool(string key, string label, bool value = true) =>
         new(key, label, ParameterKind.Boolean) { DefaultValue = value ? "true" : "false" };
 
@@ -305,14 +308,14 @@ internal static partial class TwitchSubActions
             }),
 
         // ---------------------------------------------------------------- moderation
-        new("twitch.ban", "Ban user", [UserParam(), new("reason", "Reason")],
-            (api, c, p, ct) => ModerateAsync(api, c, p, "bannedUser", "banResult", (id, t) => api.BanAsync(id, p["reason"], t), ct)),
+        new("twitch.ban", "Ban user", [UserParam(), new("reason", "Reason"), UseBotParam()],
+            (api, c, p, ct) => ModerateAsync(api, c, p, "bannedUser", "banResult", (id, t) => api.BanAsync(id, p["reason"], p.GetBool("useBot"), t), ct)),
         new("twitch.timeout", "Timeout user",
-            [UserParam(), Number("duration", "Duration (seconds)", "600", "1 second to 14 days"), new("reason", "Reason")],
+            [UserParam(), Number("duration", "Duration (seconds)", "600", "1 second to 14 days"), new("reason", "Reason"), UseBotParam()],
             (api, c, p, ct) => ModerateAsync(api, c, p, "timedOutUser", "timeoutResult",
-                (id, t) => api.TimeoutAsync(id, p.GetInt("duration", 600), p["reason"], t), ct)),
-        new("twitch.unban", "Unban user", [UserParam()],
-            (api, c, p, ct) => ModerateAsync(api, c, p, "unbannedUser", "unbanResult", api.UnbanAsync, ct)),
+                (id, t) => api.TimeoutAsync(id, p.GetInt("duration", 600), p["reason"], p.GetBool("useBot"), t), ct)),
+        new("twitch.unban", "Unban user", [UserParam(), UseBotParam()],
+            (api, c, p, ct) => ModerateAsync(api, c, p, "unbannedUser", "unbanResult", (id, t) => api.UnbanAsync(id, p.GetBool("useBot"), t), ct)),
         new("twitch.untimeout", "Remove timeout", [UserParam()],
             (api, c, p, ct) => ModerateAsync(api, c, p, "unTimedOutUser", "unTimedOutResult", api.UnbanAsync, ct)),
         new("twitch.warn", "Warn user", [UserParam(), new("reason", "Reason")],

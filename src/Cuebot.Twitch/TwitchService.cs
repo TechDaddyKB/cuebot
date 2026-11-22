@@ -66,7 +66,8 @@ public sealed class TwitchService : IConnectable, IAsyncDisposable, Cuebot.Core.
         var counters = new TwitchCounters(() => Settings, settings.ScheduleSave);
         _router = new TwitchEventRouter(time, () => Settings.UserId, () => Settings.Bot.UserId, sent, counters: counters,
             broadcasterLogin: () => Settings.Login, moderationFeed: () => HasModerationFeed);
-        Api = new TwitchApi(_helix, _tokens, _botHelix, _botTokens, () => Settings, () => _connection is not null, Publish, sent, counters);
+        Api = new TwitchApi(_helix, _tokens, _botHelix, _botTokens, () => Settings, () => _connection is not null, Publish, sent, counters,
+            message => _log.Warn("Twitch", message));
     }
 
     public string Name => "Twitch";

@@ -291,7 +291,8 @@
       "description": "Bans a viewer from your channel for good. They can no longer chat or watch in chat.",
       "fields": {
         "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action.",
-        "reason": "Why they are banned, like \"Spam\". Moderators can see it. Can be empty."
+        "reason": "Why they are banned, like \"Spam\". Moderators can see it. Can be empty.",
+        "useBot": "Tick to do this as your bot account. The bot must be signed in and a moderator here. If it cannot, your main account does it and the log says why."
       },
       "variables": {
         "bannedUser": "The display name of the person who was banned",
@@ -305,7 +306,8 @@
       "fields": {
         "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action.",
         "duration": "How long the timeout lasts, in seconds. From 1 second up to 14 days (1209600). 600 is ten minutes.",
-        "reason": "Why they are timed out. Can be empty."
+        "reason": "Why they are timed out. Can be empty.",
+        "useBot": "Tick to do this as your bot account. The bot must be signed in and a moderator here. If it cannot, your main account does it and the log says why."
       },
       "variables": {
         "timedOutUser": "The display name of the person who was timed out",
@@ -317,7 +319,8 @@
     "twitch.unban": {
       "description": "Lifts a ban so the viewer can chat again.",
       "fields": {
-        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action."
+        "user": "Who to pick: a Twitch login name like \"coolviewer\" (a leading @ is fine) or id:12345. Leave empty to use the person who triggered the action.",
+        "useBot": "Tick to do this as your bot account. The bot must be signed in and a moderator here. If it cannot, your main account does it and the log says why."
       },
       "variables": {
         "unbannedUser": "The display name of the person who was unbanned",
