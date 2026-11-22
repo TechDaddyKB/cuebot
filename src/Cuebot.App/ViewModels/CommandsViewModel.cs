@@ -334,6 +334,15 @@ public sealed partial class CommandEditorViewModel : ObservableObject
         set { if (_c.IgnoreInternal != value) Save(() => _c.IgnoreInternal = value); }
     }
 
+    /// <summary>The "Only while live" option.</summary>
+    public LiveGateViewModel LiveGate => _liveGate ??= new LiveGateViewModel(() => _c.OnlyWhileLive, () => _c.LivePlatforms,
+        (on, platforms) => Save(() =>
+        {
+            _c.OnlyWhileLive = on;
+            _c.LivePlatforms = platforms;
+        }, nameof(LiveGate)));
+    private LiveGateViewModel? _liveGate;
+
     public decimal? GlobalCooldownSeconds
     {
         get => (decimal)_c.GlobalCooldownSeconds;

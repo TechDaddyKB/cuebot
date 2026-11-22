@@ -27,7 +27,7 @@ In Python every function is also a method of `cb`, named after it in Python styl
 
 | Area | Functions |
 | --- | --- |
-| [Actions](actions.md) | 1 |
+| [Actions](actions.md) | 2 |
 | [Arguments](args.md) | 4 |
 | [Game controllers](controllers.md) | 7 |
 | [Credits](credits.md) | 4 |

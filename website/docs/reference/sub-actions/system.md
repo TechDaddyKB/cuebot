@@ -28,6 +28,7 @@ Presses keys on your keyboard for you, as if you typed them, in whatever program
 | --- | --- |
 | **Keys** | A shortcut like "Ctrl+Shift+F1". For several in a row, separate them with commas, like "Ctrl+C, Ctrl+V". On Linux the desktop may ask for permission once. Starts as: `Ctrl+Shift+F1`. |
 | **Pause between combos (ms)** | How many milliseconds to wait between shortcuts when you list several. 1000 = 1 second. Starts as: `30`. |
+| **Hold for (ms)** | How many milliseconds to keep the keys down before letting go, like 2000 to hold for 2 seconds. You can use a %variable%. 0 = a normal quick press. The keys are always let go, even when the action is cancelled. Starts as: `0`. |
 
 **Variables it adds**
 

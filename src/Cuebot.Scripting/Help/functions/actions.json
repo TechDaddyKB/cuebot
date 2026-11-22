@@ -7,6 +7,16 @@
       },
       "returns": "true when the action finished without errors, otherwise false.",
       "example": { "name": "Shoutout" }
+    },
+    "actions.cancel": {
+      "description": "Stops the runs of an action that are going on or waiting in a queue. A run stops at its next step or wait. Fails when no action has that name.",
+      "parameters": {
+        "name": "The action's name. Leave it empty for the action this script is in.",
+        "includePending": "Optional. false leaves runs waiting in a queue alone. Starts as true.",
+        "includeThisRun": "Optional. true also stops the run this script is in. Starts as false, which keeps this run and whatever started it going."
+      },
+      "returns": "How many runs were cancelled.",
+      "example": { "name": "Shoutout" }
     }
   }
 }

@@ -378,6 +378,18 @@
         "queueCleared": "How many waiting runs were thrown away"
       }
     },
+    "core.cancelRuns": {
+      "description": "Stops runs of an action that are going on right now, and the ones waiting in its queue. A run stops at its next step or wait, so a step already in progress finishes. An action that is waiting for a cancelled run stops too.",
+      "fields": {
+        "target": "This action, or Chosen action to name another one.",
+        "action": "With Chosen action: the action's name.",
+        "includePending": "Tick to also cancel runs still waiting in a queue. Untick to stop only the ones already running.",
+        "keepThisRun": "Tick to keep this run (and the action that started it) going. Untick to stop this run as well."
+      },
+      "variables": {
+        "runsCancelled": "How many runs were cancelled"
+      }
+    },
     "core.comment": {
       "description": "A note to yourself in the list of steps. It does nothing when the action runs. Good for explaining what a part of a long action is for.",
       "fields": {
@@ -548,8 +560,18 @@
       "description": "Checks something, then runs different steps depending on the answer. Example: IF %message% contains \"hello\" THEN say hi back. Steps go under True (yes) or False (no).",
       "fields": {
         "left": "The thing to look at, usually a %variable% like %user% or %message%. For \"exists\" and \"does not exist\" type only the variable's name, like targetUser.",
-        "operator": "How to compare. \"equals\" = the same. \"contains\" = has it inside. \"greater than\" and \"less than\" compare numbers. \"is empty\" = nothing there. \"matches regex\" is an advanced search pattern.",
-        "right": "What to compare with, like hello or 100. Capital letters do not matter. Not used for \"is empty\", \"is not empty\", \"exists\" and \"does not exist\"."
+        "operator": "How to compare. \"equals\" = the same. \"contains\" = has it inside. \"greater than\" and \"less than\" compare numbers, and \"at least\" (≥) and \"at most\" (≤) also count an equal number. \"is empty\" = nothing there. \"matches regex\" is an advanced search pattern.",
+        "right": "What to compare with, like hello or 100. Capital letters do not matter. Not used for \"is empty\", \"is not empty\", \"exists\" and \"does not exist\".",
+        "combine": "Check more than one thing. All = every condition must be true (AND). Any = one true condition is enough (OR). Conditions set to \"not used\" are skipped.",
+        "left2": "The second condition's value.",
+        "operator2": "How to compare the second condition, or \"not used\".",
+        "right2": "What the second condition compares with.",
+        "left3": "The third condition's value.",
+        "operator3": "How to compare the third condition, or \"not used\".",
+        "right3": "What the third condition compares with.",
+        "left4": "The fourth condition's value.",
+        "operator4": "How to compare the fourth condition, or \"not used\".",
+        "right4": "What the fourth condition compares with."
       },
       "variables": {
         "match.count": "Only with \"matches regex\": how many pieces matched",
@@ -750,7 +772,8 @@
       "description": "Presses keys on your keyboard for you, as if you typed them, in whatever program is in front. Good for triggering another program's shortcut.",
       "fields": {
         "keys": "A shortcut like \"Ctrl+Shift+F1\". For several in a row, separate them with commas, like \"Ctrl+C, Ctrl+V\". On Linux the desktop may ask for permission once.",
-        "delay": "How many milliseconds to wait between shortcuts when you list several. 1000 = 1 second."
+        "delay": "How many milliseconds to wait between shortcuts when you list several. 1000 = 1 second.",
+        "hold": "How many milliseconds to keep the keys down before letting go, like 2000 to hold for 2 seconds. You can use a %variable%. 0 = a normal quick press. The keys are always let go, even when the action is cancelled."
       },
       "variables": {
         "keysPressed": "The shortcuts that were pressed"

@@ -536,6 +536,8 @@ public sealed partial class StreamerBotMappingTable
         ["contains"] = "contains", ["doesnotcontain"] = "does not contain", ["notcontains"] = "does not contain",
         ["startswith"] = "starts with", ["endswith"] = "ends with",
         ["greaterthan"] = "greater than", ["gt"] = "greater than", ["lessthan"] = "less than", ["lt"] = "less than",
+        ["greaterthanorequal"] = "at least", ["greaterorequal"] = "at least", ["gte"] = "at least", ["ge"] = "at least",
+        ["lessthanorequal"] = "at most", ["lessorequal"] = "at most", ["lte"] = "at most", ["le"] = "at most",
         ["isnullorempty"] = "is empty", ["isempty"] = "is empty", ["isnotnullorempty"] = "is not empty", ["isnotempty"] = "is not empty",
         ["regex"] = "matches regex", ["matchesregex"] = "matches regex", ["regexmatch"] = "matches regex",
     };

@@ -34,7 +34,7 @@ internal static class CommandAndUserFeatures
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<Chat.AccountStandings>());
         services.AddSingleton(sp => new CommandService(sp.GetRequiredService<CommandStore>(), sp.GetRequiredService<GroupStore>(),
             sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(), status: sp.GetRequiredService<ViewerStatusCache>(),
-            standings: sp.GetRequiredService<Chat.AccountStandings>()));
+            standings: sp.GetRequiredService<Chat.AccountStandings>(), live: sp.GetRequiredService<Chat.StreamLiveState>()));
         // Created at start-up with the other periodic services, so replies work before any page is opened.
         services.AddSingleton<IPeriodicService>(sp => new CommandReplier(sp.GetRequiredService<CommandStore>(),
             sp.GetRequiredService<Chat.ChatHub>(), sp.GetRequiredService<EventBus>(), sp.GetRequiredService<AppLog>(),
@@ -49,7 +49,7 @@ internal static class CommandAndUserFeatures
         services.AddSingleton<IPeriodicService>(sp => new Timers.CronClock(sp.GetRequiredService<EventBus>(), sp.GetRequiredService<ProfileService>()));
         services.AddSingleton<ITriggerProvider, Timers.CronTriggers>();
         services.AddSingleton(sp => new TimerService(sp.GetRequiredService<ProfileService>(), sp.GetRequiredService<EventBus>(),
-            periodic: sp.GetServices<IPeriodicService>(), log: sp.GetRequiredService<AppLog>()));
+            periodic: sp.GetServices<IPeriodicService>(), log: sp.GetRequiredService<AppLog>(), live: sp.GetRequiredService<Chat.StreamLiveState>()));
 
         // Commands
         services.AddSingleton<ITriggerProvider, CommandTriggers>();

@@ -274,6 +274,8 @@ public sealed class CphPlatformTests : IDisposable
         }
 
         public Task PressAsync(IReadOnlyList<HotkeyGesture> combos, CancellationToken ct = default) => Task.CompletedTask;
+
+        public Task HoldAsync(IReadOnlyList<HotkeyGesture> combos, TimeSpan hold, CancellationToken ct = default) => Task.CompletedTask;
     }
 
     private sealed class FakeAnnouncer : IChatAnnouncer

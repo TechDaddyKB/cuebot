@@ -163,9 +163,12 @@ public sealed class ActionRunContext
     /// <summary>Nesting level when actions run other actions; guards against infinite recursion.</summary>
     public int Depth { get; }
 
+    /// <summary>The run this context belongs to (empty outside a run).</summary>
+    public Guid RunId { get; internal init; }
+
     public string Resolve(string template) => VariableResolver.Resolve(template, Args, Globals.Get);
 
     /// <summary>A copy with its own argument dictionary, for steps that run concurrently.</summary>
     internal ActionRunContext Fork() =>
-        new(Action, new Dictionary<string, object?>(Args, StringComparer.OrdinalIgnoreCase), Engine, Globals, Log, Depth);
+        new(Action, new Dictionary<string, object?>(Args, StringComparer.OrdinalIgnoreCase), Engine, Globals, Log, Depth) { RunId = RunId };
 }

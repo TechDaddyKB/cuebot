@@ -34,6 +34,7 @@ internal static class EngineFeatures
         services.AddSingleton<UserPromptService>();
         services.AddSingleton<ISubActionHandler, GetInputDialogSubAction>();
         services.AddSingleton<ISubActionHandler, ClearActionQueueSubAction>();
+        services.AddSingleton<ISubActionHandler, CancelRunsSubAction>();
         services.AddSingleton<ISubActionHandler, SetActionQueueBlockingSubAction>();
         services.AddSingleton<ISubActionHandler, SetActionQueuePauseSubAction>();
         services.AddSingleton<ISubActionHandler, GetActionGroupStateSubAction>();

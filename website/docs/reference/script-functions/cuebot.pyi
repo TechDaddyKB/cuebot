@@ -45,6 +45,15 @@ class Cuebot:
         """Fills in %variables% and ~globals~ in a text, the way step settings are."""
     def pick(self, *weights: float) -> int:
         """Picks a position at random by weight (0 = first), like a random group."""
+    def actions_cancel(self, name: Any, *, include_pending: Any = None, include_this_run: Any = None) -> Any:
+        """Stops the runs of an action that are going on or waiting in a queue. A run stops at its next step or wait. Fails when no action has that name.
+
+        name: The action's name. Leave it empty for the action this script is in.
+        include_pending: Optional. false leaves runs waiting in a queue alone. Starts as true.
+        include_this_run: Optional. true also stops the run this script is in. Starts as false, which keeps this run and whatever started it going.
+        Gives back: How many runs were cancelled.
+        Same as cb.call(\"actions.cancel\", ...).
+        """
     def actions_run(self, name: Any) -> Any:
         """Runs another action by its name and waits until it is done. It gets a copy of this action's variables. Fails when no action has that name.
 
@@ -734,10 +743,11 @@ class Cuebot:
         Gives back: true while connected, otherwise false.
         Same as cb.call(\"hyperate.isConnected\", ...).
         """
-    def input_key_press(self, keys: Any) -> Any:
+    def input_key_press(self, keys: Any, *, hold_ms: Any = None) -> Any:
         """Presses keys on your keyboard for you, in the app that is in front. On Linux your desktop asks once for permission. Fails with an error when the keys cannot be read or sent.
 
         keys: The keys to press, like \"Ctrl+Shift+F1\". Split several with commas, like \"Ctrl+C, Ctrl+V\". SendKeys text like \"^c\" or \"{ENTER}\" works too.
+        hold_ms: Optional. How many milliseconds to keep each combination down before letting go, up to 300000. Leave it out for a normal press.
         Gives back: true when the keys were pressed.
         Same as cb.call(\"input.keyPress\", ...).
         """

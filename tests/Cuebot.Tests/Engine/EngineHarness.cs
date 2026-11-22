@@ -11,7 +11,8 @@ internal sealed class EngineHarness : IDisposable
 {
     public static readonly TimeSpan TestTimeout = TimeSpan.FromSeconds(10);
 
-    public EngineHarness(IRandomSource? random = null, int historyCapacity = ActionHistory.DefaultCapacity)
+    public EngineHarness(IRandomSource? random = null, int historyCapacity = ActionHistory.DefaultCapacity,
+        Cuebot.Core.Chat.StreamLiveState? live = null)
     {
         Bus = new EventBus(Log);
         Profile = new ProfileService(null, Log);
@@ -27,7 +28,7 @@ internal sealed class EngineHarness : IDisposable
             new GetInputSubAction(), new StopSubAction(), new RunActionSubAction(Profile), new SetArgumentSubAction(),
             new SendSignalSubAction(Signals), new WaitForSignalSubAction(Signals),
             new SetActionStateSubAction(Profile), new GetActionStateSubAction(Profile),
-            new GetInputDialogSubAction(Prompts), new ClearActionQueueSubAction(Queues, Profile),
+            new GetInputDialogSubAction(Prompts), new ClearActionQueueSubAction(Queues, Profile), new CancelRunsSubAction(Profile),
             new SetActionQueueBlockingSubAction(Profile), new SetActionQueuePauseSubAction(Queues, Profile),
             new SetTriggerStateSubAction(Profile), new SetSubActionStateSubAction(Profile), new SetSubActionWeightSubAction(Profile),
             new GetActionGroupStateSubAction(Profile), new SetActionGroupStateSubAction(Profile), new TriggerCustomEventSubAction(Bus),
@@ -43,7 +44,7 @@ internal sealed class EngineHarness : IDisposable
                 [new ParameterDescriptor("match", "Match")],
                 (e, s, _) => s["match"] == "" || Equals(e.Args.GetValueOrDefault("value"), s["match"])),
         ]);
-        Engine = new ActionEngine(Bus, Profile, Registry, Globals, Log, Queues, History, Random);
+        Engine = new ActionEngine(Bus, Profile, Registry, Globals, Log, Queues, History, Random, live);
         Engine.RunCompleted += r => Completed.Enqueue(r);
     }
 

@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Cuebot.App.ViewModels"
+             x:Class="Cuebot.App.Views.LiveGateView"
+             x:DataType="vm:LiveGateViewModel">
+  <StackPanel Spacing="4">
+    <CheckBox Content="Only while live" IsChecked="{Binding OnlyWhileLive}"
+              ToolTip.Tip="Ticked: this only runs while you are live on a connected platform. A platform Cuebot has not heard from yet counts as offline." />
+    <WrapPanel IsVisible="{Binding OnlyWhileLive}" Margin="28,0,0,0">
+      <TextBlock Classes="muted" Text="On (none ticked = any):" VerticalAlignment="Center" Margin="0,0,12,0" />
+      <CheckBox Content="Twitch" IsChecked="{Binding Twitch}" Margin="0,0,12,0" />
+      <CheckBox Content="YouTube" IsChecked="{Binding YouTube}" Margin="0,0,12,0" />
+      <CheckBox Content="Kick" IsChecked="{Binding Kick}" Margin="0,0,12,0" />
+      <CheckBox Content="Rumble" IsChecked="{Binding Rumble}" />
+    </WrapPanel>
+  </StackPanel>
+</UserControl>

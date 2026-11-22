@@ -75,6 +75,8 @@ More about variables: [Variables, the %words%](../actions/variables.md).
 - **Ignore messages sent from Cuebot**: stops a command from starting itself when Cuebot writes it in chat.
 - **Sources**: limit the command to some chats, one per line, like `Twitch`, `YouTube` or `Twitch:Whisper`. Empty
   means every chat on every platform.
+- **Only while live**: the command only works while you are live, on any connected platform or on the ones you tick.
+  Offline it stays silent and does not use up its cooldown.
 
 ### Text replies
 

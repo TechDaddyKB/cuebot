@@ -165,6 +165,8 @@ Click a trigger to see its details under the list:
 - **TRIGGER · Twitch** and its name, then a plain explanation of when it fires.
 - **Enabled**: the same as the on/off switch.
 - **Always run**: only on triggers with a minimum and a maximum, like bits or viewers. See below.
+- **Only while live**: the trigger only fires while you are live, on any connected platform or on the ones you tick. A
+  platform Cuebot has not heard from yet counts as offline. **Test trigger** still works while offline.
 - Its **settings** (often called filters): they make the trigger pickier. A channel point trigger can be set to one
   reward, a command trigger to one command. Each setting has a hint under it.
 ![The Raid trigger with Variables this gives your action opened: %user%, %userName%, %userId% and %viewers%](../../assets/screens/actions-trigger-variables.png)

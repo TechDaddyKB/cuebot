@@ -102,6 +102,16 @@ public sealed class TimerItemViewModel : ObservableObject
         set => Set(Definition.MinChatLines, (int)Math.Max(0, value ?? 0), v => Definition.MinChatLines = v);
     }
 
+    /// <summary>The "Only while live" option.</summary>
+    public LiveGateViewModel LiveGate => _liveGate ??= new LiveGateViewModel(() => Definition.OnlyWhileLive, () => Definition.LivePlatforms, (on, platforms) =>
+    {
+        Definition.OnlyWhileLive = on;
+        Definition.LivePlatforms = platforms;
+        OnPropertyChanged(nameof(ScheduleSummary));
+        _changed();
+    });
+    private LiveGateViewModel? _liveGate;
+
     /// <summary>5-field cron schedule; blank uses the interval instead.</summary>
     public string Cron
     {
@@ -149,6 +159,7 @@ public sealed class TimerItemViewModel : ObservableObject
                 : $"every {d.IntervalSeconds} s";
             if (!d.Repeat) schedule = "once, " + schedule.Replace("every ", "after ");
             if (d.MinChatLines > 0) schedule += $", if {d.MinChatLines}+ chat lines";
+            if (d.OnlyWhileLive) schedule += d.LivePlatforms is { Count: > 0 } live ? $", only while live on {string.Join("/", live)}" : ", only while live";
             return schedule;
         }
     }

@@ -3,7 +3,8 @@
     "input.keyPress": {
       "description": "Presses keys on your keyboard for you, in the app that is in front. On Linux your desktop asks once for permission. Fails with an error when the keys cannot be read or sent.",
       "parameters": {
-        "keys": "The keys to press, like \"Ctrl+Shift+F1\". Split several with commas, like \"Ctrl+C, Ctrl+V\". SendKeys text like \"^c\" or \"{ENTER}\" works too."
+        "keys": "The keys to press, like \"Ctrl+Shift+F1\". Split several with commas, like \"Ctrl+C, Ctrl+V\". SendKeys text like \"^c\" or \"{ENTER}\" works too.",
+        "holdMs": "Optional. How many milliseconds to keep each combination down before letting go, up to 300000. Leave it out for a normal press."
       },
       "returns": "true when the keys were pressed.",
       "example": { "keys": "Ctrl+Shift+F1" }

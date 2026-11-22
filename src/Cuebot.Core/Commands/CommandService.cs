@@ -26,14 +26,16 @@ public sealed class CommandService : IPeriodicService, IDisposable
     private readonly GroupStore _groups;
     private readonly EventBus _bus;
     private readonly AppLog _log;
+    private readonly Chat.StreamLiveState _live;
     private readonly IDisposable _subscription;
     private readonly ViewerStatusCache? _status;
     private readonly AccountStandings? _standings;
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _lookups = new(StringComparer.Ordinal);
 
     public CommandService(CommandStore store, GroupStore groups, EventBus bus, AppLog log, TimeProvider? time = null,
-        ViewerStatusCache? status = null, AccountStandings? standings = null)
+        ViewerStatusCache? status = null, AccountStandings? standings = null, Chat.StreamLiveState? live = null)
     {
+        _live = live ?? new Chat.StreamLiveState();
         _status = status;
         _standings = standings;
         _store = store;
@@ -65,6 +67,7 @@ public sealed class CommandService : IPeriodicService, IDisposable
             var hasReply = !string.IsNullOrWhiteSpace(command.Reply);
             if ((command.IgnoreBotAccount || hasReply) && (args.GetBool("isBot") || args.GetBool("isBotAccount"))) continue;
             if ((command.IgnoreInternal || hasReply) && args.GetBool("isInternal")) continue;
+            if (!_live.Allows(command.OnlyWhileLive, command.LivePlatforms)) continue;
             if (!SourceMatches(command, args)) continue;
 
             CommandMatch? match;

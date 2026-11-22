@@ -31,6 +31,7 @@ public sealed class TimerService : IDisposable
     private readonly IReadOnlyList<IPeriodicService> _periodic;
     private readonly AppLog? _log;
     private readonly Random _random;
+    private readonly StreamLiveState _live;
     private readonly Dictionary<Guid, Runtime> _state = [];
     private readonly object _gate = new();
     private readonly CancellationTokenSource _cts = new();
@@ -39,7 +40,7 @@ public sealed class TimerService : IDisposable
     private bool _disposed;
 
     public TimerService(ProfileService profile, EventBus bus, TimeProvider? time = null,
-        IEnumerable<IPeriodicService>? periodic = null, AppLog? log = null, Random? random = null)
+        IEnumerable<IPeriodicService>? periodic = null, AppLog? log = null, Random? random = null, StreamLiveState? live = null)
     {
         _profile = profile;
         _bus = bus;
@@ -47,6 +48,7 @@ public sealed class TimerService : IDisposable
         _periodic = periodic?.ToArray() ?? [];
         _log = log;
         _random = random ?? new Random();
+        _live = live ?? new StreamLiveState();
         _subscription = bus.Subscribe(OnEvent);
     }
 
@@ -156,7 +158,7 @@ public sealed class TimerService : IDisposable
         if (now < rt.Due) return null;
 
         var lines = rt.Lines;
-        if (timer.MinChatLines > 0 && lines < timer.MinChatLines)
+        if ((timer.MinChatLines > 0 && lines < timer.MinChatLines) || !_live.Allows(timer.OnlyWhileLive, timer.LivePlatforms))
         {
             Arm(timer, rt, now, resetLines: false); // skip this cycle; keep counting
             return null;

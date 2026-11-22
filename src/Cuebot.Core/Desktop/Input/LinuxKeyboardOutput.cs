@@ -84,6 +84,7 @@ internal sealed class LinuxKeyboardOutput(AppLog log, Func<string?>? loadToken, 
 
     public override void Dispose()
     {
+        ReleaseHeldKeys();
         _backend?.Dispose();
         _choose.Dispose();
         base.Dispose();

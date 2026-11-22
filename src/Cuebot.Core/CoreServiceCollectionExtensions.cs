@@ -29,6 +29,7 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton(sp => new ProfileService(paths, sp.GetRequiredService<AppLog>()));
         services.AddSingleton<Registry>(sp => new Registry(
             sp.GetServices<ISubActionHandler>(), sp.GetServices<ITriggerType>(), sp.GetServices<ITriggerProvider>()));
+        services.AddSingleton(sp => new Chat.StreamLiveState(() => sp.GetServices<Chat.IStreamLiveStatus>()));
         services.AddSingleton<ActionEngine>();
         services.AddSingleton<ScriptApi>();
         services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(30) });
