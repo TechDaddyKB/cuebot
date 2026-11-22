@@ -1,7 +1,11 @@
 namespace Cuebot.App.Shell;
 
 /// <summary>One keyboard shortcut. <see cref="Id"/> names the window command it runs (window shortcuts only).</summary>
-public sealed record AppShortcut(string Id, string Gesture, string Description, string Where);
+/// <param name="Keys">The key gestures to bind when <paramref name="Gesture"/> is only display text (Ctrl+=).</param>
+public sealed record AppShortcut(string Id, string Gesture, string Description, string Where, IReadOnlyList<string>? Keys = null)
+{
+    public IReadOnlyList<string> Bindings => Keys ?? [Gesture];
+}
 
 /// <summary>
 /// The app's keyboard shortcuts (after Streamer.bot's documented ones). The main window builds its KeyBindings from
@@ -18,6 +22,9 @@ public static class AppShortcuts
         new("jump", "Ctrl+K", "Jump to a page", Anywhere),
         new("help", "F1", "Open the Support page", Anywhere),
         new("fullScreen", "F11", "Full screen on or off (Esc also leaves full screen)", Anywhere),
+        new("zoomIn", "Ctrl+=", "Zoom in", Anywhere, ["Ctrl+OemPlus", "Ctrl+Shift+OemPlus", "Ctrl+Add"]),
+        new("zoomOut", "Ctrl+-", "Zoom out (in the Commands list this key collapses groups)", Anywhere, ["Ctrl+OemMinus", "Ctrl+Subtract"]),
+        new("zoomReset", "Ctrl+0", "Zoom back to 100%", Anywhere, ["Ctrl+D0", "Ctrl+NumPad0"]),
         new("testTrigger", "F5", "Test the selected action's trigger", ActionsPage),
         new("import", "Ctrl+Alt+I", "Import (opens Import / Export)", Anywhere),
         new("export", "Ctrl+Alt+E", "Export (opens Import / Export)", Anywhere),
@@ -29,7 +36,11 @@ public static class AppShortcuts
     /// <summary>Handled by the Actions page itself (they depend on which list has focus).</summary>
     public static readonly IReadOnlyList<AppShortcut> Actions =
     [
-        new("", "Delete", "Delete the selected trigger or sub-action (in the action list: the action, press twice)", ActionsPage),
+        new("", "Delete", "Delete the selected trigger or sub-actions (in the action list: the actions, press twice)", ActionsPage),
+        new("", "Ctrl+Click / Shift+Click", "Select several actions, or several sub-actions of one list", ActionsPage),
+        new("", "Ctrl+A", "Select every action, or every sub-action of the list", ActionsPage),
+        new("", "Ctrl+G", "Put the selected sub-actions in a new group", ActionsPage),
+        new("", "Esc", "Back to one selected sub-action", ActionsPage),
         new("", "Ctrl+D", "Duplicate the selected action, trigger or sub-action", ActionsPage),
         new("", "Ctrl+O", "Turn the selected action, trigger or sub-action on or off", ActionsPage),
         new("", "Ctrl+Up / Ctrl+Down", "Move the selected sub-action up or down", ActionsPage),

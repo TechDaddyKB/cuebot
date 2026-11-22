@@ -64,6 +64,9 @@ public sealed partial class ChatOptionsViewModel : ObservableObject
         ActionNames = actionNames;
         ShowEmotes = settings.ShowEmotes;
         ShowPronouns = settings.ShowPronouns;
+        ChatTextSize = double.IsFinite(settings.TextSize)
+            ? (decimal)Math.Clamp(settings.TextSize, ChatPageSettings.MinTextSize, ChatPageSettings.MaxTextSize)
+            : (decimal)ChatPageSettings.DefaultTextSize;
         HighlightMentions = settings.Highlights.Mentions;
         HighlightFirstTime = settings.Highlights.FirstTimeChatters;
         MentionNames = string.Join(", ", settings.Highlights.MentionNames);
@@ -150,6 +153,22 @@ public sealed partial class ChatOptionsViewModel : ObservableObject
 
     partial void OnShowEmotesChanged(bool value) { _settings.ShowEmotes = value; Save(); }
     partial void OnShowPronounsChanged(bool value) { _settings.ShowPronouns = value; Save(); }
+
+    /// <summary>Size of the chat message text (a number box, so it can be briefly empty while typing).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ChatFontSize))]
+    private decimal? _chatTextSize = (decimal)ChatPageSettings.DefaultTextSize;
+
+    public double ChatFontSize => Math.Clamp((double)(ChatTextSize ?? (decimal)ChatPageSettings.DefaultTextSize),
+        ChatPageSettings.MinTextSize, ChatPageSettings.MaxTextSize);
+
+    partial void OnChatTextSizeChanged(decimal? value)
+    {
+        if (value is null) return;
+        _settings.TextSize = ChatFontSize;
+        Save();
+    }
+
     partial void OnHighlightMentionsChanged(bool value) { _settings.Highlights.Mentions = value; Save(); }
     partial void OnHighlightFirstTimeChanged(bool value) { _settings.Highlights.FirstTimeChatters = value; Save(); }
     partial void OnMentionNamesChanged(string value) { _settings.Highlights.MentionNames = SplitList(value); Save(); }

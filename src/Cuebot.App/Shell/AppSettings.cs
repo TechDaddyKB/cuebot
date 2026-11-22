@@ -33,6 +33,12 @@ public sealed class GeneralSettings
 
     /// <summary>Boxes dragged or added on the action flowchart snap to its dot grid.</summary>
     public bool FlowchartSnapToGrid { get; set; } = true;
+
+    /// <summary>Interface zoom, 0.8 to 2.0 (see <see cref="UiZoom"/>).</summary>
+    public double UiScale { get; set; } = UiZoom.Default;
+
+    /// <summary>Tighter rows, cards and controls, at the same text size.</summary>
+    public bool CompactDensity { get; set; }
 }
 
 /// <summary>How text templates format values (applied to the shared <c>TextEnvironment</c>).</summary>
@@ -170,6 +176,7 @@ public sealed class AppSettingsStore
             settings.General ??= new GeneralSettings();
             settings.Backups ??= new BackupSettings();
             settings.Text ??= new TextSettings();
+            settings.General.UiScale = UiZoom.Normalize(settings.General.UiScale);
             if (settings.Backups.Keep < 1) settings.Backups.Keep = BackupSettings.DefaultKeep;
             settings.Backups.GoogleDrive ??= new GoogleDriveBackupSettings();
             if (settings.Backups.GoogleDrive.Keep < 1) settings.Backups.GoogleDrive.Keep = GoogleDriveBackupSettings.DefaultKeep;

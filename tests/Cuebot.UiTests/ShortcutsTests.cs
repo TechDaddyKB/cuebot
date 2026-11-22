@@ -83,8 +83,11 @@ public sealed class ShortcutsTests : IAsyncDisposable
         var (window, vm) = Open();
         foreach (var shortcut in AppShortcuts.Window)
         {
-            var binding = Assert.Single(window.KeyBindings, k => k.Gesture == KeyGesture.Parse(shortcut.Gesture));
-            Assert.Same(vm.ShortcutCommands[shortcut.Id], binding.Command);
+            foreach (var gesture in shortcut.Bindings)
+            {
+                var binding = Assert.Single(window.KeyBindings, k => k.Gesture == KeyGesture.Parse(gesture));
+                Assert.Same(vm.ShortcutCommands[shortcut.Id], binding.Command);
+            }
         }
         Assert.Equal(AppShortcuts.All, new SettingsView().FindControl<ItemsControl>("ShortcutList")!.ItemsSource);
 

@@ -67,6 +67,24 @@ Keys while the list has the focus (click an action first):
 | ++delete++ | Asks first: the line under the buttons says *Press Delete again to delete the action 'Name'.* Press ++delete++ again within 5 seconds to delete it. |
 | ++ctrl+o++ | Switch the action on or off. |
 | ++ctrl+c++ / ++ctrl+v++ / ++ctrl+d++ | Copy, paste, duplicate the action. |
+| ++ctrl+a++ | Select every action in the list. |
+
+### Work on several actions at once
+
+++ctrl++ + click adds or removes an action from the selection (++cmd++ on a Mac). ++shift++ + click selects a whole
+run of actions. With two or more selected, a panel takes the place of the editor:
+
+| In the panel | What it does |
+| --- | --- |
+| **Turn on** / **Turn off** | Switches all of them. ++ctrl+o++ does the same: if any are off, the first press turns them all on. |
+| **Duplicate** | Makes a copy of each one and selects the copies. |
+| **Copy** | Copies them all. Paste them here or into another Cuebot. |
+| **Delete** | Deletes them all. **Undo delete** brings them all back, in their old places. In the list, ++delete++ asks first. |
+| **Move to group** | Type or pick a group and press **Move**. Leave it empty to take them out of their group. |
+| **↶** / **↷** | Undo or redo the last change made here, on all of them at once. |
+
+The right-click menu works on the whole selection too. If you edited one of the actions after a bulk change, undo
+leaves that one as it is and tells you. Click a single action to go back to editing it.
 
 ## The action header
 
@@ -227,6 +245,21 @@ Changes save by themselves. Typing in a box counts as one undo step per pause.
 - These never move a step into or out of a branch. To do that, drag it on the [Flowchart](flowchart.md#move-a-step-to-another-place-rewire),
   or copy it, select the place you want, paste, and delete the old one.
 
+### Work on several sub-actions at once
+
+In the list, ++ctrl++ + click adds or removes a step (++cmd++ on a Mac), ++shift++ + click selects a run of steps, and
+++ctrl+a++ selects the whole list. A selection stays inside **one list**: clicking a step in another branch starts a
+new selection there. ++esc++ goes back to one step.
+
+With two or more selected, buttons appear under the list in place of the step's details:
+
+- **Turn on** / **Turn off**, **Duplicate**, **Copy** and **Delete** work on all of them.
+- **Group** (++ctrl+g++) puts them in a new [Group](logic-and-branches.md) where the first one was.
+- **↑** / **↓**, ++ctrl+home++ and ++ctrl+end++ move them together and keep their order.
+- **Paste** puts what you copied after the last selected step.
+
+Each of these is **one** undo step. The flowchart works on one box at a time, so opening it goes back to one selected step.
+
 ### Right-click menu
 
 Right-click a step (it gets selected first) for:
@@ -304,7 +337,9 @@ the whole action is duplicated.
 - It remembers up to 100 changes, until you close Cuebot.
 - Typing in one box is merged into one undo step per pause. Ticking a box is one step each.
 - Moving boxes on the flowchart and **Auto-arrange** can be undone too.
-- A deleted **whole action** comes back with **Undo delete** (see [the actions list](#the-actions-list)).
+- A deleted **whole action** comes back with **Undo delete** (see [the actions list](#the-actions-list)). Actions
+  deleted together come back together.
+- A change to [several actions at once](#work-on-several-actions-at-once) is one undo step while they are still selected.
 
 ## Keyboard shortcuts
 
@@ -323,7 +358,9 @@ and ++ctrl+z++ work on the text as usual). They work the same in the list and on
 | ++ctrl+up++ / ++ctrl+down++ | Move the selected sub-action up / down. |
 | ++ctrl+home++ / ++ctrl+end++ | Move the selected sub-action to the top / bottom of its list. |
 | ++ctrl+r++ | With a **Group** step selected: jump to its **Name** box to rename it. |
-| ++esc++ | Close the search window or the test window. |
+| ++ctrl+g++ | Put the selected sub-actions in a new **Group**. |
+| ++ctrl+a++ | Select every action (in the actions list) or every sub-action of the list. |
+| ++esc++ | Close the search window or the test window. With several sub-actions selected: back to one. |
 
 The **Settings** page lists every Cuebot shortcut.
 

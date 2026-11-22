@@ -154,6 +154,7 @@
         </StackPanel>
 
         <ListBox x:Name="ChatList" ItemsSource="{Binding Messages}" SelectedItem="{Binding SelectedLine}" Background="Transparent"
+                 FontSize="{Binding Options.ChatFontSize}"
                  ContextRequested="OnChatContextRequested">
           <ListBox.ItemTemplate>
             <DataTemplate DataType="vm:ChatLineViewModel">
@@ -588,6 +589,12 @@
             <TextBlock Text="Display" FontWeight="SemiBold" />
             <CheckBox x:Name="ShowEmotesBox" Content="Show emotes as images" IsChecked="{Binding ShowEmotes}" ToolTip.Tip="Ticked: emotes appear as little pictures. Unticked: you see just their names as text." />
             <CheckBox Content="Show pronouns (Twitch, alejo.io)" IsChecked="{Binding ShowPronouns}" ToolTip.Tip="Shows he/she/they next to a chatter when they have set it on alejo.io (a pronoun website)." />
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="Chat text size" VerticalAlignment="Center" />
+              <NumericUpDown x:Name="ChatTextSizeBox" Value="{Binding ChatTextSize}" Minimum="10" Maximum="28" Increment="1" FormatString="0" Width="110"
+                             AutomationProperties.Name="Chat text size" ToolTip.Tip="How big chat messages are, from 10 to 28. The default is 13." />
+            </StackPanel>
 
             <TextBlock Text="Highlights" FontWeight="SemiBold" Margin="0,8,0,0" />
             <CheckBox Content="Mentions of these names" IsChecked="{Binding HighlightMentions}" ToolTip.Tip="Colours a message when someone writes one of your names, so you do not miss it." />

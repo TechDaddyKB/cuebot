@@ -84,8 +84,15 @@ public sealed partial class ActionsViewModel : PageViewModel
     [ObservableProperty] private string _filter = "";
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]
+    [NotifyPropertyChangedFor(nameof(ShowsEditor))]
     private ActionItemViewModel? _selectedAction;
     [ObservableProperty] private bool _isGraphView;
+
+    // The flowchart works on one box at a time, so it must not act on a block it does not show.
+    partial void OnIsGraphViewChanged(bool value)
+    {
+        if (value) SelectedAction?.CollapseStepSelection();
+    }
 
     /// <summary>Flowchart boxes snap to the dot grid when dragged or added (remembered in app.json).</summary>
     [ObservableProperty] private bool _snapToGrid;
@@ -110,8 +117,140 @@ public sealed partial class ActionsViewModel : PageViewModel
         if (Picker.IsOpen) Picker.CancelCommand.Execute(null);
     }
 
-    public bool CanUndo => SelectedAction is { } a && History(a).CanUndo;
-    public bool CanRedo => SelectedAction is { } a && History(a).CanRedo;
+    public bool CanUndo => IsBulkSelection ? _bulkUndo.Count > 0 : SelectedAction is { } a && History(a).CanUndo;
+    public bool CanRedo => IsBulkSelection ? _bulkRedo.Count > 0 : SelectedAction is { } a && History(a).CanRedo;
+
+    // ---- Several actions selected ----
+
+    private IReadOnlyList<ActionItemViewModel> _selectedActions = [];
+
+    /// <summary>One bulk edit: each changed action's id and the state that edit left it in.</summary>
+    private sealed record BulkStep(IReadOnlyList<(Guid Id, string State)> Actions);
+
+    private readonly Stack<BulkStep> _bulkUndo = new();
+    private readonly Stack<BulkStep> _bulkRedo = new();
+
+    /// <summary>Asks the view to select these rows (after a bulk duplicate, paste, undo or restore).</summary>
+    public event Action<IReadOnlyList<ActionItemViewModel>>? ActionSelectionRequested;
+
+    /// <summary>The selected actions in list order.</summary>
+    public IReadOnlyList<ActionItemViewModel> SelectedActions => _selectedActions;
+
+    /// <summary>Two or more actions are selected: the bulk panel replaces the editor.</summary>
+    public bool IsBulkSelection => _selectedActions.Count > 1;
+
+    public bool ShowsEditor => HasSelection && !IsBulkSelection;
+
+    public string BulkTitle => $"{_selectedActions.Count} actions selected";
+    public string CopyActionHeader => IsBulkSelection ? $"Copy {_selectedActions.Count} actions" : "Copy action";
+    public string DuplicateActionHeader => IsBulkSelection ? $"Duplicate {_selectedActions.Count} actions" : "Duplicate action";
+    public string DeleteActionHeader => IsBulkSelection ? $"Delete {_selectedActions.Count} actions" : "Delete action";
+
+    /// <summary>The group the bulk panel moves the selection to (empty: no group).</summary>
+    [ObservableProperty] private string _bulkGroup = "";
+
+    /// <summary>The groups in use, as suggestions for <see cref="BulkGroup"/>.</summary>
+    public IReadOnlyList<string> GroupNames => _all.Select(a => a.Group).Where(g => g.Length > 0)
+        .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToArray();
+
+    /// <summary>Takes the list's selection (the view calls this whenever it changes).</summary>
+    public void SetSelectedActions(IEnumerable<ActionItemViewModel> items)
+    {
+        var wanted = items.ToHashSet();
+        var next = Actions.Where(wanted.Contains).ToArray();
+        if (next.SequenceEqual(_selectedActions)) return;
+        var wasBulk = IsBulkSelection;
+        _selectedActions = next;
+        OnPropertyChanged(nameof(SelectedActions));
+        OnPropertyChanged(nameof(IsBulkSelection));
+        OnPropertyChanged(nameof(ShowsEditor));
+        OnPropertyChanged(nameof(BulkTitle));
+        OnPropertyChanged(nameof(CopyActionHeader));
+        OnPropertyChanged(nameof(DuplicateActionHeader));
+        OnPropertyChanged(nameof(DeleteActionHeader));
+        if (IsBulkSelection && !wasBulk) OnPropertyChanged(nameof(GroupNames));
+        RaiseUndoState();
+    }
+
+    /// <summary>Selects these actions, here and in the list.</summary>
+    private void SelectActions(IReadOnlyList<ActionItemViewModel> items)
+    {
+        if (items.Count == 0) return;
+        if (SelectedAction is null || !items.Contains(SelectedAction)) SelectedAction = items[0];
+        SetSelectedActions(items);
+        ActionSelectionRequested?.Invoke(_selectedActions);
+    }
+
+    /// <summary>What the action-level commands work on: the whole selection, or the one selected action.</summary>
+    private IReadOnlyList<ActionItemViewModel> ActionTargets() =>
+        IsBulkSelection ? _selectedActions : SelectedAction is { } action ? [action] : [];
+
+    /// <summary>Applies one change to every selected action, as one undo step.</summary>
+    private void BulkEdit(Action<ActionItemViewModel> edit, Func<int, string> status)
+    {
+        var changed = new List<(Guid, string)>();
+        var targets = ActionTargets();
+        foreach (var item in targets)
+        {
+            var history = History(item);   // made before the edit, so it holds the state to go back to
+            var before = Snapshot(item.Definition);
+            if (before != history.Current) AdoptOutsideChange(history, before);
+            using (item.Batch()) edit(item);
+            var after = Snapshot(item.Definition);
+            if (after != before) changed.Add((item.Definition.Id, after));
+        }
+        if (changed.Count > 0)
+        {
+            _bulkUndo.Push(new BulkStep(changed));
+            _bulkRedo.Clear();
+        }
+        ApplyFilter();   // a new group sorts differently
+        SelectActions(targets.Where(Actions.Contains).ToArray());
+        RaiseUndoState();
+        EditStatus = status(changed.Count);
+    }
+
+    [RelayCommand]
+    private void BulkTurnOn() => BulkEdit(a => a.Enabled = true, n => $"Turned on {Plural(n, "action")}.");
+
+    [RelayCommand]
+    private void BulkTurnOff() => BulkEdit(a => a.Enabled = false, n => $"Turned off {Plural(n, "action")}.");
+
+    [RelayCommand]
+    private void BulkMoveToGroup()
+    {
+        var group = BulkGroup.Trim();
+        BulkEdit(a => a.Group = group, n => group.Length == 0
+            ? $"Took {Plural(n, "action")} out of their group."
+            : $"Moved {Plural(n, "action")} to '{group}'.");
+        OnPropertyChanged(nameof(GroupNames));
+    }
+
+    /// <summary>Takes back the last bulk edit on every action it changed, unless that action was edited since.</summary>
+    private void StepBulk(Stack<BulkStep> from, Stack<BulkStep> to, Func<EditHistory, string?> move, string done)
+    {
+        if (!from.TryPop(out var step)) return;
+        var reversed = new List<(Guid, string)>();
+        var touched = new List<Guid>();
+        var skipped = 0;
+        foreach (var (id, state) in step.Actions)
+        {
+            if (_all.FirstOrDefault(a => a.Definition.Id == id) is not { } item || History(item).Current != state)
+            {
+                skipped++;
+                continue;
+            }
+            if (move(History(item)) is not { } restored) continue;
+            Restore(item, restored);
+            reversed.Add((id, restored));
+            touched.Add(id);
+        }
+        if (reversed.Count > 0) to.Push(new BulkStep(reversed));
+        SelectActions(Actions.Where(a => touched.Contains(a.Definition.Id)).ToArray());
+        RaiseUndoState();
+        EditStatus = skipped == 0 ? $"{done} {Plural(reversed.Count, "action")}."
+            : $"{done} {Plural(reversed.Count, "action")}; {skipped} changed since and stayed as they are.";
+    }
 
     partial void OnFilterChanged(string value) => ApplyFilter();
 
@@ -123,6 +262,8 @@ public sealed partial class ActionsViewModel : PageViewModel
             var now = Snapshot(value.Definition);
             if (now != history.Current) AdoptOutsideChange(history, now);
         }
+        // A row outside the multi-selection replaces it; a row inside it is just the new primary.
+        if (value is null || !_selectedActions.Contains(value)) SetSelectedActions(value is null ? [] : [value]);
         RaiseUndoState();
     }
 
@@ -191,6 +332,7 @@ public sealed partial class ActionsViewModel : PageViewModel
             action.GroupHeader = first ? (action.Group.Length == 0 ? "No group" : action.Group) : null;
             action.GroupCount = first ? Actions.Count(a => string.Equals(a.Group, action.Group, StringComparison.OrdinalIgnoreCase)) : 0;
         }
+        SetSelectedActions(_selectedActions);   // drops rows the search hid or a delete removed, and keeps list order
         OnPropertyChanged(nameof(ActionCount));
     }
 
@@ -233,11 +375,42 @@ public sealed partial class ActionsViewModel : PageViewModel
     private void DuplicateAction()
     {
         if (SelectedAction is null) return;
+        if (IsBulkSelection)
+        {
+            var copies = AddAll(_selectedActions.Select(a =>
+            {
+                var clone = Json.Clone(a.Definition);
+                EditorClip.NewIds(clone);
+                return clone;
+            }).ToArray());
+            EditStatus = $"Duplicated {Plural(copies.Count, "action")}.";
+            return;
+        }
         var copy = Json.Clone(SelectedAction.Definition);
         EditorClip.NewIds(copy);
         copy.Name = UniqueName(copy.Name);
         Add(copy);
         EditStatus = $"Duplicated as '{copy.Name}'.";
+    }
+
+    /// <summary>Adds several actions under unique names, publishes once, and selects them.</summary>
+    private IReadOnlyList<ActionItemViewModel> AddAll(IReadOnlyList<ActionDefinition> definitions)
+    {
+        var added = new List<ActionItemViewModel>();
+        foreach (var definition in definitions)
+        {
+            definition.Name = UniqueName(definition.Name);
+            var item = Wrap(definition);
+            _all.Add(item);
+            _profile.Profile.Actions.Add(definition);
+            added.Add(item);
+        }
+        _profile.NotifyChanged();
+        if (Filter.Length > 0) Filter = "";
+        else ApplyFilter();
+        SelectedAction = added[0];
+        SelectActions(added);
+        return added;
     }
 
     /// <summary>
@@ -286,28 +459,38 @@ public sealed partial class ActionsViewModel : PageViewModel
     /// <summary>How many deleted actions "Undo delete" can bring back.</summary>
     public const int DeletedKept = 20;
 
-    private readonly List<(ActionDefinition Definition, int Index, EditHistory? History)> _deleted = [];
+    /// <summary>One press of Delete: the actions it removed, each with its old place and undo history.</summary>
+    private readonly List<(ActionDefinition Definition, int Index, EditHistory? History)[]> _deleted = [];
 
-    /// <summary>"Deleted 'Name'." while a deleted action can be brought back, else null (the notice is hidden).</summary>
-    public string? DeletedNotice => _deleted.Count == 0 ? null : $"Deleted '{_deleted[^1].Definition.Name}'.";
+    /// <summary>"Deleted 'Name'." while deleted actions can be brought back, else null (the notice is hidden).</summary>
+    public string? DeletedNotice => _deleted.Count == 0 ? null
+        : _deleted[^1].Length == 1 ? $"Deleted '{_deleted[^1][0].Definition.Name}'." : $"Deleted {_deleted[^1].Length} actions.";
 
     public bool CanRestoreDeleted => _deleted.Count > 0;
 
     [RelayCommand]
     private void DeleteAction()
     {
-        if (SelectedAction is not { } action) return;
-        var index = _profile.Profile.Actions.IndexOf(action.Definition);
-        _profile.Profile.Actions.Remove(action.Definition);
+        var targets = ActionTargets();
+        if (targets.Count == 0) return;
+        // Oldest place first, so bringing them back in this order puts each where it was.
+        var batch = targets
+            .Select(a => (a.Definition, Index: _profile.Profile.Actions.IndexOf(a.Definition), History: _histories.GetValueOrDefault(a.Definition.Id)))
+            .OrderBy(d => d.Index)
+            .ToArray();
+        foreach (var item in targets)
+        {
+            _profile.Profile.Actions.Remove(item.Definition);
+            _all.Remove(item);
+            _histories.Remove(item.Definition.Id);
+        }
         _profile.NotifyChanged();
-        _all.Remove(action);
-        _deleted.Add((action.Definition, index, _histories.GetValueOrDefault(action.Definition.Id)));
+        _deleted.Add(batch);
         if (_deleted.Count > DeletedKept) _deleted.RemoveAt(0);
-        _histories.Remove(action.Definition.Id);
         SelectedAction = null;
         ApplyFilter();
         RaiseDeletedState();
-        EditStatus = $"Deleted '{action.Name}'.";
+        EditStatus = batch.Length == 1 ? $"Deleted '{batch[0].Definition.Name}'." : $"Deleted {batch.Length} actions.";
     }
 
     /// <summary>Brings back the most recently deleted action, in its old place, with its undo history.</summary>
@@ -315,23 +498,30 @@ public sealed partial class ActionsViewModel : PageViewModel
     private void RestoreDeleted()
     {
         if (_deleted.Count == 0) return;
-        var (definition, index, history) = _deleted[^1];
+        var batch = _deleted[^1];
         _deleted.RemoveAt(_deleted.Count - 1);
-        if (_profile.Profile.Actions.Any(a => a.Id == definition.Id))
+        var restored = new List<ActionItemViewModel>();
+        foreach (var (definition, index, history) in batch)
+        {
+            if (_profile.Profile.Actions.Any(a => a.Id == definition.Id)) continue;   // already back (an import or the API added it again)
+            if (history is not null) _histories[definition.Id] = history;
+            var item = Wrap(definition);
+            _all.Add(item);
+            _profile.Profile.Actions.Insert(Math.Clamp(index, 0, _profile.Profile.Actions.Count), definition);
+            restored.Add(item);
+        }
+        if (restored.Count == 0)
         {
             RaiseDeletedState();
-            return;   // already back (an import or the API added it again)
+            return;
         }
-        if (history is not null) _histories[definition.Id] = history;
-        var item = Wrap(definition);
-        _all.Add(item);
-        _profile.Profile.Actions.Insert(Math.Clamp(index, 0, _profile.Profile.Actions.Count), definition);
         _profile.NotifyChanged();
         if (Filter.Length > 0) Filter = "";
         else ApplyFilter();
-        SelectedAction = item;
+        SelectedAction = restored[0];
+        SelectActions(restored);
         RaiseDeletedState();
-        EditStatus = $"Brought back '{definition.Name}'.";
+        EditStatus = restored.Count == 1 ? $"Brought back '{restored[0].Name}'." : $"Brought back {restored.Count} actions.";
     }
 
     /// <summary>Hides the "Deleted …" notice; the deleted actions are gone for good.</summary>
@@ -351,6 +541,7 @@ public sealed partial class ActionsViewModel : PageViewModel
 
     private Guid? _deleteArmedFor;
     private DateTime _deleteArmedAt;
+    private int _deleteArmedCount;
 
     /// <summary>
     /// The Delete key in the action list: the first press asks, a second press within 5 seconds deletes the action
@@ -360,16 +551,17 @@ public sealed partial class ActionsViewModel : PageViewModel
     {
         if (SelectedAction is not { } action) return false;
         var now = Clock();
-        if (_deleteArmedFor == action.Definition.Id && now - _deleteArmedAt < TimeSpan.FromSeconds(5))
+        var count = ActionTargets().Count;
+        if (_deleteArmedFor == action.Definition.Id && _deleteArmedCount == count && now - _deleteArmedAt < TimeSpan.FromSeconds(5))
         {
             _deleteArmedFor = null;
             DeleteAction();
-            EditStatus = $"Deleted '{action.Name}'.";
             return true;
         }
         _deleteArmedFor = action.Definition.Id;
+        _deleteArmedCount = count;
         _deleteArmedAt = now;
-        EditStatus = $"Press Delete again to delete the action '{action.Name}'.";
+        EditStatus = count > 1 ? $"Press Delete again to delete {count} actions." : $"Press Delete again to delete the action '{action.Name}'.";
         return false;
     }
 
@@ -377,6 +569,20 @@ public sealed partial class ActionsViewModel : PageViewModel
     public void ToggleEnabled(bool wholeAction)
     {
         if (SelectedAction is not { } action) return;
+        if (IsBulkSelection)
+        {
+            // Mixed selection: first press turns everything on, like a tri-state checkbox.
+            if (_selectedActions.Any(a => !a.Enabled)) BulkTurnOn();
+            else BulkTurnOff();
+            return;
+        }
+        if (!wholeAction && action.HasStepBlock)
+        {
+            var on = action.SelectedSteps.Any(s => !s.Enabled);
+            action.SetSelectedStepsEnabled(on);
+            EditStatus = $"{action.SelectedSteps.Count} sub-actions turned {(on ? "on" : "off")}.";
+            return;
+        }
         switch (wholeAction ? null : action.Selected)
         {
             case TriggerItemViewModel trigger:
@@ -432,7 +638,7 @@ public sealed partial class ActionsViewModel : PageViewModel
     [RelayCommand]
     private void TestTrigger()
     {
-        if (SelectedAction is not { } action) return;
+        if (IsBulkSelection || SelectedAction is not { } action) return;
         Test.Open(action, async (option, args) =>
         {
             var snapshot = _profile.Snapshot.Actions.FirstOrDefault(a => a.Id == action.Definition.Id) ?? action.Definition;
@@ -458,19 +664,52 @@ public sealed partial class ActionsViewModel : PageViewModel
     }
 
     [RelayCommand]
-    private void DeleteItem() => SelectedAction?.DeleteSelected();
+    private void DeleteItem()
+    {
+        if (IsBulkSelection || SelectedAction is not { } action) return;   // the editor is hidden: it has no selection to act on
+        var count = action.SelectedSteps.Count;
+        action.DeleteSelected();
+        if (count > 1) EditStatus = $"Deleted {count} sub-actions.";
+    }
 
     [RelayCommand]
-    private void MoveUp() => SelectedAction?.MoveSelected(-1);
+    private void MoveUp() { if (!IsBulkSelection) SelectedAction?.MoveSelected(-1); }
 
     [RelayCommand]
-    private void MoveDown() => SelectedAction?.MoveSelected(1);
+    private void MoveDown() { if (!IsBulkSelection) SelectedAction?.MoveSelected(1); }
 
     [RelayCommand]
-    private void MoveToTop() => SelectedAction?.MoveSelectedToEdge(top: true);
+    private void MoveToTop() { if (!IsBulkSelection) SelectedAction?.MoveSelectedToEdge(top: true); }
 
     [RelayCommand]
-    private void MoveToBottom() => SelectedAction?.MoveSelectedToEdge(top: false);
+    private void MoveToBottom() { if (!IsBulkSelection) SelectedAction?.MoveSelectedToEdge(top: false); }
+
+    [RelayCommand]
+    private void StepsTurnOn() => SetStepsEnabled(true);
+
+    [RelayCommand]
+    private void StepsTurnOff() => SetStepsEnabled(false);
+
+    private void SetStepsEnabled(bool enabled)
+    {
+        if (IsBulkSelection || SelectedAction is not { } action) return;
+        action.SetSelectedStepsEnabled(enabled);
+        EditStatus = $"{Plural(action.SelectedSteps.Count, "sub-action")} turned {(enabled ? "on" : "off")}.";
+    }
+
+    /// <summary>Ctrl+G: puts the selected sub-actions into a new Group.</summary>
+    [RelayCommand]
+    private void GroupSteps()
+    {
+        if (IsBulkSelection || SelectedAction is not { } action) return;
+        var count = action.SelectedSteps.Count;
+        if (action.WrapSelectionInGroup() is null)
+        {
+            EditStatus = "Select the sub-actions to put in a group first.";
+            return;
+        }
+        EditStatus = $"Put {Plural(count, "sub-action")} in a new group.";
+    }
 
     [RelayCommand]
     private void AutoArrange() => SelectedAction?.ClearLayout();
@@ -478,7 +717,10 @@ public sealed partial class ActionsViewModel : PageViewModel
     [RelayCommand]
     private void Select(EditorItemViewModel item)
     {
-        if (SelectedAction is not null) SelectedAction.Selected = item;
+        if (SelectedAction is not { } action) return;
+        // A plain click on the block's primary step changes no property, but still means "just this one".
+        if (ReferenceEquals(action.Selected, item)) action.CollapseStepSelection();
+        else action.Selected = item;
     }
 
     // ---- Copy / paste / duplicate ----
@@ -490,7 +732,11 @@ public sealed partial class ActionsViewModel : PageViewModel
     public async Task<EditorClip?> CopySelectionAsync(bool wholeAction)
     {
         if (SelectedAction is not { } action) return null;
-        var clip = wholeAction ? EditorClip.Of(action.Definition) : action.Selected switch
+        var clip = IsBulkSelection
+            ? new EditorClip { Kind = ClipKind.Actions, Actions = _selectedActions.Select(a => Json.Clone(a.Definition)).ToList() }
+            : wholeAction ? EditorClip.Of(action.Definition)
+            : action.HasStepBlock ? new EditorClip { Kind = ClipKind.SubActions, SubActions = action.SelectedSteps.Select(s => Json.Clone(s.Definition)).ToList() }
+            : action.Selected switch
         {
             TriggerItemViewModel t => EditorClip.Of(t.Definition),
             SubActionItemViewModel s => EditorClip.Of(s.Definition),
@@ -555,13 +801,17 @@ public sealed partial class ActionsViewModel : PageViewModel
         switch (fresh.Kind)
         {
             case ClipKind.Actions:
-                foreach (var a in fresh.Actions)
+                if (fresh.Actions.Count > 1) AddAll(fresh.Actions);
+                else
                 {
-                    a.Name = UniqueName(a.Name);
-                    Add(a);
+                    fresh.Actions[0].Name = UniqueName(fresh.Actions[0].Name);
+                    Add(fresh.Actions[0]);
                 }
                 EditStatus = $"Pasted {fresh.Describe()}.";
                 return true;
+            case ClipKind.SubActions or ClipKind.Triggers when IsBulkSelection:
+                EditStatus = $"Select one action to paste {fresh.Describe()} into.";
+                return false;
             case ClipKind.SubActions when SelectedAction is { } action:
                 action.InsertSteps(fresh.SubActions, action.DefaultInsertTarget());
                 EditStatus = $"Pasted {fresh.Describe()} into '{action.Name}'.";
@@ -588,6 +838,16 @@ public sealed partial class ActionsViewModel : PageViewModel
     private void DuplicateItem()
     {
         if (SelectedAction is not { } action) return;
+        if (IsBulkSelection)
+        {
+            DuplicateAction();
+            return;
+        }
+        if (action.HasStepBlock)
+        {
+            EditStatus = $"Duplicated {action.DuplicateSelectedSteps().Count} sub-actions.";
+            return;
+        }
         switch (action.Selected)
         {
             case SubActionItemViewModel step:
@@ -665,6 +925,11 @@ public sealed partial class ActionsViewModel : PageViewModel
     [RelayCommand(CanExecute = nameof(CanUndo))]
     private void Undo()
     {
+        if (IsBulkSelection)
+        {
+            StepBulk(_bulkUndo, _bulkRedo, h => h.Undo(), "Undone on");
+            return;
+        }
         if (SelectedAction is not { } action || History(action).Undo() is not { } state) return;
         Restore(action, state);
         EditStatus = "Undone.";
@@ -673,6 +938,11 @@ public sealed partial class ActionsViewModel : PageViewModel
     [RelayCommand(CanExecute = nameof(CanRedo))]
     private void Redo()
     {
+        if (IsBulkSelection)
+        {
+            StepBulk(_bulkRedo, _bulkUndo, h => h.Redo(), "Redone on");
+            return;
+        }
         if (SelectedAction is not { } action || History(action).Redo() is not { } state) return;
         Restore(action, state);
         EditStatus = "Redone.";
@@ -686,6 +956,7 @@ public sealed partial class ActionsViewModel : PageViewModel
         var at = _all.IndexOf(item);
         if (restored is null || index < 0 || at < 0) return;
         var selectedKey = item.SelectedKey;
+        var blockIds = item.HasStepBlock ? item.SelectedSteps.Select(s => s.Definition.Id).ToArray() : [];
         _profile.Profile.Actions[index] = restored;
         var replacement = Wrap(restored);
         _all[at] = replacement;
@@ -706,6 +977,7 @@ public sealed partial class ActionsViewModel : PageViewModel
             SelectedAction = replacement;
         }
         replacement.Select(selectedKey);
+        replacement.SelectSteps(blockIds);
         RaiseUndoState();
     }
 

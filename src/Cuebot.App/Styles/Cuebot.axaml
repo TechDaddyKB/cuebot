@@ -359,6 +359,34 @@
     <Setter Property="BorderThickness" Value="1" />
   </Style>
 
+  <!-- ===== Interface zoom and Compact density ===== -->
+  <!-- Menus, dropdowns, flyouts and tooltips are separate top-levels: this gives them the window's zoom. -->
+  <Style Selector="Popup">
+    <Setter Property="InheritsTransform" Value="True" />
+  </Style>
+  <Style Selector="Window.compact Border.card">
+    <Setter Property="Padding" Value="10" />
+    <Setter Property="Margin" Value="0,0,0,6" />
+  </Style>
+  <Style Selector="Window.compact Button.row">
+    <Setter Property="Padding" Value="6,2" />
+    <Setter Property="Margin" Value="0" />
+  </Style>
+  <Style Selector="Window.compact :is(Button):not(.row):not(.rail)">
+    <Setter Property="Padding" Value="8,3" />
+    <Setter Property="MinHeight" Value="26" />
+  </Style>
+  <Style Selector="Window.compact TextBox, Window.compact ComboBox, Window.compact NumericUpDown, Window.compact AutoCompleteBox">
+    <Setter Property="MinHeight" Value="26" />
+  </Style>
+  <Style Selector="Window.compact TabItem">
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="Padding" Value="10,2" />
+  </Style>
+  <Style Selector="Window.compact ListBoxItem">
+    <Setter Property="MinHeight" Value="0" />
+  </Style>
+
   <!-- ===== Pill tabs ===== -->
   <Style Selector="TabControl">
     <Setter Property="Padding" Value="0,8,0,0" />

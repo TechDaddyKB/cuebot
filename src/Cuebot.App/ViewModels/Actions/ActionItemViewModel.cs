@@ -51,17 +51,177 @@ public sealed partial class ActionItemViewModel : ObservableObject
 
     partial void OnSelectedChanged(EditorItemViewModel? oldValue, EditorItemViewModel? newValue)
     {
-        if (oldValue is not null) oldValue.IsSelected = false;
+        if (!_keepStepSelection)
+        {
+            // A plain selection replaces a multi-selection.
+            foreach (var step in _selectedSteps) step.IsSelected = false;
+            _selectedSteps.Clear();
+            if (newValue is SubActionItemViewModel single) _selectedSteps.Add(single);
+            _stepAnchor = newValue as SubActionItemViewModel;
+        }
+        if (oldValue is not null && !(oldValue is SubActionItemViewModel kept && _selectedSteps.Contains(kept))) oldValue.IsSelected = false;
         if (newValue is not null) newValue.IsSelected = true;
         OnPropertyChanged(nameof(SelectedTrigger));
+        RaiseStepSelection();
+    }
+
+    // ---- Several sub-actions selected (always from one list, so every block operation is well defined) ----
+
+    private readonly List<SubActionItemViewModel> _selectedSteps = [];
+    private SubActionItemViewModel? _stepAnchor;
+    private bool _keepStepSelection;
+
+    /// <summary>The selected sub-actions in list order (one list only). A single selected step counts.</summary>
+    public IReadOnlyList<SubActionItemViewModel> SelectedSteps =>
+        _selectedSteps.Where(s => s.Parent.Items.Contains(s)).OrderBy(s => s.Parent.Items.IndexOf(s)).ToArray();
+
+    /// <summary>Two or more sub-actions are selected: the details pane gives way to the block tools.</summary>
+    public bool HasStepBlock => SelectedSteps.Count > 1;
+
+    public string StepBlockSummary => $"{SelectedSteps.Count} sub-actions selected";
+
+    private void RaiseStepSelection()
+    {
         OnPropertyChanged(nameof(SelectedStep));
+        OnPropertyChanged(nameof(SelectedSteps));
+        OnPropertyChanged(nameof(HasStepBlock));
+        OnPropertyChanged(nameof(StepBlockSummary));
+    }
+
+    private void SetStepSelection(IEnumerable<SubActionItemViewModel> steps, SubActionItemViewModel primary)
+    {
+        var next = steps.ToList();
+        foreach (var step in _selectedSteps.Where(s => !next.Contains(s))) step.IsSelected = false;
+        _selectedSteps.Clear();
+        _selectedSteps.AddRange(next);
+        foreach (var step in next) step.IsSelected = true;
+        _keepStepSelection = true;
+        try { Selected = primary; }
+        finally { _keepStepSelection = false; }
+        RaiseStepSelection();
+    }
+
+    /// <summary>Ctrl/Cmd+click: adds or removes a step. A step from another list starts a new selection there.</summary>
+    public void ToggleStepSelection(SubActionItemViewModel step)
+    {
+        var current = SelectedSteps;
+        if (current.Count == 0 || current[0].Parent != step.Parent)
+        {
+            Selected = step;
+            return;
+        }
+        _stepAnchor = step;
+        if (!current.Contains(step))
+        {
+            SetStepSelection(current.Append(step), step);
+            return;
+        }
+        if (current.Count == 1) return;   // the last selected step stays selected
+        var rest = current.Where(s => s != step).ToArray();
+        SetStepSelection(rest, rest[^1]);
+    }
+
+    /// <summary>Shift+click: selects from the last clicked step to this one, within one list.</summary>
+    public void SelectStepRange(SubActionItemViewModel step)
+    {
+        var anchor = _stepAnchor is { } a && a.Parent == step.Parent && a.Parent.Items.Contains(a) ? a : null;
+        if (anchor is null)
+        {
+            Selected = step;
+            return;
+        }
+        var items = step.Parent.Items;
+        var (from, to) = (items.IndexOf(anchor), items.IndexOf(step));
+        if (from > to) (from, to) = (to, from);
+        SetStepSelection(items.Skip(from).Take(to - from + 1), step);
+    }
+
+    /// <summary>Ctrl+A: every step of the list the selection is in (the top-level list when nothing is selected).</summary>
+    public void SelectAllSteps()
+    {
+        var list = Selected switch
+        {
+            SubActionItemViewModel step => step.Parent,
+            BranchViewModel branch => branch.Steps,
+            _ => Steps,
+        };
+        if (list.Items.Count > 0) SetStepSelection(list.Items, list.Items[^1]);
+    }
+
+    /// <summary>Back to one selected step (the flowchart and Esc work on one).</summary>
+    public void CollapseStepSelection()
+    {
+        if (HasStepBlock && Selected is SubActionItemViewModel primary) SetStepSelection([primary], primary);
+    }
+
+    /// <summary>Selects these steps again after undo rebuilt the editor.</summary>
+    public void SelectSteps(IReadOnlyCollection<Guid> ids)
+    {
+        var found = Steps.Descendants().Where(s => ids.Contains(s.Definition.Id)).ToArray();
+        if (found.Length < 2 || found.Any(s => s.Parent != found[0].Parent)) return;
+        SetStepSelection(found, found[^1]);
+    }
+
+    /// <summary>Turns the selected steps on or off as one undo step.</summary>
+    public void SetSelectedStepsEnabled(bool enabled)
+    {
+        using (Batch())
+        {
+            foreach (var step in SelectedSteps) step.Enabled = enabled;
+        }
+    }
+
+    /// <summary>Copies the selected steps right after the last of them, and selects the copies. One undo step.</summary>
+    public IReadOnlyList<SubActionItemViewModel> DuplicateSelectedSteps()
+    {
+        var steps = SelectedSteps;
+        if (steps.Count == 0) return [];
+        var copies = steps.Select(s =>
+        {
+            var copy = Cuebot.Core.Storage.Json.Clone(s.Definition);
+            EditorClip.NewIds(copy, clearLayout: true);
+            return copy;
+        }).ToArray();
+        var list = steps[0].Parent;
+        var added = InsertSteps(copies, new StepInsertTarget(list, list.Items.IndexOf(steps[^1]) + 1));
+        if (added.Count > 1) SetStepSelection(added, added[^1]);
+        return added;
+    }
+
+    /// <summary>Default name of the Group that <see cref="WrapSelectionInGroup"/> creates.</summary>
+    public const string NewGroupName = "New group";
+
+    /// <summary>Puts the selected steps, in order, into a new Group where the first of them was. One undo step.</summary>
+    /// <returns>The new group, or null when nothing is selected (or no Group sub-action is registered).</returns>
+    public SubActionItemViewModel? WrapSelectionInGroup()
+    {
+        var steps = SelectedSteps;
+        if (steps.Count == 0 || Registry.GetSubAction(GroupSubAction.Id) is not { } groupHandler) return null;
+        var list = steps[0].Parent;
+        SubActionItemViewModel group;
+        using (Batch())
+        {
+            var definition = new SubActionDefinition { Type = GroupSubAction.Id };
+            foreach (var p in groupHandler.Parameters) definition.Parameters[p.Key] = p.DefaultValue;
+            definition.Parameters["name"] = NewGroupName;
+            foreach (var branch in SubActionBranches.For(groupHandler, definition)) definition.Branch(branch);
+            group = list.Insert(list.Items.IndexOf(steps[0]), definition);
+            var inside = group.Branches.First(b => b.Name == GroupSubAction.Steps).Steps;
+            foreach (var step in steps)
+            {
+                step.Definition.Layout = null;
+                inside.Adopt(step, inside.Items.Count);
+            }
+        }
+        Selected = group;
+        return group;
     }
 
     /// <summary>The selection when it is a trigger (shown under the trigger list).</summary>
     public TriggerItemViewModel? SelectedTrigger => Selected as TriggerItemViewModel;
 
     /// <summary>The selection when it is a sub-action or branch (shown under the sub-action list).</summary>
-    public EditorItemViewModel? SelectedStep => Selected is TriggerItemViewModel ? null : Selected;
+    public EditorItemViewModel? SelectedStep => Selected is TriggerItemViewModel || HasStepBlock ? null : Selected;
 
     /// <summary>Set by the page on the first action of each group in the list: the group's folder row.</summary>
     [ObservableProperty] private string? _groupHeader;
@@ -295,6 +455,8 @@ public sealed partial class ActionItemViewModel : ObservableObject
     /// <summary>Insert after the selected step, at the top of a selected branch, or at the end.</summary>
     public StepInsertTarget DefaultInsertTarget() => Selected switch
     {
+        SubActionItemViewModel step when SelectedSteps is { Count: > 1 } block =>
+            new StepInsertTarget(step.Parent, step.Parent.Items.IndexOf(block[^1]) + 1),
         SubActionItemViewModel step => new StepInsertTarget(step.Parent, step.Parent.Items.IndexOf(step) + 1),
         BranchViewModel branch => new StepInsertTarget(branch.Steps, branch.Steps.Items.Count),
         _ => new StepInsertTarget(Steps, Steps.Items.Count),
@@ -350,6 +512,15 @@ public sealed partial class ActionItemViewModel : ObservableObject
 
     public void DeleteSelected()
     {
+        if (HasStepBlock)
+        {
+            using (Batch())
+            {
+                foreach (var step in SelectedSteps) step.Parent.Remove(step);
+            }
+            Selected = null;
+            return;
+        }
         switch (Selected)
         {
             case SubActionItemViewModel step:
@@ -368,13 +539,45 @@ public sealed partial class ActionItemViewModel : ObservableObject
 
     public void MoveSelected(int delta)
     {
-        if (Selected is SubActionItemViewModel step) step.Parent.Move(step, delta);
+        if (Selected is not SubActionItemViewModel step) return;
+        if (!HasStepBlock)
+        {
+            step.Parent.Move(step, delta);
+            return;
+        }
+        // One place per step, leading edge first; a step blocked by the list's end holds the ones behind it.
+        var block = SelectedSteps;
+        var list = block[0].Parent;
+        var sign = Math.Sign(delta);
+        using (Batch())
+        {
+            foreach (var s in sign < 0 ? block : block.Reverse())
+            {
+                var to = list.Items.IndexOf(s) + sign;
+                if (to >= 0 && to < list.Items.Count && !block.Contains(list.Items[to])) list.Move(s, sign);
+            }
+        }
     }
 
     /// <summary>Moves the selected sub-action to the top or bottom of its list (Ctrl+Home / Ctrl+End).</summary>
     public void MoveSelectedToEdge(bool top)
     {
         if (Selected is not SubActionItemViewModel step) return;
+        if (HasStepBlock)
+        {
+            var block = SelectedSteps;
+            var list = block[0].Parent;
+            using (Batch())
+            {
+                for (var i = 0; i < block.Count; i++)
+                {
+                    var s = top ? block[i] : block[block.Count - 1 - i];
+                    var target = top ? i : list.Items.Count - 1 - i;
+                    list.Move(s, target - list.Items.IndexOf(s));
+                }
+            }
+            return;
+        }
         var index = step.Parent.Items.IndexOf(step);
         if (index >= 0) step.Parent.Move(step, top ? -index : step.Parent.Items.Count - 1 - index);
     }

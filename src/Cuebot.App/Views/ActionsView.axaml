@@ -109,6 +109,9 @@
       <Setter Property="Background" Value="{DynamicResource CuebotAccentSoft}" />
       <Setter Property="BorderBrush" Value="{DynamicResource CuebotAccent}" />
     </Style>
+    <Style Selector="Window.compact Border.actionRow">
+      <Setter Property="Padding" Value="8,2" />
+    </Style>
   </UserControl.Styles>
 
   <!-- Bindings through SelectedAction use ?. : the editor stays bound (hidden) while no action is selected. -->
@@ -250,19 +253,19 @@
             </DockPanel>
           </Border>
           <TextBox DockPanel.Dock="Top" PlaceholderText="Search actions" Text="{Binding Filter}" Margin="0,0,0,8" />
-          <ListBox x:Name="ActionList" Classes="plain" ItemContainerTheme="{StaticResource ActionRowContainer}" ItemsSource="{Binding Actions}" SelectedItem="{Binding SelectedAction}" Background="Transparent">
+          <ListBox x:Name="ActionList" Classes="plain" SelectionMode="Multiple" ItemContainerTheme="{StaticResource ActionRowContainer}" ItemsSource="{Binding Actions}" SelectedItem="{Binding SelectedAction}" Background="Transparent">
             <ListBox.ContextMenu>
               <ContextMenu>
-                <MenuItem Header="Copy action" InputGesture="Ctrl+C" Command="{Binding CopyActionCommand}" IsEnabled="{Binding HasSelection}" />
+                <MenuItem Header="{Binding CopyActionHeader}" InputGesture="Ctrl+C" Command="{Binding CopyActionCommand}" IsEnabled="{Binding HasSelection}" />
                 <MenuItem Header="Paste" InputGesture="Ctrl+V" Command="{Binding PasteCommand}" />
-                <MenuItem Header="Duplicate action" InputGesture="Ctrl+D" Command="{Binding DuplicateActionCommand}" IsEnabled="{Binding HasSelection}" />
-                <MenuItem Header="Export to code" IsEnabled="{Binding HasSelection}"
+                <MenuItem Header="{Binding DuplicateActionHeader}" InputGesture="Ctrl+D" Command="{Binding DuplicateActionCommand}" IsEnabled="{Binding HasSelection}" />
+                <MenuItem Header="Export to code" IsEnabled="{Binding ShowsEditor}"
                           ToolTip.Tip="Makes a copy of this action that runs as one C# or Python script, and switches this one off">
                   <MenuItem Header="C#" Command="{Binding ExportToCodeCommand}" CommandParameter="csharp" />
                   <MenuItem Header="Python" Command="{Binding ExportToCodeCommand}" CommandParameter="python" />
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="Delete action" Command="{Binding DeleteActionCommand}" IsEnabled="{Binding HasSelection}" />
+                <MenuItem Header="{Binding DeleteActionHeader}" Command="{Binding DeleteActionCommand}" IsEnabled="{Binding HasSelection}" />
               </ContextMenu>
             </ListBox.ContextMenu>
             <ListBox.ItemTemplate>
@@ -289,13 +292,44 @@
 
       <!-- ===== Triggers (own column when wide) ===== -->
       <Panel x:Name="TriggerPane" Grid.Column="2">
-        <Border Classes="card" Margin="0" Padding="12" IsVisible="{Binding HasSelection}">
+        <Border Classes="card" Margin="0" Padding="12" IsVisible="{Binding ShowsEditor}">
           <ContentControl Content="{Binding}" ContentTemplate="{StaticResource TriggerPane}" />
         </Border>
       </Panel>
 
+      <!-- ===== Several actions selected: the bulk panel takes the place of the editor ===== -->
+      <Border x:Name="BulkPanel" Grid.Column="2" Grid.ColumnSpan="3" Classes="card" Margin="0" IsVisible="{Binding IsBulkSelection}">
+        <ScrollViewer>
+          <StackPanel Spacing="14" MaxWidth="560" HorizontalAlignment="Left">
+            <StackPanel Spacing="2">
+              <TextBlock x:Name="BulkTitle" Classes="h2" Text="{Binding BulkTitle}" />
+              <TextBlock Classes="muted" TextWrapping="Wrap" Text="What you do here applies to all of them. Click one action to go back to editing it." />
+            </StackPanel>
+            <WrapPanel Orientation="Horizontal" ItemSpacing="6" LineSpacing="6">
+              <Button x:Name="BulkOn" Content="Turn on" Command="{Binding BulkTurnOnCommand}" ToolTip.Tip="Turn all the selected actions on" />
+              <Button x:Name="BulkOff" Content="Turn off" Command="{Binding BulkTurnOffCommand}" ToolTip.Tip="Turn all the selected actions off" />
+              <Button x:Name="BulkDuplicate" Content="Duplicate" Command="{Binding DuplicateActionCommand}" ToolTip.Tip="Make a copy of each selected action (Ctrl+D)" />
+              <Button Content="Copy" Command="{Binding CopyActionCommand}" ToolTip.Tip="Copy all the selected actions (Ctrl+C)" />
+              <Button x:Name="BulkDelete" Content="Delete" Command="{Binding DeleteActionCommand}" ToolTip.Tip="Delete all the selected actions. Undo delete brings them back together." />
+              <Button Content="↶" AutomationProperties.Name="Undo" Command="{Binding UndoCommand}" ToolTip.Tip="Undo the last change to these actions (Ctrl+Z)" />
+              <Button Content="↷" AutomationProperties.Name="Redo" Command="{Binding RedoCommand}" ToolTip.Tip="Redo (Ctrl+Y or Ctrl+Shift+Z)" />
+            </WrapPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Text="Move to group" />
+              <Grid ColumnDefinitions="*,8,Auto">
+                <AutoCompleteBox x:Name="BulkGroupBox" Text="{Binding BulkGroup}" ItemsSource="{Binding GroupNames}" FilterMode="ContainsOrdinal" MinimumPrefixLength="0"
+                                 PlaceholderText="Group name (empty: no group)" AutomationProperties.Name="Group to move the selected actions to" />
+                <Button x:Name="BulkMove" Grid.Column="2" Content="Move" Command="{Binding BulkMoveToGroupCommand}" ToolTip.Tip="Put all the selected actions in this group" />
+              </Grid>
+            </StackPanel>
+            <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding EditStatus}"
+                       IsVisible="{Binding EditStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+
       <!-- ===== Selected action ===== -->
-      <Border Grid.Column="4" Classes="card" Margin="0" Padding="0" IsVisible="{Binding HasSelection}">
+      <Border Grid.Column="4" Classes="card" Margin="0" Padding="0" IsVisible="{Binding ShowsEditor}">
         <DockPanel>
           <Border DockPanel.Dock="Top" Padding="16,12,16,8" BorderBrush="{DynamicResource CuebotLine}" BorderThickness="0,0,0,1">
             <StackPanel Spacing="8">
@@ -394,6 +428,7 @@
                       <MenuItem Header="Paste" InputGesture="Ctrl+V" Command="{Binding PasteCommand}" />
                       <MenuItem Header="Duplicate" InputGesture="Ctrl+D" Command="{Binding DuplicateItemCommand}" />
                       <MenuItem Header="Delete" InputGesture="Delete" Command="{Binding DeleteItemCommand}" />
+                      <MenuItem Header="Put in a new group" InputGesture="Ctrl+G" Command="{Binding GroupStepsCommand}" />
                       <Separator />
                       <MenuItem Header="Copy whole action" Command="{Binding CopyActionCommand}" />
                       <MenuItem Header="Undo" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}" />
@@ -404,6 +439,20 @@
                 </ScrollViewer>
                 <Border Grid.Row="2" Height="1" Background="{DynamicResource CuebotLine}" Margin="0,4,0,8"
                         IsVisible="{Binding SelectedAction?.SelectedStep, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                <!-- Several sub-actions selected: block tools in place of one step's details. -->
+                <Border x:Name="StepBlockBar" Grid.Row="3" Padding="4,6,8,10" IsVisible="{Binding SelectedAction?.HasStepBlock, TargetNullValue=False, FallbackValue=False}">
+                  <StackPanel Spacing="6">
+                    <TextBlock x:Name="StepBlockTitle" FontWeight="SemiBold" Text="{Binding SelectedAction?.StepBlockSummary}" />
+                    <WrapPanel Orientation="Horizontal" ItemSpacing="6" LineSpacing="6">
+                      <Button Content="Turn on" Command="{Binding StepsTurnOnCommand}" ToolTip.Tip="Turn the selected sub-actions on" />
+                      <Button Content="Turn off" Command="{Binding StepsTurnOffCommand}" ToolTip.Tip="Turn the selected sub-actions off" />
+                      <Button Content="Duplicate" Command="{Binding DuplicateItemCommand}" ToolTip.Tip="Copy them right after the last selected one (Ctrl+D)" />
+                      <Button Content="Copy" Command="{Binding CopyItemCommand}" ToolTip.Tip="Copy the selected sub-actions (Ctrl+C)" />
+                      <Button Content="Group" Command="{Binding GroupStepsCommand}" ToolTip.Tip="Put them in a new Group where the first one is (Ctrl+G)" />
+                      <Button Content="Delete" Command="{Binding DeleteItemCommand}" ToolTip.Tip="Delete the selected sub-actions (Delete). Ctrl+Z brings them back." />
+                    </WrapPanel>
+                  </StackPanel>
+                </Border>
                 <ScrollViewer Grid.Row="3" MaxHeight="320" Padding="4,0,8,12"
                               IsVisible="{Binding SelectedAction?.SelectedStep, Converter={x:Static ObjectConverters.IsNotNull}}">
                   <ContentControl x:Name="StepDetails" Content="{Binding SelectedAction?.SelectedStep}">

@@ -32,7 +32,12 @@ public partial class ActionsView : UserControl
                     if (e.PropertyName == nameof(TypePickerViewModel.IsOpen) && vm.Picker.IsOpen) PickerSearch.Focus();
                 };
                 ConnectClipboard(vm);
+                vm.ActionSelectionRequested += ShowActionSelection;
             }
+        };
+        ActionList.SelectionChanged += (_, _) =>
+        {
+            if (!_showingSelection) ViewModel?.SetSelectedActions(ActionList.SelectedItems?.OfType<ActionItemViewModel>() ?? []);
         };
         // Right-click selects what is under the pointer first, so the context menu acts on it.
         AddHandler(PointerPressedEvent, OnPreviewPointerPressed, RoutingStrategies.Tunnel);
@@ -59,6 +64,25 @@ public partial class ActionsView : UserControl
 
     private ActionsViewModel? ViewModel => DataContext as ActionsViewModel;
 
+    private bool _showingSelection;
+
+    /// <summary>Modifier keys of the last left press, for the row's Click (which does not carry them).</summary>
+    private KeyModifiers _pressModifiers;
+
+    /// <summary>Puts a selection the page made (bulk duplicate, undo, restore) on the list's rows.</summary>
+    private void ShowActionSelection(IReadOnlyList<ActionItemViewModel> items)
+    {
+        if (ActionList.SelectedItems is not { } selected) return;
+        _showingSelection = true;
+        try
+        {
+            // Add first: emptying the list on the way would read as "no action selected".
+            foreach (var item in items.Where(i => !selected.Contains(i))) selected.Add(item);
+            foreach (var row in selected.OfType<ActionItemViewModel>().Where(r => !items.Contains(r)).ToArray()) selected.Remove(row);
+        }
+        finally { _showingSelection = false; }
+    }
+
     private void ConnectClipboard(ActionsViewModel vm)
     {
         vm.WriteSystemClipboard = async text =>
@@ -71,17 +95,21 @@ public partial class ActionsView : UserControl
 
     private void OnPreviewPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (!e.GetCurrentPoint(this).Properties.IsRightButtonPressed || e.Source is not Visual source || ViewModel is not { } vm) return;
+        var point = e.GetCurrentPoint(this).Properties;
+        if (point.IsLeftButtonPressed) _pressModifiers = e.KeyModifiers;
+        if (!point.IsRightButtonPressed || e.Source is not Visual source || ViewModel is not { } vm) return;
         if (source.FindAncestorOfType<ListBoxItem>(includeSelf: true) is { DataContext: ActionItemViewModel action })
         {
-            vm.SelectedAction = action;
+            // Right-clicking inside a multi-selection keeps it, so the menu acts on all of it.
+            if (!vm.SelectedActions.Contains(action)) vm.SelectedAction = action;
             return;
         }
         for (Visual? v = source; v is not null && v != ListEditor; v = v.GetVisualParent())
         {
             if (v is Button { DataContext: EditorItemViewModel item })
             {
-                vm.SelectCommand.Execute(item);
+                if (item is not SubActionItemViewModel step || vm.SelectedAction?.SelectedSteps.Contains(step) != true)
+                    vm.SelectCommand.Execute(item);
                 return;
             }
         }
@@ -116,7 +144,23 @@ public partial class ActionsView : UserControl
 
     private void OnItemClick(object? sender, RoutedEventArgs e)
     {
-        if (sender is Control { DataContext: EditorItemViewModel item }) ViewModel?.SelectCommand.Execute(item);
+        var modifiers = _pressModifiers;
+        _pressModifiers = KeyModifiers.None;   // a later Space or Enter on the row is a plain click
+        if (sender is not Control { DataContext: EditorItemViewModel item } || ViewModel is not { } vm) return;
+        if (item is SubActionItemViewModel step && vm.SelectedAction is { } action)
+        {
+            if (modifiers.HasFlag(KeyModifiers.Shift))
+            {
+                action.SelectStepRange(step);
+                return;
+            }
+            if ((modifiers & (KeyModifiers.Control | KeyModifiers.Meta)) != 0)
+            {
+                action.ToggleStepSelection(step);
+                return;
+            }
+        }
+        vm.SelectCommand.Execute(item);
     }
 
     /// <summary>True when the key goes to a text field (its own copy/paste/undo apply).</summary>
@@ -170,6 +214,7 @@ public partial class ActionsView : UserControl
     /// </summary>
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
+        _pressModifiers = KeyModifiers.None;   // Space or Enter on a row is a plain click, whatever was last clicked
         // Esc closes the open dialog (test trigger or type picker), even from its text fields.
         if (e.Key == Key.Escape && ViewModel is { } open && (open.Test.IsOpen || open.Picker.IsOpen))
         {
@@ -197,6 +242,18 @@ public partial class ActionsView : UserControl
             case Key.O when command:
                 e.Handled = true;
                 vm.ToggleEnabled(wholeAction: inActionList);
+                break;
+            case Key.A when command && !inActionList && ListEditor.IsKeyboardFocusWithin && vm.SelectedAction is { } all:
+                e.Handled = true;
+                all.SelectAllSteps();
+                break;
+            case Key.G when command && !inActionList && !vm.IsBulkSelection && vm.SelectedAction?.Selected is SubActionItemViewModel:
+                e.Handled = true;
+                vm.GroupStepsCommand.Execute(null);
+                break;
+            case Key.Escape when vm.SelectedAction is { HasStepBlock: true } block:
+                e.Handled = true;
+                block.CollapseStepSelection();
                 break;
             case Key.Delete when inActionList && e.KeyModifiers == KeyModifiers.None:
                 e.Handled = true;

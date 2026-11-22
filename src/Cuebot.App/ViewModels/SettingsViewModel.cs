@@ -64,6 +64,9 @@ public sealed partial class SettingsViewModel : PageViewModel
         _closeToTray = s.General.CloseToTray;
         _startMinimized = s.General.StartMinimized;
         _theme = s.General.Theme;
+        _uiScale = UiZoom.Normalize(s.General.UiScale);
+        _compactDensity = s.General.CompactDensity;
+        _store.Saved += () => OnUi(ReadAppearance);
         _backupOnStart = s.Backups.OnStart;
         _backupBeforeImport = s.Backups.BeforeImport;
         _backupKeep = s.Backups.Keep;
@@ -180,6 +183,35 @@ public sealed partial class SettingsViewModel : PageViewModel
     partial void OnCloseToTrayChanged(bool value) => Update(s => s.General.CloseToTray = value);
     partial void OnStartMinimizedChanged(bool value) => Update(s => s.General.StartMinimized = value);
     partial void OnThemeChanged(AppTheme value) => Update(s => s.General.Theme = value);
+
+    // ---- Zoom and density ----
+
+    public IReadOnlyList<ZoomPreset> ZoomPresets { get; } = UiZoom.Presets.Select(p => new ZoomPreset(UiZoom.Label(p), p)).ToArray();
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ZoomLabel))]
+    private double _uiScale;
+
+    [ObservableProperty] private bool _compactDensity;
+
+    public string ZoomLabel => UiZoom.Label(UiScale);
+
+    partial void OnUiScaleChanged(double value) => Update(s => s.General.UiScale = UiZoom.Normalize(value));
+    partial void OnCompactDensityChanged(bool value) => Update(s => s.General.CompactDensity = value);
+
+    [RelayCommand] private void ZoomIn() => UiScale = UiZoom.In(UiScale);
+    [RelayCommand] private void ZoomOut() => UiScale = UiZoom.Out(UiScale);
+    [RelayCommand] private void SetZoom(double scale) => UiScale = UiZoom.Normalize(scale);
+
+    /// <summary>Follows zoom changes made elsewhere (the zoom keys) without saving them again.</summary>
+    private void ReadAppearance()
+    {
+        var wasLoading = _loading;
+        _loading = true;
+        UiScale = UiZoom.Normalize(_store.Settings.General.UiScale);
+        CompactDensity = _store.Settings.General.CompactDensity;
+        _loading = wasLoading;
+    }
     partial void OnBackupOnStartChanged(bool value) => Update(s => s.Backups.OnStart = value);
     partial void OnBackupBeforeImportChanged(bool value) => Update(s => s.Backups.BeforeImport = value);
 
@@ -510,6 +542,9 @@ public sealed partial class SettingsViewModel : PageViewModel
     public string Runtime => $"{RuntimeInformation.FrameworkDescription} ({RuntimeInformation.RuntimeIdentifier})";
     public string OsDescription => RuntimeInformation.OSDescription;
 }
+
+/// <summary>A zoom preset button: "125%" and its scale.</summary>
+public sealed record ZoomPreset(string Label, double Scale);
 
 /// <summary>A text culture choice: its name ("" = default) and how it is shown.</summary>
 public sealed record CultureOption(string Name, string Display);

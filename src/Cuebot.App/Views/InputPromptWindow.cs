@@ -31,15 +31,21 @@ public sealed class InputPromptWindow : Window
         var cancel = new Button { Content = "Cancel", IsCancel = true, MinWidth = 80, Name = "PromptCancel" };
         ok.Click += (_, _) => Finish(_input.Text ?? "");
         cancel.Click += (_, _) => Finish(null);
-        Content = new StackPanel
+        var zoom = Cuebot.App.Shell.UiZoom.Current;
+        Width = 420 * zoom;
+        Content = new LayoutTransformControl
         {
-            Margin = new Thickness(16),
-            Spacing = 12,
-            Children =
+            LayoutTransform = new Avalonia.Media.ScaleTransform(zoom, zoom),
+            Child = new StackPanel
             {
-                new TextBlock { Text = request.Prompt, TextWrapping = Avalonia.Media.TextWrapping.Wrap, Name = "PromptText" },
-                _input,
-                new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { ok, cancel } },
+                Margin = new Thickness(16),
+                Spacing = 12,
+                Children =
+                {
+                    new TextBlock { Text = request.Prompt, TextWrapping = Avalonia.Media.TextWrapping.Wrap, Name = "PromptText" },
+                    _input,
+                    new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { ok, cancel } },
+                },
             },
         };
         Opened += (_, _) =>

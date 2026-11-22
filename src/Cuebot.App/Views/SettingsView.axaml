@@ -32,6 +32,26 @@
                     <ComboBox x:Name="ThemePicker" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" MinWidth="160" ToolTip.Tip="Choose a light or dark look for Cuebot." />
                   </StackPanel>
                   <TextBlock Classes="muted" TextWrapping="Wrap" Text="System follows the desktop's light or dark preference." />
+                  <WrapPanel Orientation="Horizontal" ItemSpacing="6" LineSpacing="6">
+                    <TextBlock Text="Zoom" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <Button x:Name="ZoomOutButton" Content="−" Command="{Binding ZoomOutCommand}" AutomationProperties.Name="Zoom out" ToolTip.Tip="Make everything smaller (Ctrl+-)" />
+                    <TextBlock x:Name="ZoomValue" Text="{Binding ZoomLabel}" MinWidth="46" TextAlignment="Center" VerticalAlignment="Center" />
+                    <Button x:Name="ZoomInButton" Content="+" Command="{Binding ZoomInCommand}" AutomationProperties.Name="Zoom in" ToolTip.Tip="Make everything larger (Ctrl+=)" />
+                    <ItemsControl ItemsSource="{Binding ZoomPresets}" Margin="6,0,0,0">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ZoomPreset">
+                          <Button Content="{Binding Label}" Command="{Binding $parent[ItemsControl].((vm:SettingsViewModel)DataContext).SetZoomCommand}"
+                                  CommandParameter="{Binding Scale}" ToolTip.Tip="Set the zoom to this size (Ctrl+0 goes back to 100%)" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </WrapPanel>
+                  <CheckBox x:Name="CompactDensityBox" Content="Compact layout" IsChecked="{Binding CompactDensity}"
+                            ToolTip.Tip="Ticked: rows, cards and buttons take less room, so more fits on screen. Text stays the same size." />
+                  <TextBlock Classes="muted" TextWrapping="Wrap" Text="Zoom scales the whole app, including its text, menus and pop-ups. The text in Chat has its own size under Chat options." />
                 </StackPanel>
               </Border>
             </StackPanel>

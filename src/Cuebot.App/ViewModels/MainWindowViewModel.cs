@@ -236,7 +236,39 @@ public sealed partial class MainWindowViewModel : ObservableObject
             ["logs"] = new RelayCommand(() => _shell.OpenFolder(_host.Get<AppPaths>().Logs), NotTyping),
             ["jump"] = new RelayCommand(() => JumpRequested?.Invoke()),
             ["fullScreen"] = new RelayCommand(() => FullScreenRequested?.Invoke()),
+            ["zoomIn"] = new RelayCommand(() => SetUiScale(UiZoom.In(UiScale))),
+            ["zoomOut"] = new RelayCommand(() => SetUiScale(UiZoom.Out(UiScale))),
+            ["zoomReset"] = new RelayCommand(() => SetUiScale(UiZoom.Default)),
         };
+        // Kept directly: a save during shutdown can post this after the host's services are disposed.
+        _appSettings = host.Settings;
+        ReadAppearance();
+        _appSettings.Saved += () => Avalonia.Threading.Dispatcher.UIThread.Post(ReadAppearance);
+    }
+
+    private readonly AppSettingsStore _appSettings;
+
+    /// <summary>The interface zoom (the window applies it).</summary>
+    [ObservableProperty] private double _uiScale = UiZoom.Default;
+
+    /// <summary>Tighter rows and controls (the window applies it).</summary>
+    [ObservableProperty] private bool _compactDensity;
+
+    private void ReadAppearance()
+    {
+        var general = _appSettings.Settings.General;
+        UiScale = UiZoom.Normalize(general.UiScale);
+        CompactDensity = general.CompactDensity;
+    }
+
+    /// <summary>Applies and remembers a zoom (the zoom keys; the Settings page saves its own).</summary>
+    public void SetUiScale(double scale)
+    {
+        var value = UiZoom.Normalize(scale);
+        if (value == UiScale) return;
+        UiScale = value;
+        _appSettings.Settings.General.UiScale = value;
+        _appSettings.TrySave();
     }
 
     /// <summary>

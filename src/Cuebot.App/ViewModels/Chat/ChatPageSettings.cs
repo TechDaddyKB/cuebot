@@ -12,6 +12,13 @@ public sealed class ChatPageSettings
     /// </summary>
     public bool ShowPronouns { get; set; }
 
+    /// <summary>Size of the chat message text, on top of the interface zoom.</summary>
+    public double TextSize { get; set; } = DefaultTextSize;
+
+    public const double DefaultTextSize = 13;
+    public const double MinTextSize = 10;
+    public const double MaxTextSize = 28;
+
     public HighlightRules Highlights { get; set; } = new();
 
     public List<QuickActionDefinition> QuickActions { get; set; } = [];

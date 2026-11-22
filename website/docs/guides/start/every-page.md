@@ -197,7 +197,7 @@ brackets.
 
 | Page | What it is for | Guide |
 | --- | --- | --- |
-| **Settings** | Tabs **General** (tray, theme), **Profiles** (your personas), **Audio & text** (sound devices, number and date format), **Backups**, **Google Drive** and **About** (version, data folder, startup switches and keyboard shortcuts). | [Profiles](../platforms/profiles.md), [Backups](../help/backups.md), [Google Drive backups](../help/google-drive-backups.md), [Your data](../help/your-data.md), [Settings](#the-settings-page) |
+| **Settings** | Tabs **General** (tray, theme, zoom, compact layout), **Profiles** (your personas), **Audio & text** (sound devices, number and date format), **Backups**, **Google Drive** and **About** (version, data folder, startup switches and keyboard shortcuts). | [Profiles](../platforms/profiles.md), [Backups](../help/backups.md), [Google Drive backups](../help/google-drive-backups.md), [Your data](../help/your-data.md), [Settings](#the-settings-page) |
 | **Import / Export** | Bring in Streamer.bot actions, or share your own. Tabs **Import** and **Export**. | [Moving from Streamer.bot](moving-from-streamer-bot.md) |
 | **Support** | Report a problem, and check for updates. Tabs **Report a problem** and **Updates**. | [Asking for help](../help/troubleshooting.md#asking-for-help), [Updating Cuebot](updating.md) |
 
@@ -230,11 +230,24 @@ brackets.
 
 Want the chat inside OBS? The [HTTP server](../developers/http-server.md) gives you a chat dock and an event dock.
 
+## Make Cuebot bigger or smaller
+
+Press ++ctrl+equal++ to zoom in, ++ctrl+minus++ to zoom out and ++ctrl+0++ to go back to 100%. The zoom runs from 80%
+to 200%, covers the whole app with its menus and pop-ups, and is remembered. You can also set it under **Settings >
+General > Appearance**, with buttons for 90, 100, 125, 150 and 200%.
+
+If the window is too small for the zoom you picked, it gets scroll bars instead of squeezing the page. In the
+Commands list, ++ctrl+minus++ keeps its own job (collapse all groups), so click somewhere else first.
+
+**Compact layout**, in the same place, makes rows, cards and buttons tighter so more fits on screen, at the same text
+size. The text in Chat has its own size: see **Chat text size** in [Chat options](../chat/index.md).
+
 ## The Settings page
 
 - **General**: **Show an icon in the system tray** (ticked at first) keeps Cuebot next to the clock. **Closing the window keeps
   Cuebot running in the tray** hides it instead of closing it. **Start minimized** starts it hidden. **Theme** picks
-  light, dark (the first choice), or **System** (the same as your computer).
+  light, dark (the first choice), or **System** (the same as your computer). **Zoom** and **Compact layout** are
+  explained in [Make Cuebot bigger or smaller](#make-cuebot-bigger-or-smaller).
 - **Profiles**: your personas, each with its own accounts, mods and everything else. Make, rename, recolour, switch
   and delete them here. See [More than one persona (profiles)](../platforms/profiles.md).
 - **Audio & text**: pick the **Output devices** (speakers) and **Input devices** (microphones) Cuebot may use. **Culture**

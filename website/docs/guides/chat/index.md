@@ -54,6 +54,7 @@ options again.
 | You want | Do this |
 | --- | --- |
 | Emotes as little pictures, not words | Tick **Show emotes as images** (under **Display**). |
+| Bigger or smaller chat text | Set **Chat text size** (under **Display**), from 10 to 28. The default is 13. |
 | To see he/she/they next to names | Tick **Show pronouns (Twitch, alejo.io)**. It shows what the viewer set on alejo.io, a pronoun website. |
 | To notice when someone says your name | Tick **Mentions of these names** and type your names, like `kris, krisbot`. Those messages get a colour. |
 | To notice a word, like `giveaway` | Type it under **Keywords**. Separate words with commas. |

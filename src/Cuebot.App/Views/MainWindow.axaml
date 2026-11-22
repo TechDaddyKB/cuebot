@@ -144,7 +144,11 @@
     <DataTemplate DataType="vm:OverlaysViewModel"><views:OverlaysView /></DataTemplate>
   </Window.DataTemplates>
 
-  <Grid RowDefinitions="52,*,28">
+  <!-- Interface zoom: the shell is scaled as a whole. MainWindow.axaml.cs sizes ShellRoot and turns scrolling on only
+       when the window is smaller than the shell's minimum at this zoom. -->
+  <ScrollViewer x:Name="ZoomViewport" Focusable="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled">
+  <LayoutTransformControl x:Name="ZoomLayer" HorizontalAlignment="Left" VerticalAlignment="Top">
+  <Grid x:Name="ShellRoot" RowDefinitions="52,*,28">
     <!-- ===== Top bar ===== -->
     <Border x:Name="TopBar" Background="{DynamicResource CuebotRail}">
       <Grid>
@@ -401,4 +405,6 @@
       </DockPanel>
     </Border>
   </Grid>
+  </LayoutTransformControl>
+  </ScrollViewer>
 </Window>

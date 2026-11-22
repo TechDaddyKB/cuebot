@@ -1,7 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Chrome;
 using Avalonia.Input;
+using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 using Cuebot.App.Shell;
 using Cuebot.App.ViewModels;
@@ -14,6 +16,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContextChanged += (_, _) => BindShortcuts();
+        ZoomViewport.SizeChanged += (_, _) => LayOutZoomedShell();
         // Tunnel: the box itself takes the first Enter (to close its list) before a bubbling handler sees it.
         Jump.AddHandler(KeyDownEvent, OnJumpKeyDown, RoutingStrategies.Tunnel);
         Jump.SelectionChanged += (_, _) => { if (Jump.SelectedItem is string title) JumpTo(title); };
@@ -98,17 +101,61 @@ public partial class MainWindow : Window
         {
             _boundVm.JumpRequested -= OnJumpRequested;
             _boundVm.FullScreenRequested -= ToggleFullScreen;
+            _boundVm.PropertyChanged -= OnViewModelPropertyChanged;
         }
         if (DataContext is not MainWindowViewModel vm) return;
         _boundVm = vm;
+        vm.PropertyChanged += OnViewModelPropertyChanged;
         vm.JumpRequested += OnJumpRequested;
         vm.FullScreenRequested += ToggleFullScreen;
         vm.IsTypingText = IsTypingText;
         foreach (var shortcut in AppShortcuts.Window)
         {
             if (!vm.ShortcutCommands.TryGetValue(shortcut.Id, out var command)) continue;
-            KeyBindings.Add(new KeyBinding { Gesture = KeyGesture.Parse(shortcut.Gesture), Command = command, CommandParameter = ShortcutTag });
+            foreach (var gesture in shortcut.Bindings)
+                KeyBindings.Add(new KeyBinding { Gesture = KeyGesture.Parse(gesture), Command = command, CommandParameter = ShortcutTag });
         }
+        ApplyZoom();
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(MainWindowViewModel.UiScale) or nameof(MainWindowViewModel.CompactDensity)) ApplyZoom();
+    }
+
+    /// <summary>Scales the shell and sets its density. Popups follow through <c>Popup.InheritsTransform</c>.</summary>
+    private void ApplyZoom()
+    {
+        if (_boundVm is not { } vm) return;
+        var scale = UiZoom.Normalize(vm.UiScale);
+        UiZoom.Current = scale;
+        Classes.Set("compact", vm.CompactDensity);
+        if (ZoomLayer.LayoutTransform is not ScaleTransform current || current.ScaleX != scale)
+            ZoomLayer.LayoutTransform = new ScaleTransform(scale, scale);
+        if (OperatingSystem.IsWindows())
+        {
+            // The caption buttons are not scaled, so the bar keeps room for them in scaled units.
+            ExtendClientAreaTitleBarHeightHint = 52 * scale;
+            var m = TopBarContent.Margin;
+            TopBarContent.Margin = new Avalonia.Thickness(m.Left, m.Top, CaptionButtonsWidth / scale, m.Bottom);
+        }
+        LayOutZoomedShell();
+    }
+
+    /// <summary>
+    /// Gives the shell the window's size in scaled units, but never less than its minimum: a small window at a high
+    /// zoom scrolls. Scrolling stays off otherwise, so the viewer takes no keys or wheel events from the pages.
+    /// </summary>
+    private void LayOutZoomedShell()
+    {
+        var viewport = ZoomViewport.Bounds.Size;
+        if (viewport.Width <= 0 || viewport.Height <= 0) return;
+        var scale = UiZoom.Normalize(_boundVm?.UiScale ?? UiZoom.Default);
+        var (width, height) = UiZoom.ContentSize(viewport.Width, viewport.Height, scale);
+        ShellRoot.Width = width;
+        ShellRoot.Height = height;
+        ZoomViewport.HorizontalScrollBarVisibility = width * scale > viewport.Width + 0.5 ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled;
+        ZoomViewport.VerticalScrollBarVisibility = height * scale > viewport.Height + 0.5 ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled;
     }
 
     /// <summary>True when keyboard focus is in a text field or code editor.</summary>
