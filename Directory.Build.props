@@ -4,7 +4,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <Authors>Cuebot contributors</Authors>
     <Product>Cuebot</Product>
     <Copyright>Copyright (c) 2026 TechDaddyKB and Cuebot contributors</Copyright>

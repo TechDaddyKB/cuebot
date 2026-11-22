@@ -17,7 +17,7 @@ helps find it in the log.
 
 **App and connections**
 
-- [ ] The title bar shows **Cuebot 1.0.3**.
+- [ ] The title bar shows **Cuebot 1.0.4**.
 - [ ] Every platform and service you use shows as connected in the top bar. With more than four, they are small
       badges; hovering one shows its name and status. Nothing covers the search box, title or profile switcher.
 - [ ] Optional: run the automated tests for what you will use on stream (see [Running](#running)), for example

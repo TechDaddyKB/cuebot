@@ -4,6 +4,31 @@ What changed in each version of Cuebot, newest first. Each line links to the gui
 
 To get the newest version, see [Updating Cuebot](updating.md).
 
+## 1.0.4
+
+New options for actions, commands and chat, plus fixes. Update Cuebot, and update the phone app from Google Play or the App Store.
+
+- **Only while live.** Timers, commands and triggers can run only while you are live, optionally on chosen platforms.
+- **Cancel running actions.** A new step stops this action or a chosen one, including queued runs.
+- **Better If steps.** If, While and Switch gain *at least* and *at most*, and up to four conditions joined with AND or OR.
+- **Key hold.** Keyboard press can hold keys for a set time.
+- **Text reply commands.** A command can reply with text without an action, and has a description and preset arguments.
+- **Richer command permissions.** Built-in groups for mods, VIPs, subscribers, sub tiers and followers, and a **Command denied** trigger.
+- **Banned accounts kept out.** Banned accounts no longer reach follows, alerts, speech or credits.
+- **Interface zoom.** Zoom from 80% to 200% with Ctrl+= and Ctrl+-, plus a compact layout and a separate chat text size.
+- **Multi-select.** Select several actions or sub-actions to switch on or off, move, duplicate, copy or delete them together.
+- **Discord webhooks.** Send embeds and link buttons from a JSON or Discohook body, post in threads, and edit or delete sent messages.
+- **Twitch Shared Chat.** Chat and the chat box overlay show which channel a message came from.
+- **YouTube member emotes.** Show them from your own list of codes and images.
+
+Fixes:
+
+- **IBM Watson speech** no longer lets chat text change how a voice speaks.
+- **Renaming an action** now updates the steps, deck buttons, hotkeys and quick actions that use it.
+- **Ban and timeout as the bot** now really use the bot account. Sign the bot in again to grant the ban permission.
+- **YouTube quota** estimates match Google's current costs.
+- **A damaged actions file** now restores the newest good backup instead of starting empty.
+
 ## 1.0.3
 
 A fix for the Android phone app. Update it from Google Play.
