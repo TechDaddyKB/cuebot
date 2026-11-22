@@ -10,10 +10,11 @@ struct PairedCuebot: Codable, Identifiable, Hashable {
     var apiPort: Int
     var httpPort: Int
     var instanceId: String?
+    var https: Bool?
 
     func endpoint(_ secrets: Keychain.Secrets) -> CuebotEndpoint {
         CuebotEndpoint(name: name, host: host, apiPort: apiPort, httpPort: httpPort, token: secrets.token,
-                       deckToken: secrets.deckToken, instanceId: instanceId)
+                       deckToken: secrets.deckToken, instanceId: instanceId, https: https)
     }
 }
 
@@ -57,6 +58,7 @@ final class PairedCuebots {
         entry.host = endpoint.host
         entry.apiPort = endpoint.apiPort
         entry.httpPort = endpoint.httpPort
+        entry.https = endpoint.https
         entry.instanceId = endpoint.instanceId ?? entry.instanceId
         // Drop other entries for the same address left by earlier versions.
         all.removeAll { $0.id != entry.id && $0.host == entry.host && $0.apiPort == entry.apiPort }
