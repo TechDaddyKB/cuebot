@@ -57,7 +57,9 @@ if [ -n "${CUEBOT_MACOS_SIGN_IDENTITY:-}" ]; then
     done
   codesign --force --timestamp --options runtime --entitlements "$root/packaging/macos/Cuebot.entitlements" \
     --sign "$CUEBOT_MACOS_SIGN_IDENTITY" "$app/Contents/MacOS/Cuebot"
-  codesign --force --timestamp --options runtime --entitlements "$root/packaging/macos/Cuebot.entitlements" \
+  # --deep also seals the managed .dll files next to the executable: codesign treats everything in Contents/MacOS as
+  # code and "verify --deep --strict" fails on an unsigned one.
+  codesign --force --deep --timestamp --options runtime --entitlements "$root/packaging/macos/Cuebot.entitlements" \
     --sign "$CUEBOT_MACOS_SIGN_IDENTITY" "$app"
 else
   codesign --force --deep --sign - "$app"
