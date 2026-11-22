@@ -141,6 +141,10 @@ Runs the first time someone chats in your channel during a stream. Great for a w
 
 Runs when someone follows your Kick channel. Good for a thank-you message or an alert.
 
+| Setting | What to put in |
+| --- | --- |
+| **Skip banned accounts and known bots** | Follows the 'Banned accounts and bots' options hide do not run this action. Untick to run it anyway; %isBanned% and %isKnownBot% tell them apart. Starts as: `true`. |
+
 **Variables you get**
 
 | Variable | What it holds |

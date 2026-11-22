@@ -192,6 +192,23 @@ The list next to the platform picker in the send box chooses who posts your mess
 - **Bot**: your bot account. It is offered only when a bot account is signed in on that platform (Twitch, YouTube or
   Kick).
 
+## Banned accounts and bots
+
+Banned accounts sometimes follow again and again because they know it gets announced. The **Banned accounts and bots**
+options (in the chat page's options, under **Moderation**) keep them off your stream:
+
+- **Ignore follows from banned accounts** (on): no alert, speech, credit, feed entry or subathon time.
+- **Ignore channel point redemptions from banned accounts** (off). Subs, cheers and tips are never ignored, so your
+  totals stay right.
+- **Keep banned accounts out of the credits** (on): also removes someone from this stream's credits when they are banned.
+- **Treat known bots like banned accounts** (off): applies these options to common bots like Nightbot, plus any names
+  you add under **Your own bots**, and stops their chat being read aloud.
+- **Read the Twitch ban list once a day** (on): so people you banned before installing Cuebot count too.
+
+Timeouts do not count as bans. On other platforms Cuebot knows only the bans it saw. A viewer who chats again is treated
+as unbanned. **Follow** triggers on Twitch and Kick skip these accounts too. Untick **Skip banned accounts and known
+bots** on a trigger to run it anyway; `%isBanned%` and `%isKnownBot%` tell you which it was.
+
 ## Mods and safety
 
 Mods who moderate from the mod portal act with your account. So Cuebot adds a few safety rules:

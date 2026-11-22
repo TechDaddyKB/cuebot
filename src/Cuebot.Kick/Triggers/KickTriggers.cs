@@ -8,7 +8,8 @@ namespace Cuebot.Kick.Triggers;
 /// Kick triggers (Streamer.bot's Kick list plus a few extras). First Words and Present Viewers listen to the
 /// core user registry's events, filtered to Kick.
 /// </summary>
-internal sealed class KickTriggers(Func<IEnumerable<string>>? rewardTitles = null) : ITriggerProvider
+internal sealed class KickTriggers(Func<IEnumerable<string>>? rewardTitles = null,
+    Func<Cuebot.Core.Chat.AccountStandings?>? standings = null) : ITriggerProvider
 {
     public const string Category = "Kick";
 
@@ -19,7 +20,8 @@ internal sealed class KickTriggers(Func<IEnumerable<string>>? rewardTitles = nul
             (e, s) => s["contains"].Length == 0 || e.Args.GetString("message").Contains(s["contains"], StringComparison.OrdinalIgnoreCase)),
         KickOnly("kick.firstWords", "First words", UserEvents.FirstWords),
         KickOnly("kick.presentViewers", "People in chat (every few minutes)", UserEvents.PresentViewers),
-        Event(KickEventTypes.Follow, "Follow"),
+        new EventTriggerType(KickEventTypes.Follow, Category, "Follow", KickEventTypes.Follow, [Cuebot.Core.Chat.FollowTriggerFilter.Parameter()],
+            (e, s, args) => Cuebot.Core.Chat.FollowTriggerFilter.Allows(standings?.Invoke(), "Kick", e, s, args)),
         Event(KickEventTypes.StreamOnline, "Stream online"),
         Event(KickEventTypes.StreamOffline, "Stream offline"),
         Event(KickEventTypes.ViewerCountUpdate, "Viewer count update"),

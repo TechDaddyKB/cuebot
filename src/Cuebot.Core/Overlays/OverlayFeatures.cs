@@ -34,7 +34,7 @@ public static class OverlayFeatures
         services.AddSingleton<ISubActionHandler, ShowAlertSubAction>();
         services.AddSingleton(sp => new OverlayEventBridge(sp.GetRequiredService<EventBus>(), sp.GetRequiredService<OverlayFeed>(),
             sp.GetServices<IOverlayEventAdapter>(), sp.GetRequiredService<AppLog>(), sp.GetService<EmoteService>(),
-            sp.GetService<Chat.Pronouns.PronounService>()));
+            sp.GetService<Chat.Pronouns.PronounService>(), sp.GetService<Chat.AccountStandings>()));
         services.AddSingleton(sp => new SessionDataStore(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<AppLog>(),
             sp.GetRequiredService<EventBus>(), sp.GetRequiredService<OverlayFeed>(), sp.GetRequiredService<OverlayEventBridge>(),
             sources: sp.GetServices<ISessionDataSource>()));

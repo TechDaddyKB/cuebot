@@ -3,11 +3,11 @@
 A **chat command** is a word your viewers type in chat, usually starting with `!`, like `!hello`, `!discord` or
 `!so bob`. Cuebot sees it and runs an action.
 
-A command has two halves:
+A command has up to two halves:
 
-1. **The command** (on **Automation > Commands**): which word, who may use it, and how often.
-2. **The action** (on **Automation > Actions**): what happens. It is linked to the command with a **Command triggered**
-   trigger.
+1. **The command** (on **Automation > Commands**): which word, who may use it, how often, and optionally a text reply.
+2. **The action** (on **Automation > Actions**): what happens beyond a reply. It is linked to the command with a
+   **Command triggered** trigger. A command that only answers with text needs no action.
 
 !!! tip "Commands Cuebot already answers"
     `!points`, `!top`, `!give`, `!linkkick` and the other points commands, and the games `!gamble`, `!slots` and
@@ -30,7 +30,8 @@ walks you through `!hello` step by step.
 **Listed by 'Get commands'** decides whether the command shows up when an action builds a list of your commands for
 chat (with the **Get commands** sub-action). It does not change whether the command works.
 
-Then link an action:
+For a command that only answers with text, fill in **Reply** (see [Text replies](#text-replies)) and you are done.
+Otherwise link an action:
 
 1. Go to **Automation > Actions** and make (or pick) an action.
 2. Click **+ Trigger**, choose **Commands › Command triggered** and click **Add**.
@@ -77,6 +78,22 @@ More about variables: [Variables, the %words%](../actions/variables.md).
 - **Only while live**: the command only works while you are live, on any connected platform or on the ones you tick.
   Offline it stays silent and does not use up its cooldown.
 
+### Text replies
+
+Type a message into **Reply** and Cuebot sends it to chat whenever the command runs, after the usual permission and
+cooldown checks. Variables work: `Welcome %user%, the Discord is https://discord.gg/example`.
+
+- **Which line**: with several lines, **First** always sends the first, **Random** picks one, **Rotate** takes turns.
+- **Send as**: **Default** uses the same account as the chat send box. **Bot** or **Broadcaster** picks one.
+- **Send to**: **SamePlatform** answers where the command was typed. **AllPlatforms** posts in every connected chat.
+- **Preset arguments**: `name=value` lines become variables for the reply and for linked actions, so `sound=airhorn`
+  gives `%sound%`. One action can then serve several commands. A preset never replaces a variable from chat.
+- **Description** (at the top of the editor) is a note for you and your mods, also available as `%commandDescription%`.
+
+A reply and an action can be used together. To stop loops and abuse, a command with a reply always ignores the bot and
+Cuebot's own messages. A reply is not sent if viewer text would turn it into a chat command like `/ban`, or if it would
+start another reply command.
+
 ### Cooldowns
 
 A cooldown is a wait time, so one viewer cannot spam a command.
@@ -100,6 +117,26 @@ Groups come from **Chat > Users & Groups** (see [Users and groups](users-and-gro
 !!! tip "Only some people"
     To let **only** the people on your lists use a command, set **Minimum role** to **Broadcaster** and add them under
     **Allowed users** or **Allowed groups**.
+
+**Built-in groups** appear in both group lists and fill themselves:
+
+| Group | Who is in it |
+| --- | --- |
+| `@Moderators`, `@VIPs`, `@Subscribers` | Viewers with that role in the chat they typed in (YouTube members count as subscribers) |
+| `@Subscribers T2+`, `@Subscribers T3` | Twitch subscribers at that tier or higher |
+| `@Followers` | Viewers who follow you on Twitch |
+| `@Banned` | Accounts Cuebot knows are banned |
+| `@KnownBots` | Common chat bots and the ones you listed under **Banned accounts and bots** |
+
+Example: for a followers-only command, set **Minimum role** to **Broadcaster** and tick `@Followers` under **Allowed
+groups**. If you already have your own group with one of these names, yours keeps working as before.
+
+Follower and tier checks ask Twitch the first time and remember the answer (followers 30 minutes, subs 10), so that
+viewer's command can take a moment longer. Kick, YouTube and Rumble have no follower or tier check, so nobody counts as
+a member of those groups there. If Twitch cannot be asked, the command is denied.
+
+To answer people who are turned away, make an action with the **Command denied** trigger. `%deniedReason%` says why:
+`role`, `denyList`, `notFollower`, `tier` or `statusUnknown`. It runs at most once every 5 seconds per viewer and command.
 
 ### Counters
 

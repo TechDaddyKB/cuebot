@@ -343,6 +343,19 @@
         "cooldownType": "Whether the wait is for everyone (Global) or just this viewer (User)",
         "platform": "The site the viewer is on, like twitch"
       }
+    },
+    "command.denied": {
+      "description": "Runs when a viewer tries a command they are not allowed to use, so it did not run. Good for a reply like \"this one is for followers\". It runs at most once every 5 seconds per viewer and command.",
+      "fields": {
+        "command": "The command's name from the Commands page. Empty means every command."
+      },
+      "variables": {
+        "user": "The viewer who tried the command",
+        "commandName": "The command's name",
+        "deniedReason": "Why: role, denyList, notFollower, tier or statusUnknown (the platform could not be asked)",
+        "requiredRole": "The command's minimum role",
+        "platform": "The site the viewer is on, like twitch"
+      }
     }
   },
   "subActions": {

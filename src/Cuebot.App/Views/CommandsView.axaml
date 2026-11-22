@@ -91,6 +91,11 @@
                                        ToolTip.Tip="A folder name to keep similar commands together in the list. Leave empty for none." />
                     </StackPanel>
                   </Grid>
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="Description" />
+                    <TextBox x:Name="CommandDescription" Text="{Binding Description}" PlaceholderText="What this command does"
+                             ToolTip.Tip="A short note about the command. Actions and replies can use it as %commandDescription%." />
+                  </StackPanel>
                   <WrapPanel ItemSpacing="16" LineSpacing="4">
                     <CheckBox Content="Enabled" IsChecked="{Binding Enabled}" ToolTip.Tip="Ticked: viewers can use this command. Unticked: it is switched off." />
                     <CheckBox Content="Listed by 'Get commands'" IsChecked="{Binding Include}" ToolTip.Tip="Ticked: this command shows up when an action builds a list of your commands for chat. It does not change whether the command works." />
@@ -141,6 +146,39 @@
 
               <Border Classes="card">
                 <StackPanel Spacing="10">
+                  <TextBlock Classes="h2" Text="Reply" />
+                  <TextBlock Classes="muted" TextWrapping="Wrap"
+                             Text="Cuebot sends this to chat when the command runs, so a simple text command needs no action. Variables like %user% and %input0% work. Leave it empty if an action does the talking." />
+                  <TextBox x:Name="CommandReply" Text="{Binding Reply}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"
+                           PlaceholderText="Join the Discord: https://discord.gg/example"
+                           ToolTip.Tip="The text to send. With several lines, 'Which line' picks one each time." />
+                  <WrapPanel ItemSpacing="16" LineSpacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="Which line" VerticalAlignment="Center" />
+                      <ComboBox ItemsSource="{x:Static vm:CommandEditorViewModel.ReplyModes}" SelectedItem="{Binding ReplyMode}" MinWidth="110"
+                                ToolTip.Tip="First: always the first line. Random: any line. Rotate: each line in turn." />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="Send as" VerticalAlignment="Center" />
+                      <ComboBox ItemsSource="{x:Static vm:CommandEditorViewModel.ReplyAccounts}" SelectedItem="{Binding ReplyAs}" MinWidth="120"
+                                ToolTip.Tip="Default: the same account as the chat send box. Bot or Broadcaster: that account." />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="Send to" VerticalAlignment="Center" />
+                      <ComboBox ItemsSource="{x:Static vm:CommandEditorViewModel.ReplyTargets}" SelectedItem="{Binding ReplyTo}" MinWidth="140"
+                                ToolTip.Tip="SamePlatform: the chat the command came from. AllPlatforms: every connected chat." />
+                    </StackPanel>
+                  </WrapPanel>
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="Preset arguments (name=value, one per line)" />
+                    <TextBox x:Name="CommandArguments" Text="{Binding ArgumentsText}" AcceptsReturn="True" TextWrapping="NoWrap" MinHeight="48" FontFamily="monospace"
+                             ToolTip.Tip="Extra variables for the reply and for actions, like sound=airhorn gives %sound%. They never replace a variable from chat." />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <Border Classes="card">
+                <StackPanel Spacing="10">
                   <TextBlock Classes="h2" Text="Cooldowns" />
                   <WrapPanel ItemSpacing="24" LineSpacing="8">
                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -166,7 +204,7 @@
                               ToolTip.Tip="The lowest chat role allowed to use this command. Everyone means anyone; higher roles like Moderator or Broadcaster are more limited." />
                   </StackPanel>
                   <TextBlock Classes="muted" TextWrapping="Wrap"
-                             Text="The broadcaster can always run a command. Deny lists win over everything else; allow lists let people below the minimum role in. To restrict a command to listed people only, set the minimum role to Broadcaster." />
+                             Text="The broadcaster can always run a command. Deny lists win over everything else; allow lists let people below the minimum role in. To restrict a command to listed people only, set the minimum role to Broadcaster. Groups starting with @ are built in: @Followers and the sub tiers are checked with Twitch when needed. A Command denied trigger can answer people who are turned away." />
                   <Grid ColumnDefinitions="*,12,*">
                     <StackPanel Spacing="4">
                       <TextBlock Text="Allowed users (name or id, one per line)" />
@@ -193,8 +231,8 @@
                       </ItemsControl>
                     </StackPanel>
                   </Grid>
-                  <TextBlock Classes="muted" IsVisible="{Binding !HasGroups}" TextWrapping="Wrap"
-                             Text="Create groups on the Users &amp; Groups page to allow or deny whole groups." />
+                  <TextBlock Classes="muted" TextWrapping="Wrap"
+                             Text="Create your own groups on the Users &amp; Groups page." />
                 </StackPanel>
               </Border>
 

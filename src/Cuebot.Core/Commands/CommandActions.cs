@@ -24,6 +24,7 @@ public sealed class CommandTriggers(CommandStore store) : ITriggerProvider
     [
         Trigger("command.triggered", "Command triggered", CommandService.TriggeredEvent),
         Trigger("command.cooldown", "Command cooldown", CommandService.CooldownEvent),
+        Trigger("command.denied", "Command denied", CommandService.DeniedEvent),
     ];
 
     private EventTriggerType Trigger(string id, string name, string eventType) =>

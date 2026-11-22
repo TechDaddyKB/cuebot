@@ -18,6 +18,7 @@ public sealed class StreamerBotEventCatalogTests : IAsyncDisposable
     /// </summary>
     internal static readonly HashSet<string> CuebotExtras = new(StringComparer.Ordinal)
     {
+        "Command.Denied",
         "CrowdControl.Connected", "CrowdControl.Disconnected", "CrowdControl.EffectRefund", "CrowdControl.EffectRetry",
         "CrowdControl.GameSessionPaused",
         "DonorDrive.Connected", "DonorDrive.Disconnected",
