@@ -27,7 +27,8 @@ public static class TwitchServiceCollectionExtensions
         services.AddSingleton<Cuebot.Core.Rewards.IChannelRewards>(sp => new TwitchChannelRewards(sp.GetRequiredService<TwitchService>()));
         services.AddSingleton<ITriggerProvider>(sp =>
             new TwitchTriggers(TimeProvider.System, () => sp.GetRequiredService<TwitchService>().CustomPowerUpTitles,
-                () => sp.GetRequiredService<TwitchService>().Api.RewardTitles));
+                () => sp.GetRequiredService<TwitchService>().Api.RewardTitles,
+                () => sp.GetService<Cuebot.Core.Chat.AccountStandings>()));
         foreach (var spec in TwitchSubActions.All)
             services.AddSingleton<ISubActionHandler>(sp => new TwitchSubAction(spec, () => sp.GetRequiredService<TwitchService>().Api));
         services.AddSingleton<IScriptFunctionProvider, TwitchScriptFunctions>();
@@ -51,6 +52,8 @@ public static class TwitchServiceCollectionExtensions
             new TwitchProtectedAccounts(() => sp.GetRequiredService<TwitchService>().Api));
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IChannelRoles>(sp =>
             new TwitchChannelRoles(() => sp.GetRequiredService<TwitchService>().Api, sp.GetRequiredService<AppLog>()));
+        services.AddSingleton<Cuebot.Core.Commands.IViewerStatusSource>(sp => new TwitchViewerStatus(() => sp.GetRequiredService<TwitchService>().Api));
+        services.AddSingleton<Cuebot.Core.Chat.IBanListSource>(sp => new TwitchViewerStatus(() => sp.GetRequiredService<TwitchService>().Api));
         return services;
     }
 }

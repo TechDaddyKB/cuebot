@@ -320,6 +320,9 @@ public sealed partial class ApiOperations(ServerServices services, Func<IReadOnl
         command.AllowedGroups ??= [];
         command.DeniedUsers ??= [];
         command.DeniedGroups ??= [];
+        command.Description ??= "";
+        command.Reply ??= "";
+        command.Arguments ??= [];
         if (command.Name.Length == 0) errors.Add(Problem("name", "The command needs a name"));
         if (command.GlobalCooldownSeconds < 0) errors.Add(Problem("globalCooldownSeconds", "Must be 0 or more"));
         if (command.UserCooldownSeconds < 0) errors.Add(Problem("userCooldownSeconds", "Must be 0 or more"));

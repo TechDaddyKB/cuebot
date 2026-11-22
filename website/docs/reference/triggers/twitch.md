@@ -805,6 +805,10 @@ Runs when one viewer builds a full emote pyramid in chat, like 1, 2, 3 emotes th
 
 Runs when someone follows your Twitch channel. Great for a thank-you message or an on-screen alert.
 
+| Setting | What to put in |
+| --- | --- |
+| **Skip banned accounts and known bots** | Follows the 'Banned accounts and bots' options hide do not run this action. Untick to run it anyway; %isBanned% and %isKnownBot% tell them apart. Starts as: `true`. |
+
 **Variables you get**
 
 | Variable | What it holds |

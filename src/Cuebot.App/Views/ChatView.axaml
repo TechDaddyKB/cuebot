@@ -592,6 +592,20 @@
               <CheckBox x:Name="MirroringBox" Content="Automatic mirroring (off by default)" IsChecked="{Binding AutomaticMirroring}" IsEnabled="{Binding CanMirror}"
                         ToolTip.ShowOnDisabled="True" ToolTip.Tip="Needs identity links." />
               <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{x:Static vmc:ChatOptionsViewModel.AutomaticMirroringText}" />
+
+              <TextBlock Text="Banned accounts and bots" FontWeight="SemiBold" Margin="0,8,0,0" />
+              <CheckBox x:Name="IgnoreBannedFollowsBox" Content="Ignore follows from banned accounts" IsChecked="{Binding IgnoreBannedFollows}"
+                        ToolTip.Tip="Their follow gets no alert, no speech, no credit and no place in the feed." />
+              <CheckBox Content="Ignore channel point redemptions from banned accounts" IsChecked="{Binding IgnoreBannedRedemptions}"
+                        ToolTip.Tip="Subs, cheers and tips are never ignored, so your totals stay right." />
+              <CheckBox Content="Keep banned accounts out of the credits" IsChecked="{Binding KeepBannedOutOfCredits}"
+                        ToolTip.Tip="Also takes someone off this stream's credits the moment they are banned." />
+              <CheckBox x:Name="TreatKnownBotsBox" Content="Treat known bots like banned accounts" IsChecked="{Binding TreatKnownBotsAsBanned}"
+                        ToolTip.Tip="Applies the options above to common bots like Nightbot, and stops their chat being read aloud." />
+              <CheckBox Content="Read the Twitch ban list once a day" IsChecked="{Binding SyncBanList}"
+                        ToolTip.Tip="So people you banned before installing Cuebot count too." />
+              <TextBlock Text="Your own bots (comma separated)" FontSize="12" />
+              <TextBox Text="{Binding ExtraBots}" PlaceholderText="e.g. MyChannelBot" ToolTip.Tip="Added to the built-in list of known bots." />
             </StackPanel>
 
             <TextBlock Text="Display" FontWeight="SemiBold" />

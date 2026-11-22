@@ -33,6 +33,30 @@ public enum ChatPermission
     Broadcaster,
 }
 
+/// <summary>Which line of a multi-line reply is sent.</summary>
+public enum CommandReplyMode
+{
+    First,
+    Random,
+    Rotate,
+}
+
+/// <summary>The account a command's reply is sent from.</summary>
+public enum CommandReplyAccount
+{
+    /// <summary>Whatever the platform's send box uses by default.</summary>
+    Default,
+    Bot,
+    Broadcaster,
+}
+
+/// <summary>Where a command's reply goes.</summary>
+public enum CommandReplyTarget
+{
+    SamePlatform,
+    AllPlatforms,
+}
+
 /// <summary>
 /// A platform-agnostic chat command (commands.json). It listens to the combined chat ("chat.message") and, on a
 /// match that passes permissions and cooldowns, publishes "command.triggered".
@@ -52,6 +76,19 @@ public sealed class CommandDefinition
 
     /// <summary>Listed by the "Get commands" sub-action.</summary>
     public bool Include { get; set; } = true;
+
+    /// <summary>What the command is for: shown on the Commands page and available as %commandDescription%.</summary>
+    public string Description { get; set; } = "";
+
+    /// <summary>Text sent to chat when the command runs (variables allowed, one option per line). No action needed.</summary>
+    public string Reply { get; set; } = "";
+
+    public CommandReplyMode ReplyMode { get; set; } = CommandReplyMode.First;
+    public CommandReplyAccount ReplyAs { get; set; } = CommandReplyAccount.Default;
+    public CommandReplyTarget ReplyTo { get; set; } = CommandReplyTarget.SamePlatform;
+
+    /// <summary>Preset variables handed to the reply and to actions. They never replace a variable the chat event set.</summary>
+    public Dictionary<string, string> Arguments { get; set; } = [];
 
     public CommandMode Mode { get; set; } = CommandMode.Basic;
     public CommandLocation Location { get; set; } = CommandLocation.Start;
@@ -81,7 +118,10 @@ public sealed class CommandDefinition
     /// <summary>User names or ids that may run the command regardless of <see cref="MinimumRole"/>.</summary>
     public List<string> AllowedUsers { get; set; } = [];
 
-    /// <summary>Groups (groups.json) whose members may run the command regardless of <see cref="MinimumRole"/>.</summary>
+    /// <summary>
+    /// Groups (groups.json, or a <see cref="BuiltInGroups"/> name such as @Followers) whose members may run the command
+    /// regardless of <see cref="MinimumRole"/>.
+    /// </summary>
     public List<string> AllowedGroups { get; set; } = [];
 
     /// <summary>User names or ids that may never run the command (the broadcaster excepted).</summary>

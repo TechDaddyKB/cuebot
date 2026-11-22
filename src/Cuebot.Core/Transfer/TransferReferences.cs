@@ -35,6 +35,7 @@ public static class TransferReferences
         {
             ["command.triggered"] = ("command", TransferKind.Command),
             ["command.cooldown"] = ("command", TransferKind.Command),
+            ["command.denied"] = ("command", TransferKind.Command),
             ["core.timer"] = ("timer", TransferKind.Timer),
         };
 

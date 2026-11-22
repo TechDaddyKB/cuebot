@@ -41,8 +41,12 @@ public sealed class ChatHub : IDisposable
     private readonly Queue<ChatModerationNotice> _moderation = new();
     private readonly HashSet<string> _deleted = new(StringComparer.Ordinal);
 
-    public ChatHub(EventBus bus, AppLog log, IEnumerable<IChatEventAdapter> adapters, IEnumerable<IChatSender> senders)
+    private readonly AccountStandings? _standings;
+
+    public ChatHub(EventBus bus, AppLog log, IEnumerable<IChatEventAdapter> adapters, IEnumerable<IChatSender> senders,
+        AccountStandings? standings = null)
     {
+        _standings = standings;
         _bus = bus;
         _log = log;
         _adapters = adapters.ToArray();
@@ -147,7 +151,13 @@ public sealed class ChatHub : IDisposable
         {
             if (adapter.ToChatMessage(e) is { } message) Add(message, e);
             if (adapter.ToFeedItem(e) is { } item)
-                Add(e.Args.GetBool("isTest") ? item with { IsTest = true, IsEmulated = e.Args.GetBool("isEmulated") } : item);
+            {
+                var userId = e.Args.GetString("userId");
+                if (_standings?.HidesActivity(item.Kind, item.Spend is not null, item.Platform, userId,
+                        e.Args.GetString("userName") is { Length: > 0 } login ? login : item.User, e.Args.GetBool("isTest")) == true)
+                    continue;
+                Add(e.Args.GetBool("isTest") ? item with { IsTest = true, IsEmulated = e.Args.GetBool("isEmulated") } : item, userId);
+            }
         }
     }
 
@@ -195,7 +205,7 @@ public sealed class ChatHub : IDisposable
             ["amount"] = message.Amount ?? "",
         };
 
-    private void Add(FeedItem item)
+    private void Add(FeedItem item, string userId)
     {
         lock (_gate) Push(_feed, item);
         FeedItemAdded?.Invoke(item);
@@ -204,6 +214,7 @@ public sealed class ChatHub : IDisposable
             ["platform"] = item.Platform,
             ["kind"] = item.Kind.ToString(),
             ["user"] = item.User,
+            ["userId"] = userId,
             ["title"] = item.Title,
             ["detail"] = item.Detail ?? "",
             ["amount"] = item.Amount ?? "",

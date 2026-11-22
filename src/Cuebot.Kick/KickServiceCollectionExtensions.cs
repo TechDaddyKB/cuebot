@@ -48,7 +48,8 @@ public static class KickServiceCollectionExtensions
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IChatModerator>(sp => new KickChatModerator(sp.GetRequiredService<KickService>()));
         services.AddSingleton<Cuebot.Core.Chat.Moderation.IProtectedAccounts>(sp => new KickProtectedAccounts(sp.GetRequiredService<KickService>()));
         services.AddSingleton<IChatSender, KickChatSender>();
-        services.AddSingleton<ITriggerProvider>(sp => new KickTriggers(() => sp.GetRequiredService<KickService>().Rewards.Select(r => r.Title)));
+        services.AddSingleton<ITriggerProvider>(sp => new KickTriggers(() => sp.GetRequiredService<KickService>().Rewards.Select(r => r.Title),
+            () => sp.GetService<Cuebot.Core.Chat.AccountStandings>()));
         services.AddSingleton<ISubActionHandler, SendMessageSubAction>();
         services.AddSingleton<ISubActionHandler, ReplyToMessageSubAction>();
         services.AddSingleton<ISubActionHandler, DeleteMessageSubAction>();

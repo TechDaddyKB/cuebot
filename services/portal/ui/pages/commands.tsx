@@ -14,9 +14,17 @@ interface Command {
   globalCooldownSeconds: number;
   userCooldownSeconds: number;
   minimumRole: "Everyone" | "Subscriber" | "Vip" | "Moderator" | "Broadcaster";
+  description?: string;
+  reply?: string;
+  allowedGroups?: string[];
   [key: string]: unknown;
 }
 interface Commands extends Answer { commands?: Command[] }
+
+const builtInGroups: [string, string][] = [
+  ["@Followers", "Followers"], ["@Subscribers", "Subscribers"], ["@Subscribers T2+", "Tier 2 and 3 subscribers"],
+  ["@Subscribers T3", "Tier 3 subscribers"], ["@VIPs", "VIPs"], ["@Moderators", "Moderators"],
+];
 
 const blank = (): Command => ({
   id: crypto.randomUUID(), name: "New command", group: "", enabled: true, mode: "Basic", location: "Start", commands: ["!new"],
@@ -39,7 +47,7 @@ export function CommandsPage() {
         {can("CreateCommands") && <button type="button" class="primary" onClick={() => setEditing({ command: blank(), isNew: true })}>+ Command</button>}
       </div>
       <LoadError data={data} />
-      <p class="muted">Chat commands like !discord. A command starts the actions that use it as their trigger.</p>
+      <p class="muted">Chat commands like !discord. A command can reply with text by itself, or start the actions that use it as their trigger.</p>
       {data?.commands && (data.commands.length === 0 ? <p class="muted">No commands yet.</p> : (
         <ul class="rows">
           {data.commands.map((c) => (
@@ -91,6 +99,13 @@ function CommandEditor({ command, isNew, done }: { command: Command; isNew: bool
           options={[["Start", "At the start of a message"], ["Exact", "The whole message"], ["Anywhere", "Anywhere in a message"]]} />
         <Select label="Who can use it" value={c.minimumRole} onChange={(minimumRole) => set({ minimumRole: minimumRole as Command["minimumRole"] })}
           options={[["Everyone", "Everyone"], ["Subscriber", "Subscribers and up"], ["Vip", "VIPs and up"], ["Moderator", "Moderators and up"], ["Broadcaster", "Only the streamer"]]} />
+        {builtInGroups.map(([group, label]) => (
+          <Check key={group} label={`Also allow: ${label}`} checked={(c.allowedGroups ?? []).includes(group)}
+            onChange={(on) => set({ allowedGroups: [...(c.allowedGroups ?? []).filter((g) => g !== group), ...(on ? [group] : [])] })} />
+        ))}
+        <Field label="Description" value={c.description ?? ""} onInput={(description) => set({ description })} />
+        <Field label="Reply in chat (optional, no action needed; one option per line)" multiline value={c.reply ?? ""}
+          onInput={(reply) => set({ reply })} />
         <Field label="Cooldown for everyone (seconds)" type="number" value={String(c.globalCooldownSeconds)}
           onInput={(v) => set({ globalCooldownSeconds: Math.max(0, Number(v) || 0) })} />
         <Field label="Cooldown per viewer (seconds)" type="number" value={String(c.userCooldownSeconds)}

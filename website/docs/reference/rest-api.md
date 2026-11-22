@@ -1343,6 +1343,12 @@ The objects the answers above name, with their fields.
 | `globalCooldownSeconds` | number | Seconds to wait before anyone can use it again, like 10. 0 means no wait. |
 | `userCooldownSeconds` | number | Seconds one viewer must wait before using it again, like 30. 0 means no wait. |
 | `minimumRole` | one of `Everyone`, `Subscriber`, `Vip`, `Moderator`, `Broadcaster` | Who may use it: Everyone, Subscriber, Vip, Moderator or Broadcaster (you). Higher roles can always use it too. |
+| `description` | text | What the command does, a note for you and your mods. Actions and replies get it as %commandDescription%. |
+| `reply` | text | Text Cuebot sends to chat when the command runs, so it needs no action. Variables work. With several lines, replyMode picks one. |
+| `replyMode` | one of `First`, `Random`, `Rotate` | Which reply line is sent: First, Random, or Rotate (each in turn). |
+| `replyAs` | one of `Default`, `Bot`, `Broadcaster` | The account that sends the reply: Default, Bot or Broadcaster. |
+| `replyTo` | one of `SamePlatform`, `AllPlatforms` | Where the reply goes: SamePlatform (the chat it came from) or AllPlatforms. |
+| `arguments` | object | Preset variables for the reply and for actions, like {"sound": "airhorn"} gives %sound%. They never replace a variable from chat. |
 | `include` | true/false | Listed by the "Get commands" sub-action |
 | `ignoreBotAccount` | true/false | Ignore the bot account's own messages |
 | `ignoreInternal` | true/false | Ignore messages sent from Cuebot's own chat window |

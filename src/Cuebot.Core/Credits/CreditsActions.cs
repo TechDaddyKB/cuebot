@@ -12,7 +12,7 @@ public static class CreditsFeatures
     public static IServiceCollection AddCreditsFeatures(this IServiceCollection services)
     {
         services.AddSingleton(sp => new CreditsCollector(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<EventBus>(),
-            sp.GetRequiredService<AppLog>()));
+            sp.GetRequiredService<AppLog>(), standings: sp.GetService<Chat.AccountStandings>()));
         services.AddSingleton<ICreditsSource>(sp => sp.GetRequiredService<CreditsCollector>());
         // Ticked by the timer service (auto reset); resolving TimerService at start-up creates the collector.
         services.AddSingleton<IPeriodicService>(sp => sp.GetRequiredService<CreditsCollector>());

@@ -29,6 +29,24 @@ public sealed class ModerationSettings
     /// </summary>
     public bool SoftWarnings { get; set; } = true;
 
+    /// <summary>Follows from banned accounts reach no alert, speech, credits, feed or subathon. On: nobody wants these.</summary>
+    public bool IgnoreBannedFollows { get; set; } = true;
+
+    /// <summary>Also drop channel point redemptions from banned accounts. Off: a redemption may still need handling.</summary>
+    public bool IgnoreBannedRedemptions { get; set; }
+
+    /// <summary>Leave banned accounts out of the credits, and take them out when they are banned.</summary>
+    public bool KeepBannedOutOfCredits { get; set; } = true;
+
+    /// <summary>Known bots count as banned for these options. Off: some streamers credit or announce their bots.</summary>
+    public bool TreatKnownBotsAsBanned { get; set; }
+
+    /// <summary>The streamer's own bot names, added to the built-in list.</summary>
+    public List<string> ExtraBots { get; set; } = [];
+
+    /// <summary>Read the platform's ban list daily, so bans made before Cuebot was installed count too.</summary>
+    public bool SyncBanList { get; set; } = true;
+
     public ModLogRetention Retention => new ModLogRetention(MessageTextDays, TimeoutDays, BanMonthsAfterEnd).Clamped();
 
     /// <summary>
