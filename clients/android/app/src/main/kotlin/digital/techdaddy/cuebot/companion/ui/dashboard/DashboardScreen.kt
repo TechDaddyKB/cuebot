@@ -91,7 +91,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -167,7 +169,7 @@ private fun Content(vm: DashboardViewModel, state: DashboardViewModel.UiState, e
                     item(span = StaggeredGridItemSpan.FullLine) { ConnectionsStrip(dashboard.connections) }
                     state.controlError?.let { error ->
                         item(span = StaggeredGridItemSpan.FullLine) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }, verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.Warning, contentDescription = null, tint = LocalCuebotColors.current.bad, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
                                 Text(error, color = LocalCuebotColors.current.bad, style = MaterialTheme.typography.bodySmall)

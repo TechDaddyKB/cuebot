@@ -4,6 +4,15 @@ What changed in each version of Cuebot, newest first. Each line links to the gui
 
 To get the newest version, see [Updating Cuebot](updating.md).
 
+## 1.0.6
+
+A better start and an easy way to reach us in the Android phone app. Update it from Google Play.
+
+- **Getting started.** Before you pair, the app explains what it does and offers a demo Cuebot and a link to get Cuebot.
+- **Send feedback.** Settings can post a problem or an idea to Cuebot's public GitHub issues, with your app and device details. You see what is included first.
+- **Rate and share.** Settings has shortcuts to rate the app and share it.
+- **Accessibility.** Better screen reader labels, headings and error announcements.
+
 ## 1.0.5
 
 Fixes, safer webhooks and a signed Mac app. Update Cuebot, and update the phone app from Google Play or the App Store.

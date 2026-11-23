@@ -8,7 +8,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -159,6 +161,21 @@ class CompanionUiTest {
         // Paired: the deck loads from the stand-in.
         openTab("deck")
         compose.waitUntilExactlyOneExists(hasTestTag("deck-button-i1"), 10_000)
+    }
+
+    @Test fun feedbackShowsWhatIsIncludedBeforeSending() {
+        pairWithServer()
+        launch()
+        openTab("settings")
+        compose.onNodeWithTag("settings").performScrollToNode(hasTestTag("settings-feedback"))
+        compose.onNodeWithTag("settings-feedback").performClick()
+        compose.onNodeWithTag("feedback-send").assertIsNotEnabled()
+        compose.onNodeWithTag("feedback-title").performTextInput("Deck is blank")
+        compose.onNodeWithTag("feedback-details").performTextInput("It went blank after a restart")
+        compose.onNodeWithTag("feedback-send").assertIsEnabled()
+        compose.onNodeWithText("Paired Cuebots: 1", substring = true).assertExists()
+        compose.onNodeWithText("Cancel").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("feedback-form").fetchSemanticsNodes().isEmpty() }
     }
 
     @Test fun deckShowsLiveAndPresses() {
