@@ -126,8 +126,16 @@ Store** provisioning profile.
 2. Push the tag `vX.Y.Z`. CI builds, signs and uploads the build to TestFlight. Release candidates (`vX.Y.Z-rc.N`) do
    not run this workflow.
 3. Approve the waiting `app-store-review` deployment on the workflow run in GitHub.
-4. CI waits for Apple to process the build, creates the App Store version, attaches the build, sets the notes and submits
-   it to App Review. The version releases automatically once Apple approves it.
+4. CI waits for Apple to process the build, creates the App Store version, attaches the build, sets the notes, prepares
+   App Review Information and submits it to App Review. The version releases automatically once Apple approves it.
+
+App Review needs a way to use the app without a Cuebot, so the submit job also:
+
+- uploads `clients/ios/review/cuebot-review.mp4`, unless the version already has a finished attachment. Replace that file
+  when pairing or the main screens change. It is public, so it must show only made-up data.
+- adds the [test server](https://cuebot-test.techdaddydigital.com/) pairing steps to the App Review notes if they are
+  missing, and keeps the rest of the notes. Keep the test server running for as long as the app is on the App Store. If it
+  does not answer, the job warns and still submits, because the video shows the app.
 
 Only one version can be with Apple at a time: while another is waiting or in review, the submit job stops without
 changing anything. Re-run that job once the earlier version is live. Re-running is safe at every stage.

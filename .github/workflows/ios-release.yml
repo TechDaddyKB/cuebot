@@ -95,9 +95,11 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "build=$build" >> "$GITHUB_OUTPUT"
           echo "Cuebot Companion $version ($build)"
-      - name: Check the release notes
+      - name: Check the release notes and the review video
         if: steps.secrets.outputs.configured == 'true' && github.event_name == 'push'
-        run: python3 -I clients/ios/ci/asc_submit.py --check-notes "clients/ios/release-notes/${{ steps.version.outputs.version }}.txt"
+        run: |
+          python3 -I clients/ios/ci/asc_submit.py --check-review-video clients/ios/review/cuebot-review.mp4 \
+            --check-notes "clients/ios/release-notes/${{ steps.version.outputs.version }}.txt"
       - name: Use the newest stable Xcode
         if: steps.secrets.outputs.configured == 'true'
         run: |
@@ -150,4 +152,5 @@ jobs:
           BUILD: ${{ needs.testflight.outputs.build }}
         run: |
           python3 -I clients/ios/ci/asc_submit.py --version "$VERSION" --build "$BUILD" \
-            --notes "clients/ios/release-notes/$VERSION.txt"
+            --notes "clients/ios/release-notes/$VERSION.txt" \
+            --review-video clients/ios/review/cuebot-review.mp4

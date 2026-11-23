@@ -8,6 +8,7 @@ Reads ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8_BASE64 from the environment.
 """
 import argparse
 import base64
+import hashlib
 import json
 import os
 import subprocess
@@ -21,6 +22,13 @@ import urllib.request
 BUNDLE_ID = "digital.techdaddy.cuebot.companion"
 API = "https://api.appstoreconnect.apple.com"
 MAX_NOTES = 4000
+MAX_REVIEW_NOTES = 4000
+# The always-on demo Cuebot (made-up data) that App Review and testers pair with.
+TEST_SERVER = "https://cuebot-test.techdaddydigital.com/"
+TEST_SERVER_NOTE = (f"No Cuebot is needed to review this app. On this device, open {TEST_SERVER} in Safari, tap "
+                    "\"Pair this phone\", then tap Pair in Cuebot Companion. It connects to a demo Cuebot with made-up "
+                    "data. To try the Mods tab, tap \"Join as a mod\" on that page, then in the app open Mods, Join, Paste "
+                    "the invite link, and choose Sign in with Test account. A recording of the app is attached.")
 
 EDITABLE = {"PREPARE_FOR_SUBMISSION", "READY_FOR_REVIEW", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED",
             "INVALID_BINARY"}
@@ -30,6 +38,10 @@ LIVE = {"READY_FOR_DISTRIBUTION", "READY_FOR_SALE"}
 
 
 class SubmitError(Exception):
+    pass
+
+
+class NotFound(SubmitError):
     pass
 
 
@@ -86,8 +98,9 @@ class Client:
                 if method == "GET" and (error.code == 429 or error.code >= 500) and attempt < 3:
                     self.sleep(5 * (attempt + 1))
                     continue
-                raise SubmitError(f"{method} {urllib.parse.urlsplit(url).path}: HTTP {error.code}: "
-                                  f"{describe(detail)}") from None
+                kind = NotFound if error.code == 404 else SubmitError
+                raise kind(f"{method} {urllib.parse.urlsplit(url).path}: HTTP {error.code}: "
+                           f"{describe(detail)}") from None
             except urllib.error.URLError as error:
                 if method == "GET" and attempt < 3:
                     self.sleep(5 * (attempt + 1))
@@ -102,6 +115,26 @@ class Client:
             items.extend(page.get("data", []))
             next_url = page.get("links", {}).get("next")
         return items
+
+
+    def put_part(self, operation, data):
+        """Send one part to Apple's upload address. It is pre-signed, so the API token is not sent."""
+        url = operation["url"]
+        if not (url.startswith("https://") or url.startswith(API + "/")):
+            raise SubmitError("Apple returned an upload address that is not HTTPS")
+        part = data[operation["offset"]:operation["offset"] + operation["length"]]
+        for attempt in range(4):
+            request = urllib.request.Request(url, data=part, method=operation.get("method", "PUT"))
+            for header in operation.get("requestHeaders", []):
+                request.add_header(header["name"], header["value"])
+            try:
+                with urllib.request.urlopen(request, timeout=300) as response:
+                    response.read()
+                return
+            except (urllib.error.HTTPError, urllib.error.URLError) as error:
+                if attempt == 3:
+                    raise SubmitError(f"could not upload the review video: {error}") from None
+                self.sleep(5 * (attempt + 1))
 
 
 def describe(detail):
@@ -123,6 +156,30 @@ def read_notes(path):
     if len(notes) > MAX_NOTES:
         raise SubmitError(f"{path} has {len(notes)} characters, the App Store allows {MAX_NOTES}")
     return notes
+
+
+def read_video(path):
+    try:
+        with open(path, "rb") as handle:
+            data = handle.read()
+    except OSError:
+        raise SubmitError(f"no review video at {path}") from None
+    if not data:
+        raise SubmitError(f"{path} is empty")
+    return data
+
+
+def check_test_server(url=TEST_SERVER):
+    """A warning only: the attached video still lets App Review see the app if the demo is down."""
+    try:
+        with urllib.request.urlopen(url, timeout=20) as response:
+            if response.status == 200:
+                print(f"Test server is up: {url}")
+                return True
+    except (urllib.error.URLError, OSError):
+        pass
+    print(f"::warning::The test server {url} is not answering. App Review is told to pair with it.")
+    return False
 
 
 def state_of(version):
@@ -147,7 +204,104 @@ def wait_for_build(client, app_id, version, build, timeout=3600, interval=30):
         client.sleep(interval)
 
 
-def submit(client, version, build, notes):
+def review_detail(client, version_id, versions):
+    """The version's App Review Information, copied from an earlier version when it has none."""
+    try:
+        detail = client.request("GET", f"/v1/appStoreVersions/{version_id}/appStoreReviewDetail").get("data")
+    except NotFound:
+        detail = None
+    if detail:
+        return detail
+    earlier = sorted((v for v in versions if v["id"] != version_id), key=lambda v: state_of(v) not in LIVE)
+    for other in earlier:
+        try:
+            source = client.request("GET", f"/v1/appStoreVersions/{other['id']}/appStoreReviewDetail").get("data")
+        except NotFound:
+            continue
+        if not source:
+            continue
+        attributes = source.get("attributes", {})
+        if attributes.get("demoAccountRequired"):
+            raise SubmitError("App Review Information needs a demo account, which this script does not copy")
+        copied = {k: attributes[k] for k in ("contactFirstName", "contactLastName", "contactPhone", "contactEmail",
+                                             "notes") if attributes.get(k) is not None}
+        created = client.request("POST", "/v1/appStoreReviewDetails", {"data": {
+            "type": "appStoreReviewDetails", "attributes": {**copied, "demoAccountRequired": False},
+            "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}}},
+        }})["data"]
+        created.setdefault("attributes", {}).update(copied)
+        print(f"Copied App Review Information from {other['attributes']['versionString']}")
+        return created
+    raise SubmitError("no App Review Information to use. Fill it in on the version in App Store Connect")
+
+
+def add_test_server_note(client, detail):
+    """Adds the pairing instructions once and keeps everything else in the notes."""
+    current = (detail.get("attributes") or {}).get("notes") or ""
+    if TEST_SERVER in current:
+        return
+    notes = f"{current.rstrip()}\n\n{TEST_SERVER_NOTE}" if current.strip() else TEST_SERVER_NOTE
+    if len(notes) > MAX_REVIEW_NOTES:
+        print("::warning::The App Review notes have no room for the test server instructions.")
+        return
+    client.request("PATCH", f"/v1/appStoreReviewDetails/{detail['id']}", {"data": {
+        "type": "appStoreReviewDetails", "id": detail["id"], "attributes": {"notes": notes},
+    }})
+    print("Added the test server to the App Review notes")
+
+
+def attachment_state(attachment):
+    return ((attachment.get("attributes") or {}).get("assetDeliveryState") or {}).get("state")
+
+
+def wait_for_attachment(client, attachment_id, timeout=900, interval=10):
+    waited = 0
+    while True:
+        attachment = client.request("GET", f"/v1/appStoreReviewAttachments/{attachment_id}")["data"]
+        state = attachment_state(attachment)
+        if state == "COMPLETE":
+            return
+        if state == "FAILED":
+            raise SubmitError("Apple could not process the review video")
+        if waited >= timeout:
+            raise SubmitError(f"the review video was not ready in time (last state: {state})")
+        client.sleep(interval)
+        waited += interval
+
+
+def attach_review_video(client, detail, video_path, data):
+    """Uploads the video unless the version already has a finished attachment, which is kept."""
+    detail_id = detail["id"]
+    attachments = client.get_all(f"/v1/appStoreReviewDetails/{detail_id}/appStoreReviewAttachments?limit=50")
+    if any(attachment_state(a) == "COMPLETE" for a in attachments):
+        print("The version already has a review attachment: keeping it.")
+        return
+    processing = next((a for a in attachments if attachment_state(a) == "UPLOAD_COMPLETE"), None)
+    if processing:
+        wait_for_attachment(client, processing["id"])
+        return
+    for attachment in attachments:
+        client.request("DELETE", f"/v1/appStoreReviewAttachments/{attachment['id']}")
+    created = client.request("POST", "/v1/appStoreReviewAttachments", {"data": {
+        "type": "appStoreReviewAttachments",
+        "attributes": {"fileName": os.path.basename(video_path), "fileSize": len(data)},
+        "relationships": {"appStoreReviewDetail": {"data": {"type": "appStoreReviewDetails", "id": detail_id}}},
+    }})["data"]
+    operations = created["attributes"].get("uploadOperations") or []
+    if not operations:
+        raise SubmitError("Apple returned no upload address for the review video")
+    for operation in operations:
+        client.put_part(operation, data)
+    client.request("PATCH", f"/v1/appStoreReviewAttachments/{created['id']}", {"data": {
+        "type": "appStoreReviewAttachments", "id": created["id"],
+        "attributes": {"uploaded": True,
+                       "sourceFileChecksum": hashlib.md5(data, usedforsecurity=False).hexdigest()},
+    }})
+    wait_for_attachment(client, created["id"])
+    print("Attached the review video")
+
+
+def submit(client, version, build, notes, video_path=None):
     apps = client.request("GET", "/v1/apps?" + urllib.parse.urlencode({"filter[bundleId]": BUNDLE_ID})).get("data", [])
     apps = [a for a in apps if a["attributes"].get("bundleId") == BUNDLE_ID]
     if len(apps) != 1:
@@ -202,6 +356,12 @@ def submit(client, version, build, notes):
     else:
         print("No version is live yet, so Apple takes no release notes for this one.")
 
+    if video_path:
+        data = read_video(video_path)
+        detail = review_detail(client, version_id, versions)
+        add_test_server_note(client, detail)
+        attach_review_video(client, detail, video_path, data)
+
     open_submissions = client.request("GET", "/v1/reviewSubmissions?" + urllib.parse.urlencode({
         "filter[app]": app_id, "filter[platform]": "IOS", "filter[state]": "READY_FOR_REVIEW"})).get("data", [])
     if open_submissions:
@@ -235,13 +395,18 @@ def submit(client, version, build, notes):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check-notes", metavar="FILE", help="only check a release notes file")
+    parser.add_argument("--check-review-video", metavar="FILE", help="only check the App Review video")
+    parser.add_argument("--review-video", metavar="FILE", help="attach this video to App Review Information")
     parser.add_argument("--version")
     parser.add_argument("--build")
     parser.add_argument("--notes")
     args = parser.parse_args()
     try:
-        if args.check_notes:
-            read_notes(args.check_notes)
+        if args.check_notes or args.check_review_video:
+            if args.check_notes:
+                read_notes(args.check_notes)
+            if args.check_review_video:
+                read_video(args.check_review_video)
             return
         if not (args.version and args.build and args.notes):
             parser.error("--version, --build and --notes are required")
@@ -254,8 +419,9 @@ def main():
             descriptor = os.open(key_path, os.O_WRONLY | os.O_CREAT, 0o600)
             with os.fdopen(descriptor, "wb") as handle:
                 handle.write(base64.b64decode(os.environ["ASC_KEY_P8_BASE64"]))
+            check_test_server()
             submit(Client(os.environ["ASC_KEY_ID"], os.environ["ASC_ISSUER_ID"], key_path),
-                   args.version, args.build, notes)
+                   args.version, args.build, notes, args.review_video)
     except SubmitError as error:
         print(f"::error::{error}", file=sys.stderr)
         sys.exit(1)
