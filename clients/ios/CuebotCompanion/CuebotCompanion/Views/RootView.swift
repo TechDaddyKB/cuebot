@@ -127,7 +127,13 @@ struct ConnectionGate<Content: View>: View {
             ContentUnavailableView {
                 Label("Pair with Cuebot", systemImage: "qrcode.viewfinder")
             } description: {
-                Text("In Cuebot on your computer, open the Servers page and tick \"Show pairing code\" under \"Pair a phone\" in the REST API card. Then scan the code from the Settings tab here.")
+                Text("Cuebot Companion is a remote for Cuebot, the free stream automation app for your computer.\n\nIn Cuebot, open the Servers page and tick \"Show pairing code\" under \"Pair a phone\" in the REST API card. Then scan the code from the Settings tab here.")
+            } actions: {
+                Link("Try a demo Cuebot", destination: URL(string: "https://cuebot-test.techdaddydigital.com/")!)
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("gate-demo")
+                Link("Get Cuebot", destination: URL(string: "https://techdaddydigital.com/cuebot/")!)
+                    .accessibilityIdentifier("gate-get-cuebot")
             }
         case .unauthorized:
             ContentUnavailableView {

@@ -45,6 +45,27 @@ final class LaunchTests: XCTestCase {
     }
 
     @MainActor
+    func testFeedbackNeedsTextAndShowsWhatIsIncluded() {
+        let app = launchUnpaired(tab: "settings")
+        XCTAssertTrue(app.buttons["pair-button"].waitForExistence(timeout: wait))
+        let row = app.buttons["settings-feedback"]
+        for _ in 0..<8 where !row.isHittable { app.swipeUp() }
+        row.tap()
+        let send = app.buttons["feedback-send"]
+        XCTAssertTrue(send.waitForExistence(timeout: wait))
+        XCTAssertFalse(send.isEnabled)
+        let summary = app.descendants(matching: .any)["feedback-title"].firstMatch
+        summary.tap()
+        summary.typeText("Deck is blank")
+        let details = app.descendants(matching: .any)["feedback-details"].firstMatch
+        details.tap()
+        details.typeText("It went blank")
+        XCTAssertTrue(send.isEnabled)
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(app.buttons["settings-feedback"].waitForExistence(timeout: wait))
+    }
+
+    @MainActor
     func testPairingByHandAddsTheCuebot() {
         let app = launchUnpaired(tab: "settings")
         XCTAssertTrue(app.buttons["pair-button"].waitForExistence(timeout: wait))

@@ -6,6 +6,7 @@ struct SettingsTab: View {
     @Environment(PairedCuebots.self) private var paired
     @Environment(ConnectionStore.self) private var connection
     @State private var pairing = false
+    @State private var feedback = false
     @State private var renaming: PairedCuebot?
     @State private var newName = ""
     @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system.rawValue
@@ -77,6 +78,17 @@ struct SettingsTab: View {
                         LabeledContent("API", value: status.app.apiVersion)
                     }
                     Link("Troubleshooting", destination: URL(string: "https://techdaddykb.github.io/cuebot/guides/help/troubleshooting/")!)
+                    Button { feedback = true } label: { Label("Send feedback", systemImage: "bubble.left.and.exclamationmark.bubble.right") }
+                        .accessibilityIdentifier("settings-feedback")
+                    Link(destination: URL(string: "https://apps.apple.com/app/id6835937932?action=write-review")!) {
+                        Label("Rate the app", systemImage: "star")
+                    }
+                    .accessibilityIdentifier("settings-rate")
+                    ShareLink(item: URL(string: "https://techdaddydigital.com/cuebot/")!,
+                              message: Text("Cuebot Companion is a phone remote for Cuebot, a free stream automation app.")) {
+                        Label("Share the app", systemImage: "square.and.arrow.up")
+                    }
+                    .accessibilityIdentifier("settings-share")
                 }
                 }
                 .listRowBackground(Color.cuebotCard)
@@ -87,6 +99,7 @@ struct SettingsTab: View {
             .navigationTitle("Settings")
             .sideMenuButton()
             .sheet(isPresented: $pairing) { PairingView() }
+            .sheet(isPresented: $feedback) { FeedbackView() }
             .alert("Rename", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
                 TextField("Name", text: $newName)
                 Button("Save") { if let renaming { paired.rename(renaming.id, to: newName) } }
