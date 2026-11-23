@@ -67,17 +67,41 @@ class PrepareSigningTests(unittest.TestCase):
 
 
 class FakeAsc:
-    def __init__(self, versions=(), build_states=("VALID",), open_submission=None, items=()):
+    def __init__(self, versions=(), build_states=("VALID",), open_submission=None, items=(),
+                 review_detail=None, earlier_detail=None, attachments=(), attachment_states=("COMPLETE",)):
         self.versions = [dict(v) for v in versions]
         self.build_states = list(build_states)
         self.open_submission = open_submission
         self.items = list(items)
         self.writes = []
         self.tokens = []
+        self.review_detail = review_detail
+        self.earlier_detail = earlier_detail
+        self.attachments = list(attachments)
+        self.attachment_states = list(attachment_states)
+        self.uploaded = b""
+        self.upload_tokens = []
 
     def handle(self, method, path, query, body):
         if method != "GET":
             self.writes.append((method, path, body))
+        if path.endswith("/appStoreReviewDetail"):
+            version_id = path.split("/")[3]
+            detail = self.review_detail if version_id in ("v", "newv") else self.earlier_detail
+            return {"data": detail}
+        if path == "/v1/appStoreReviewDetails" and method == "POST":
+            return {"data": {"id": "detail-new", "attributes": {}}}
+        if path.endswith("/appStoreReviewAttachments") and method == "GET":
+            return {"data": [{"id": i, "attributes": {"assetDeliveryState": {"state": state}}}
+                             for i, state in self.attachments]}
+        if path == "/v1/appStoreReviewAttachments" and method == "POST":
+            return {"data": {"id": "att1", "attributes": {"uploadOperations": [
+                {"method": "PUT", "url": f"{asc_submit.API}/upload/1", "offset": 0, "length": 4, "requestHeaders": []},
+                {"method": "PUT", "url": f"{asc_submit.API}/upload/2", "offset": 4, "length": 3, "requestHeaders": []},
+            ]}}}
+        if path.startswith("/v1/appStoreReviewAttachments/") and method == "GET":
+            state = self.attachment_states.pop(0) if len(self.attachment_states) > 1 else self.attachment_states[0]
+            return {"data": {"id": path.rsplit("/", 1)[1], "attributes": {"assetDeliveryState": {"state": state}}}}
         if path == "/v1/apps":
             return {"data": [{"id": "app1", "attributes": {"bundleId": query["filter[bundleId]"][0]}}]}
         if path == "/v1/apps/app1/appStoreVersions":
@@ -114,20 +138,28 @@ class SubmitTests(unittest.TestCase):
     def tearDownClass(cls):
         cls.folder.cleanup()
 
-    def run_submit(self, fake):
+    def run_submit(self, fake, video=None):
         class Handler(BaseHTTPRequestHandler):
             def _serve(self):
                 parts = urlsplit(self.path)
                 fake.tokens.append(self.headers.get("Authorization", ""))
                 length = int(self.headers.get("Content-Length") or 0)
-                body = json.loads(self.rfile.read(length)) if length else None
+                raw = self.rfile.read(length) if length else b""
+                if parts.path.startswith("/upload/"):
+                    fake.upload_tokens.append(self.headers.get("Authorization"))
+                    fake.uploaded += raw
+                    self.send_response(200)
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+                body = json.loads(raw) if raw else None
                 payload = json.dumps(fake.handle(self.command, parts.path, parse_qs(parts.query), body)).encode()
                 self.send_response(200)
                 self.send_header("Content-Length", str(len(payload)))
                 self.end_headers()
                 self.wfile.write(payload)
 
-            do_GET = do_POST = do_PATCH = _serve
+            do_GET = do_POST = do_PATCH = do_PUT = do_DELETE = _serve
 
             def log_message(self, *args):
                 pass
@@ -138,7 +170,7 @@ class SubmitTests(unittest.TestCase):
         asc_submit.API = f"http://127.0.0.1:{server.server_port}"
         try:
             client = asc_submit.Client("KEYID12345", "issuer", self.key, sleep=lambda _: None)
-            return asc_submit.submit(client, "1.0.5", "150.1", "Notes")
+            return asc_submit.submit(client, "1.0.5", "150.1", "Notes", video)
         finally:
             asc_submit.API = old
             server.shutdown()
@@ -212,6 +244,89 @@ class SubmitTests(unittest.TestCase):
         with self.assertRaisesRegex(asc_submit.SubmitError, "other items"):
             self.run_submit(fake)
         self.assertNotIn(("PATCH", "/v1/reviewSubmissions/sub9"), self.paths(fake))
+
+
+class ReviewVideoTests(SubmitTests):
+    DETAIL = {"id": "detail1", "attributes": {"notes": "Existing notes", "contactEmail": "review@example.test"}}
+    OLD = {"id": "old", "version": "1.0.4", "state": "READY_FOR_SALE"}
+
+    def setUp(self):
+        self.video_folder = tempfile.TemporaryDirectory()
+        self.video = os.path.join(self.video_folder.name, "review.mp4")
+        with open(self.video, "wb") as handle:
+            handle.write(b"1234567")
+
+    def tearDown(self):
+        self.video_folder.cleanup()
+
+    def fake(self, **extra):
+        extra.setdefault("review_detail", self.DETAIL)
+        return FakeAsc(versions=[self.OLD], **extra)
+
+    def body(self, fake, method, path):
+        return next(b for m, p, b in fake.writes if (m, p) == (method, path))
+
+    def test_uploads_the_video_before_submitting(self):
+        fake = self.fake(attachment_states=("UPLOAD_COMPLETE", "COMPLETE"))
+        self.assertEqual(self.run_submit(fake, self.video), "submitted")
+        self.assertEqual(fake.uploaded, b"1234567")
+        self.assertEqual(fake.upload_tokens, [None, None])
+        finished = self.body(fake, "PATCH", "/v1/appStoreReviewAttachments/att1")["data"]["attributes"]
+        self.assertIs(finished["uploaded"], True)
+        self.assertEqual(finished["sourceFileChecksum"], "fcea920f7412b5da7be0cf42b8c93759")
+        paths = self.paths(fake)
+        self.assertLess(paths.index(("PATCH", "/v1/appStoreReviewAttachments/att1")),
+                        paths.index(("POST", "/v1/reviewSubmissions")))
+
+    def test_keeps_the_notes_and_adds_the_test_server_once(self):
+        fake = self.fake()
+        self.run_submit(fake, self.video)
+        notes = self.body(fake, "PATCH", "/v1/appStoreReviewDetails/detail1")["data"]["attributes"]["notes"]
+        self.assertTrue(notes.startswith("Existing notes\n\n"))
+        self.assertIn(asc_submit.TEST_SERVER, notes)
+        again = self.fake(review_detail={"id": "detail1", "attributes": {"notes": notes}})
+        self.run_submit(again, self.video)
+        self.assertNotIn(("PATCH", "/v1/appStoreReviewDetails/detail1"), self.paths(again))
+
+    def test_notes_with_no_room_are_left_alone(self):
+        fake = self.fake(review_detail={"id": "detail1", "attributes": {"notes": "x" * 3990}})
+        self.assertEqual(self.run_submit(fake, self.video), "submitted")
+        self.assertNotIn(("PATCH", "/v1/appStoreReviewDetails/detail1"), self.paths(fake))
+
+    def test_a_finished_attachment_is_kept(self):
+        fake = self.fake(attachments=[("a1", "COMPLETE")])
+        self.assertEqual(self.run_submit(fake, self.video), "submitted")
+        self.assertEqual(fake.uploaded, b"")
+        self.assertNotIn(("POST", "/v1/appStoreReviewAttachments"), self.paths(fake))
+
+    def test_a_failed_attachment_is_replaced(self):
+        fake = self.fake(attachments=[("a1", "FAILED")])
+        self.run_submit(fake, self.video)
+        self.assertIn(("DELETE", "/v1/appStoreReviewAttachments/a1"), self.paths(fake))
+        self.assertEqual(fake.uploaded, b"1234567")
+
+    def test_a_video_apple_rejects_stops_the_submission(self):
+        fake = self.fake(attachment_states=("FAILED",))
+        with self.assertRaisesRegex(asc_submit.SubmitError, "could not process"):
+            self.run_submit(fake, self.video)
+        self.assertNotIn(("POST", "/v1/reviewSubmissions"), self.paths(fake))
+
+    def test_a_new_version_copies_the_review_information(self):
+        fake = self.fake(review_detail=None, earlier_detail=self.DETAIL)
+        self.assertEqual(self.run_submit(fake, self.video), "submitted")
+        created = self.body(fake, "POST", "/v1/appStoreReviewDetails")["data"]
+        self.assertEqual(created["attributes"]["contactEmail"], "review@example.test")
+        self.assertEqual(created["relationships"]["appStoreVersion"]["data"]["id"], "newv")
+
+    def test_no_review_information_stops_the_submission(self):
+        fake = self.fake(review_detail=None)
+        with self.assertRaisesRegex(asc_submit.SubmitError, "App Review Information"):
+            self.run_submit(fake, self.video)
+        self.assertNotIn(("POST", "/v1/reviewSubmissions"), self.paths(fake))
+
+    def test_a_missing_video_stops_before_the_review_steps(self):
+        with self.assertRaisesRegex(asc_submit.SubmitError, "no review video"):
+            self.run_submit(self.fake(), os.path.join(self.video_folder.name, "missing.mp4"))
 
 
 class NotesTests(unittest.TestCase):
