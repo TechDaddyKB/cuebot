@@ -76,6 +76,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -122,7 +123,7 @@ fun RootScreen(container: AppContainer, startTab: Tab, pendingLink: String?, onL
     val deck: DeckViewModel = viewModel(factory = viewModelFactory { initializer { DeckViewModel(container.connection, container.store, container.foreground) } })
     val dashboard: DashboardViewModel = viewModel(factory = viewModelFactory { initializer { DashboardViewModel(container.connection, container.store, container.foreground) } })
     val chat: ChatViewModel = viewModel(factory = viewModelFactory { initializer { ChatViewModel(container.connection, container.foreground) } })
-    val settings: SettingsViewModel = viewModel(factory = viewModelFactory { initializer { SettingsViewModel(container.paired, container.connection, container.store) } })
+    val settings: SettingsViewModel = viewModel(factory = viewModelFactory { initializer { SettingsViewModel(container.paired, container.connection, container.store, { container.memberships.all.value.size }) } })
     val mods: ModViewModel = viewModel(factory = viewModelFactory { initializer { ModViewModel(container.memberships, foreground = container.foreground, alert = container.alert) } })
     // The approval queue is checked while the app is on screen, so the Mods tab can show how many changes wait.
     val approvals: ApprovalsViewModel = viewModel(factory = viewModelFactory { initializer { ApprovalsViewModel(container.connection, container.foreground, alert = container.alert) } })
@@ -266,6 +267,8 @@ private fun LocalNetworkPermission(container: AppContainer) {
 }
 
 private const val LOCAL_NETWORK = "android.permission.ACCESS_LOCAL_NETWORK"
+private const val DEMO_URL = "https://cuebot-test.techdaddydigital.com/"
+private const val GET_CUEBOT_URL = "https://techdaddydigital.com/cuebot/"
 
 /** Shown instead of a tab's content when there is nothing to talk to yet, or Cuebot cannot be reached. */
 @Composable
@@ -274,8 +277,16 @@ fun ConnectionGate(container: AppContainer, goToSettings: () -> Unit, content: @
     when (val s = status) {
         ConnectionStatus.Unpaired -> Unavailable(
             Icons.Filled.QrCodeScanner, "Pair with Cuebot",
-            "In Cuebot on your computer, open the Servers page and tick \"Show pairing code\" under \"Pair a phone\" in the REST API card. Then scan the code from the Settings tab here.",
-        ) { Button(onClick = goToSettings, modifier = Modifier.testTag("gate-pair")) { Text("Pair a Cuebot") } }
+            "Cuebot Companion is a remote for Cuebot, the free stream automation app for your computer.\n\n" +
+                "In Cuebot, open the Servers page and tick \"Show pairing code\" under \"Pair a phone\" in the REST API card. Then scan the code from the Settings tab here.",
+        ) {
+            val uri = LocalUriHandler.current
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = goToSettings, modifier = Modifier.testTag("gate-pair")) { Text("Pair a Cuebot") }
+                OutlinedButton(onClick = { uri.openUri(DEMO_URL) }, modifier = Modifier.testTag("gate-demo")) { Text("Try a demo Cuebot") }
+                TextButton(onClick = { uri.openUri(GET_CUEBOT_URL) }, modifier = Modifier.testTag("gate-get-cuebot")) { Text("Get Cuebot") }
+            }
+        }
         ConnectionStatus.Unauthorized -> Unavailable(
             Icons.Filled.KeyOff, "Pair again",
             "Cuebot did not accept this phone's token (it may have been changed). Scan the pairing code again in Settings.",

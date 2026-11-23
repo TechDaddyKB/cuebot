@@ -250,7 +250,7 @@ private fun SendBox(vm: ChatViewModel, state: ChatViewModel.UiState) {
             Box {
                 OutlinedButton(onClick = { picking = true }, modifier = Modifier.testTag("chat-send-to")) {
                     Text(state.sendTo)
-                    Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+                    Icon(Icons.Filled.ArrowDropDown, contentDescription = "Choose where to send")
                 }
                 DropdownMenu(expanded = picking, onDismissRequest = { picking = false }) {
                     state.sendTargets.forEach { p ->

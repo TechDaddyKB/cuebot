@@ -3,6 +3,11 @@ package digital.techdaddy.cuebot.companion.ui.settings
 import androidx.lifecycle.ViewModel
 import digital.techdaddy.cuebot.companion.data.Connection
 import digital.techdaddy.cuebot.companion.data.ConnectionStatus
+import digital.techdaddy.cuebot.companion.data.FeedbackContext
+import digital.techdaddy.cuebot.companion.data.FeedbackDevice
+import digital.techdaddy.cuebot.companion.data.FeedbackKind
+import digital.techdaddy.cuebot.companion.data.FeedbackReporter
+import digital.techdaddy.cuebot.companion.data.FeedbackResult
 import digital.techdaddy.cuebot.companion.data.KeyValueStore
 import digital.techdaddy.cuebot.companion.data.PairedCuebots
 import digital.techdaddy.cuebot.companion.ui.MENU_PINNED_KEY
@@ -18,6 +23,8 @@ class SettingsViewModel(
     private val paired: PairedCuebots,
     private val connection: Connection,
     private val store: KeyValueStore,
+    private val modMemberships: () -> Int = { 0 },
+    private val feedback: FeedbackReporter = FeedbackReporter(store),
 ) : ViewModel() {
     val cuebots: StateFlow<PairedCuebots.State> = paired.state
     val status: StateFlow<ConnectionStatus> = connection.status
@@ -64,6 +71,23 @@ class SettingsViewModel(
     }
 
     fun retry() = connection.check()
+
+    /** The app state a feedback report includes: never the Cuebot's address, name or tokens. */
+    fun feedbackContext(device: FeedbackDevice): FeedbackContext {
+        val current = status.value
+        val app = (current as? ConnectionStatus.Online)?.status?.app
+        val state = when (current) {
+            ConnectionStatus.Unpaired -> "Not paired"
+            ConnectionStatus.Checking -> "Checking"
+            is ConnectionStatus.Online -> "Online"
+            is ConnectionStatus.Unreachable -> "Can't reach Cuebot"
+            ConnectionStatus.Unauthorized -> "Cuebot refused the pairing"
+        }
+        return FeedbackContext(device, state, cuebots.value.all.size, modMemberships(), app?.version, app?.apiVersion)
+    }
+
+    suspend fun sendFeedback(kind: FeedbackKind, title: String, details: String, context: FeedbackContext): FeedbackResult =
+        feedback.send(kind, title, details, context)
 
     companion object {
         fun describe(e: PairingLink.Failure): String = e.message ?: "That is not a Cuebot pairing code."

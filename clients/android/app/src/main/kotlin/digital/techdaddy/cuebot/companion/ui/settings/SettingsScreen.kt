@@ -12,9 +12,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.StarRate
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
 import androidx.compose.material3.AlertDialog
+import androidx.core.net.toUri
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,7 +51,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -64,6 +75,8 @@ fun SettingsScreen(vm: SettingsViewModel) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     var pairing by rememberSaveable { mutableStateOf(false) }
     var renaming by remember { mutableStateOf<PairedCuebot?>(null) }
+    var feedback by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
     val uri = LocalUriHandler.current
     val rowColors = ListItemDefaults.colors(containerColor = colors.card)
 
@@ -146,15 +159,19 @@ fun SettingsScreen(vm: SettingsViewModel) {
             item {
                 ListItem(
                     headlineContent = { Text("Troubleshooting", color = MaterialTheme.colorScheme.primary) },
-                    trailingContent = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                    trailingContent = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "Opens in browser", tint = MaterialTheme.colorScheme.primary) },
                     colors = rowColors,
                     modifier = Modifier.clickable { uri.openUri("https://techdaddykb.github.io/cuebot/guides/help/troubleshooting/") },
                 )
             }
+            item { ActionRow("Send feedback", Icons.Filled.Feedback, "settings-feedback", rowColors) { feedback = true } }
+            item { ActionRow("Rate the app", Icons.Filled.StarRate, "settings-rate", rowColors) { rateApp(context) } }
+            item { ActionRow("Share the app", Icons.Filled.Share, "settings-share", rowColors) { shareApp(context) } }
         }
     }
 
     if (pairing) PairingScreen(vm, close = { pairing = false })
+    if (feedback) FeedbackDialog(vm, close = { feedback = false })
     renaming?.let { entry ->
         var name by remember(entry.id) { mutableStateOf(entry.name) }
         AlertDialog(
@@ -170,7 +187,33 @@ fun SettingsScreen(vm: SettingsViewModel) {
 @Composable
 private fun Header(text: String) {
     Text(text.uppercase(), color = LocalCuebotColors.current.muted, style = MaterialTheme.typography.labelMedium,
-        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp))
+        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp).semantics { heading() })
+}
+
+@Composable
+private fun ActionRow(text: String, icon: ImageVector, tag: String, colors: ListItemColors, onClick: () -> Unit) {
+    ListItem(
+        headlineContent = { Text(text, color = MaterialTheme.colorScheme.primary) },
+        leadingContent = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+        colors = colors,
+        modifier = Modifier.clickable(onClick = onClick).testTag(tag),
+    )
+}
+
+/** Opens the app's page in the Play Store, or in the browser on a device without it. */
+private fun rateApp(context: Context) {
+    val id = context.packageName
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, "market://details?id=$id".toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    } catch (_: ActivityNotFoundException) {
+        context.startActivity(Intent(Intent.ACTION_VIEW, "https://play.google.com/store/apps/details?id=$id".toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+}
+
+private fun shareApp(context: Context) {
+    val send = Intent(Intent.ACTION_SEND).setType("text/plain")
+        .putExtra(Intent.EXTRA_TEXT, "Cuebot Companion is a phone remote for Cuebot, a free stream automation app: https://techdaddydigital.com/cuebot/")
+    context.startActivity(Intent.createChooser(send, "Share Cuebot Companion"))
 }
 
 @Composable
