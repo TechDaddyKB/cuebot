@@ -90,7 +90,7 @@ fun FeedbackDialog(vm: SettingsViewModel, close: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().testTag("feedback-details"),
                 )
                 Text(
-                    "This is posted publicly on Cuebot's GitHub issues. Don't include personal details. Email addresses, IP addresses, links and tokens are removed.",
+                    "This is posted publicly on Cuebot's GitHub issues. Links, email addresses, IP addresses and tokens we recognize are removed, but check your message and don't include personal or private details.",
                     style = MaterialTheme.typography.bodySmall,
                 )
                 Text("Also included:", style = MaterialTheme.typography.labelMedium, color = colors.muted)

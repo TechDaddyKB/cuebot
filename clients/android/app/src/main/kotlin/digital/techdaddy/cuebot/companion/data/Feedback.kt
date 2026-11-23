@@ -95,12 +95,14 @@ object FeedbackText {
     private const val TITLE_PREFIX = "[Android] "
 
     private val rules = listOf(
-        Regex("""cuebot(?:-portal)?://\S+""", RegexOption.IGNORE_CASE) to "[link removed]",
+        // Any scheme: a pasted webhook, stream or pairing link can carry a secret in its path or query.
+        Regex("""\b[a-z][a-z0-9+.-]*://\S+""", RegexOption.IGNORE_CASE) to "[link removed]",
         Regex("""\beyJ[\w-]+\.[\w-]+\.[\w-]+""") to "[token removed]",
         Regex("""\bBearer\s+[\w.~+/=-]+""", RegexOption.IGNORE_CASE) to "Bearer [token removed]",
         Regex("""\b(?:gh[pousr]_|github_pat_|sk-|xox[abprs]-)[\w-]{10,}""") to "[token removed]",
         Regex("""(?i)\b([\w-]*(?:token|secret|password|api[_-]?key))\s*[=:]\s*\S+""") to "$1=[removed]",
         Regex("""[\w.+-]+@[\w-]+(?:\.[\w-]+)+""") to "[email removed]",
+        Regex("""(?i)\b(?:[a-z0-9-]+\.)+[a-z]{2,}/\S*""") to "[link removed]",
         Regex("""\b(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?\b""") to "[address removed]",
         Regex("""(?i)\b(?:[0-9a-f]{1,4}:){3,7}[0-9a-f]{1,4}\b""") to "[address removed]",
         Regex("""(?i)\b[\w-]+(?:\.[\w-]+)*\.(?:local|lan|home|internal)\b(?::\d+)?""") to "[address removed]",

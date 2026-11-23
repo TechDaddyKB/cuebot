@@ -40,6 +40,15 @@ class FeedbackTest {
         listOf("me@example.com", "192.168", "studio.local", "cuebot://", "hunter2", "abc.def", "ghp_", "eyJ").forEach { assertFalse(it, text.contains(it)) }
     }
 
+    @Test fun removesEveryKindOfLink() {
+        val text = FeedbackText.scrub(
+            "See https://discord.com/api/webhooks/123/secret-a and http://example.test/private?id=secret-b " +
+                "rtmp://live.example.test/app/secret-c discord.com/api/webhooks/456/secret-d in version 1.0.6",
+        )
+        listOf("secret-a", "secret-b", "secret-c", "secret-d", "discord.com", "example.test").forEach { assertFalse(it, text.contains(it)) }
+        assertTrue(text.contains("version 1.0.6"))
+    }
+
     @Test fun postsAProblemWithTheAppDetails(): Unit = runBlocking {
         server.enqueue(answer(201, """{"number":58,"url":"https://github.com/TechDaddyKB/cuebot/issues/58","duplicate":false}"""))
         val result = reporter().send(FeedbackKind.Problem, "Deck is blank", "It went blank at 10.0.0.2", context)
