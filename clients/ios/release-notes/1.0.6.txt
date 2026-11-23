@@ -1,0 +1,1 @@
+A better start for new users with a demo Cuebot, a Send feedback form, and options to rate and share the app.
