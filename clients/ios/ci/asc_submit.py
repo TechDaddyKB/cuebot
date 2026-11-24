@@ -131,7 +131,7 @@ class Client:
                 with urllib.request.urlopen(request, timeout=300) as response:
                     response.read()
                 return
-            except (urllib.error.HTTPError, urllib.error.URLError) as error:
+            except urllib.error.URLError as error:
                 if attempt == 3:
                     raise SubmitError(f"could not upload the review video: {error}") from None
                 self.sleep(5 * (attempt + 1))
@@ -178,7 +178,7 @@ def check_test_server(url=TEST_SERVER):
             if response.status == 200:
                 print(f"Test server is up: {url}")
                 return True
-    except (urllib.error.URLError, OSError):
+    except OSError:
         pass
     print(f"::warning::The test server {url} is not answering. App Review is told to pair with it.")
     return False

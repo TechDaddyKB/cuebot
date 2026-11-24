@@ -325,8 +325,10 @@ class ReviewVideoTests(SubmitTests):
         self.assertNotIn(("POST", "/v1/reviewSubmissions"), self.paths(fake))
 
     def test_a_missing_video_stops_before_the_review_steps(self):
+        fake = self.fake()
+        missing = os.path.join(self.video_folder.name, "missing.mp4")
         with self.assertRaisesRegex(asc_submit.SubmitError, "no review video"):
-            self.run_submit(self.fake(), os.path.join(self.video_folder.name, "missing.mp4"))
+            self.run_submit(fake, missing)
 
 
 class TestServerCheckTests(unittest.TestCase):
