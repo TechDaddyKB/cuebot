@@ -332,13 +332,15 @@ class ReviewVideoTests(SubmitTests):
 class TestServerCheckTests(unittest.TestCase):
     def serve(self, status_for):
         class Handler(BaseHTTPRequestHandler):
-            def do_GET(self):
+            def _answer(self):
                 self.send_response(status_for(self.headers.get("User-Agent", "")))
                 self.send_header("Content-Length", "0")
                 self.end_headers()
 
+            do_GET = _answer
+
             def log_message(self, *args):
-                pass
+                """Keep request logs out of the test output."""
 
         server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
