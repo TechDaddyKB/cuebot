@@ -127,7 +127,7 @@ public sealed class VoiceEngine : IAsyncDisposable
         try
         {
             var reply = await SendLockedAsync(request, ct).ConfigureAwait(false);
-            return Convert.FromBase64String(reply["wav"]!.GetValue<string>());
+            return Convert.FromBase64String(reply["wav"]?.GetValue<string>() ?? throw new InvalidOperationException("The voice engine sent no sound."));
         }
         finally
         {
@@ -152,7 +152,7 @@ public sealed class VoiceEngine : IAsyncDisposable
             try
             {
                 // Never cancelled half-way: a half-written line would garble the next request.
-                await process.StandardInput.WriteLineAsync(request.ToJsonString()).ConfigureAwait(false);
+                await process.StandardInput.WriteLineAsync(request.ToJsonString().AsMemory(), CancellationToken.None).ConfigureAwait(false);
                 await process.StandardInput.FlushAsync(CancellationToken.None).ConfigureAwait(false);
             }
             catch (IOException ex)
@@ -195,9 +195,9 @@ public sealed class VoiceEngine : IAsyncDisposable
                 {
                     continue; // something a library printed; not ours
                 }
-                if (reply["id"]?.GetValueKind() != JsonValueKind.Number) continue;
+                if (reply["id"] is not { } id || id.GetValueKind() != JsonValueKind.Number) continue;
                 TaskCompletionSource<JsonObject>? waiting;
-                lock (_pending) _pending.TryGetValue(reply["id"]!.GetValue<int>(), out waiting);
+                lock (_pending) _pending.TryGetValue(id.GetValue<int>(), out waiting);
                 waiting?.TrySetResult(reply); // nobody waiting: a line the caller gave up on
             }
         }

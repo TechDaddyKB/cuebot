@@ -59,7 +59,7 @@ public static class VoiceArchive
             }
             if (Target(root, entry.Name) is not { } path) continue;
             if (++files > maxFiles) throw new InvalidDataException($"The package has more than {maxFiles} files.");
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(path) ?? root);
             await using var output = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1 << 16, useAsync: true);
             if (entry.DataStream is not { } data) continue;
             int read;

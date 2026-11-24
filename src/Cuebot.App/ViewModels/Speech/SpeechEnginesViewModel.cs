@@ -329,12 +329,18 @@ public sealed partial class VoiceLibraryPanelViewModel : ObservableObject
 
     public bool CanGetEngine => VoiceEngine.CanInstall;
 
-    public string EngineStatus => _engine.Engine.IsInstalled
-        ? $"Cuebot's voice engine is installed (sherpa-onnx {VoiceEnginePins.SherpaVersion}). It speaks every voice below."
-        : !VoiceEngine.CanInstall ? "Cuebot's voice engine has no build for this computer."
-        : _engine.Store.FindProgram("") is not null
-            ? $"Piper ({PiperRelease.Tag}) speaks your older Piper voices. Get the voice engine (about {VoiceEngine.DownloadMegabytes} MB, once) for Kokoro, sherpa-onnx and newer Piper voices."
-            : $"Get the voice engine to speak these voices (about {VoiceEngine.DownloadMegabytes} MB, once).";
+    public string EngineStatus
+    {
+        get
+        {
+            if (_engine.Engine.IsInstalled)
+                return $"Cuebot's voice engine is installed (sherpa-onnx {VoiceEnginePins.SherpaVersion}). It speaks every voice below.";
+            if (!VoiceEngine.CanInstall) return "Cuebot's voice engine has no build for this computer.";
+            return _engine.Store.FindProgram("") is not null
+                ? $"Piper ({PiperRelease.Tag}) speaks your older Piper voices. Get the voice engine (about {VoiceEngine.DownloadMegabytes} MB, once) for Kokoro, sherpa-onnx and newer Piper voices."
+                : $"Get the voice engine to speak these voices (about {VoiceEngine.DownloadMegabytes} MB, once).";
+        }
+    }
 
     public string EngineButton => _engine.Engine.IsInstalled ? "Repair voice engine" : "Get voice engine";
 

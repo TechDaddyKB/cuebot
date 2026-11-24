@@ -110,7 +110,7 @@ public sealed class VoiceLibrary : IDisposable
 
     private readonly AppLog _log;
     private readonly HttpClient? _http;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly ConcurrentDictionary<string, (DateTime Stamp, SherpaPreparation Result)> _prepared = new(StringComparer.Ordinal);
     private IReadOnlyList<LibraryVoice>? _cache;
     private DateTime _cachedAt;
@@ -213,7 +213,7 @@ public sealed class VoiceLibrary : IDisposable
     internal static void MarkDownloaded(string folder)
     {
         var marker = Path.Combine(folder, DownloadedMarker);
-        System.IO.Directory.CreateDirectory(Path.GetDirectoryName(marker)!);
+        System.IO.Directory.CreateDirectory(Path.GetDirectoryName(marker) ?? folder);
         File.WriteAllText(marker, "Downloaded from Piper's voice catalog; left out of backups.\n");
     }
 
@@ -249,9 +249,8 @@ public sealed class VoiceLibrary : IDisposable
         var voicesBin = Named("voices.bin");
         try
         {
-            foreach (var model in models)
-                if (File.Exists(model + ".json"))
-                    return InspectPiper(id, folder, model, model + ".json");
+            if (models.FirstOrDefault(m => File.Exists(m + ".json")) is { } piperModel)
+                return InspectPiper(id, folder, piperModel, piperModel + ".json");
             if (tokens is null)
             {
                 var name = Path.GetFileName(models[0]);
@@ -307,7 +306,8 @@ public sealed class VoiceLibrary : IDisposable
             : [];
         var problem = type is "espeak" or "text" ? null
             : $"This voice turns text into sounds with \"{type}\", which Cuebot does not have. Only voices that use espeak-ng work.";
-        return new LibraryVoice(id, folder, problem is null ? clusters.Count > 0 ? VoiceFormat.PiperClusters : VoiceFormat.Piper : VoiceFormat.Unknown,
+        var format = clusters.Count > 0 ? VoiceFormat.PiperClusters : VoiceFormat.Piper;
+        return new LibraryVoice(id, folder, problem is null ? format : VoiceFormat.Unknown,
             language, rate, speakers, problem)
         {
             ModelPath = model, ConfigPath = config, EspeakVoice = espeak, PhonemeType = type, VowelClusters = clusters,
@@ -441,7 +441,9 @@ public sealed class VoiceLibrary : IDisposable
     {
         var dir = Path.Combine(voice.Folder, ".cuebot");
         var tokens = Path.Combine(dir, "tokens.txt");
-        using var doc = JsonDocument.Parse(File.ReadAllText(voice.ConfigPath!));
+        var config = voice.ConfigPath ?? throw new InvalidOperationException($"{voice.Id} has no Piper config.");
+        var modelPath = voice.ModelPath ?? throw new InvalidOperationException($"{voice.Id} has no model.");
+        using var doc = JsonDocument.Parse(File.ReadAllText(config));
         var map = doc.RootElement.GetProperty("phoneme_id_map");
         var text = new StringBuilder();
         var symbols = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -459,8 +461,8 @@ public sealed class VoiceLibrary : IDisposable
         if (!File.Exists(tokens) || File.ReadAllText(tokens) != text.ToString())
             File.WriteAllText(tokens, text.ToString(), new UTF8Encoding(false));
 
-        if (!OnnxMetadata.Read(voice.ModelPath!).ContainsKey("sample_rate"))
-            AddSherpaMetadata(voice.ModelPath!, dir, new Dictionary<string, string>
+        if (!OnnxMetadata.Read(modelPath).ContainsKey("sample_rate"))
+            AddSherpaMetadata(modelPath, dir, new Dictionary<string, string>
             {
                 ["model_type"] = "vits",
                 ["comment"] = "piper",

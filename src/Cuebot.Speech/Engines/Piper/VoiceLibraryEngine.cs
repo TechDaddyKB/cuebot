@@ -95,7 +95,7 @@ public sealed class VoiceLibraryEngine(VoiceLibrary library, VoiceEngine engine,
             case VoiceBackend.VoiceEngine:
                 return SynthesizedAudio.Wav(await engine.SpeakAsync(EngineRequest(voice, voice.Speaker(speaker), text, request.Rate, library), ct).ConfigureAwait(false));
             case VoiceBackend.PiperProgram:
-                var program = PiperProgram!;
+                var program = PiperProgram ?? throw new InvalidOperationException(why ?? "Piper is not installed.");
                 // The downloaded program is Piper 2023.11.14-2, which refuses multi-character phonemes some voices list;
                 // a program the user chose may be newer, so it gets the voice as it is.
                 var config = store.IsDownloadedProgram(program) ? PiperStore.PrepareConfig(voice) : null;
@@ -184,7 +184,7 @@ public sealed class VoiceLibraryEngine(VoiceLibrary library, VoiceEngine engine,
     {
         List<string> arguments =
         [
-            "--model", voice.ModelPath!,
+            "--model", voice.ModelPath ?? throw new InvalidOperationException($"{voice.Id} has no model."),
             "--output_raw",
             "--length_scale", LengthScale(rate).ToString("0.##", CultureInfo.InvariantCulture),
         ];
