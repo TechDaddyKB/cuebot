@@ -325,8 +325,39 @@ class ReviewVideoTests(SubmitTests):
         self.assertNotIn(("POST", "/v1/reviewSubmissions"), self.paths(fake))
 
     def test_a_missing_video_stops_before_the_review_steps(self):
+        fake = self.fake()
+        missing = os.path.join(self.video_folder.name, "missing.mp4")
         with self.assertRaisesRegex(asc_submit.SubmitError, "no review video"):
-            self.run_submit(self.fake(), os.path.join(self.video_folder.name, "missing.mp4"))
+            self.run_submit(fake, missing)
+
+
+class TestServerCheckTests(unittest.TestCase):
+    def serve(self, status_for):
+        class Handler(BaseHTTPRequestHandler):
+            def _answer(self):
+                self.send_response(status_for(self.headers.get("User-Agent", "")))
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+
+            do_GET = _answer
+
+            def log_message(self, *args):
+                """Keep request logs out of the test output."""
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(thread.join)
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        return f"http://127.0.0.1:{server.server_port}/"
+
+    def test_passes_a_block_on_the_default_python_user_agent(self):
+        url = self.serve(lambda agent: 403 if agent.startswith("Python-urllib") else 200)
+        self.assertTrue(asc_submit.check_test_server(url))
+
+    def test_still_warns_when_the_server_fails(self):
+        self.assertFalse(asc_submit.check_test_server(self.serve(lambda agent: 503)))
 
 
 class NotesTests(unittest.TestCase):

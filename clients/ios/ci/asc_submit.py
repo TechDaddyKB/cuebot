@@ -131,7 +131,7 @@ class Client:
                 with urllib.request.urlopen(request, timeout=300) as response:
                     response.read()
                 return
-            except (urllib.error.HTTPError, urllib.error.URLError) as error:
+            except urllib.error.URLError as error:
                 if attempt == 3:
                     raise SubmitError(f"could not upload the review video: {error}") from None
                 self.sleep(5 * (attempt + 1))
@@ -171,12 +171,14 @@ def read_video(path):
 
 def check_test_server(url=TEST_SERVER):
     """A warning only: the attached video still lets App Review see the app if the demo is down."""
+    # Cloudflare rejects Python's default User-Agent with a 403, which looks like an outage.
+    request = urllib.request.Request(url, headers={"User-Agent": "cuebot-release-check"})
     try:
-        with urllib.request.urlopen(url, timeout=20) as response:
+        with urllib.request.urlopen(request, timeout=20) as response:
             if response.status == 200:
                 print(f"Test server is up: {url}")
                 return True
-    except (urllib.error.URLError, OSError):
+    except OSError:
         pass
     print(f"::warning::The test server {url} is not answering. App Review is told to pair with it.")
     return False
