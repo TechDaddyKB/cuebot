@@ -1,8 +1,10 @@
+using System.Collections.Frozen;
 using System.Formats.Tar;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Cuebot.Core.Logging;
 
 namespace Cuebot.Speech;
@@ -52,49 +54,65 @@ public sealed record PiperCatalogVoice(string Key, string Name, string LanguageC
         (Speakers > 1 ? $", {Speakers} voices" : "");
 }
 
-/// <summary>A downloaded voice: its model file and what its config says.</summary>
-public sealed record PiperInstalledVoice(string Key, string ModelPath, int SampleRate, string LanguageCode, IReadOnlyList<string> Speakers);
-
 /// <summary>
-/// Piper's program and voices in the data folder (<c>piper/program</c>, <c>piper/voices</c>). Nothing is bundled: the
-/// program comes from Piper's GitHub release and is checked against a pinned SHA-256; voices come from Piper's voice
-/// catalog and are checked against the size and MD5 it lists. Only a checked file is moved into place.
+/// Piper's voice catalog and the Piper program. Voices from the catalog go into the shared <see cref="VoiceLibrary"/>,
+/// checked against the size and MD5 the catalog lists, and reach their folder only once both files are complete. The
+/// Piper 2023.11.14-2 program (<c>piper/program</c>, checked against a pinned SHA-256) is what Cuebot 1.0.6 and
+/// before downloaded; it still speaks classic Piper voices where it is installed (see <see cref="VoiceLibraryEngine"/>).
 /// </summary>
 public sealed class PiperStore
 {
     private const string LogSource = "Speech";
+
     internal const string VoicesBaseUrl = "https://huggingface.co/rhasspy/piper-voices/resolve/main/";
+
+    /// <summary>
+    /// Catalog voices that turn text into phonemes with something other than espeak-ng (Hebrew, Japanese, Lithuanian,
+    /// Thai, Chinese pinyin). Neither the voice engine nor the Piper program has those, so they are hidden.
+    /// </summary>
+    internal static readonly FrozenSet<string> UnsupportedVoices = new[]
+    {
+        "he_IL-saspeech-medium", "ja_JP-hi_fi_captain-medium", "lt_LT-ingute-medium", "lt_LT-reginute1-medium",
+        "th_TH-tsync2-medium", "zh_CN-chaowen-medium", "zh_CN-xiao_ya-medium",
+    }.ToFrozenSet(StringComparer.Ordinal);
+
     private static readonly TimeSpan CatalogMaxAge = TimeSpan.FromDays(7);
 
     private readonly HttpClient _http;
     private readonly AppLog _log;
+    private readonly VoiceLibrary _library;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
-    public PiperStore(string directory, HttpClient http, AppLog log)
+    public PiperStore(string directory, HttpClient http, AppLog log, VoiceLibrary library)
     {
         Directory = directory;
         _http = http;
         _log = log;
+        _library = library;
     }
 
     public string Directory { get; }
 
     public string ProgramDirectory => Path.Combine(Directory, "program");
 
-    public string VoicesDirectory => Path.Combine(Directory, "voices");
-
     private string CatalogPath => Path.Combine(Directory, "voices.json");
 
-    /// <summary>Raised (on a background thread) when the program or a voice was added or removed.</summary>
+    /// <summary>Raised (on a background thread) when the program was installed. Voices raise <see cref="VoiceLibrary.Changed"/>.</summary>
     public event Action? Changed;
 
     /// <summary>The program to run: the user's choice when it exists, else the downloaded one.</summary>
     public string? FindProgram(string custom)
     {
         if (custom.Trim().Length > 0 && File.Exists(custom.Trim())) return custom.Trim();
-        var downloaded = Path.Combine(ProgramDirectory, "piper", OperatingSystem.IsWindows() ? "piper.exe" : "piper");
-        return File.Exists(downloaded) ? downloaded : null;
+        return File.Exists(DownloadedProgram) ? DownloadedProgram : null;
     }
+
+    private string DownloadedProgram => Path.Combine(ProgramDirectory, "piper", OperatingSystem.IsWindows() ? "piper.exe" : "piper");
+
+    /// <summary>True for the program <see cref="InstallProgramAsync"/> put in place (Piper <see cref="PiperRelease.Tag"/>).</summary>
+    internal bool IsDownloadedProgram(string program) =>
+        string.Equals(Path.GetFullPath(program), Path.GetFullPath(DownloadedProgram),
+            OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Downloads and unpacks Piper's program for this computer (about 20-26 MB).</summary>
     public async Task InstallProgramAsync(IProgress<double>? progress = null, CancellationToken ct = default)
@@ -174,7 +192,7 @@ public sealed class PiperStore
         foreach (var entry in doc.RootElement.EnumerateObject())
         {
             var v = entry.Value;
-            if (v.ValueKind != JsonValueKind.Object || !v.TryGetProperty("files", out var files)) continue;
+            if (v.ValueKind != JsonValueKind.Object || !v.TryGetProperty("files", out var files) || UnsupportedVoices.Contains(entry.Name)) continue;
             PiperVoiceFile? model = null, config = null;
             foreach (var f in files.EnumerateObject())
             {
@@ -192,70 +210,87 @@ public sealed class PiperStore
         return [.. list.OrderBy(v => v.Display, StringComparer.OrdinalIgnoreCase)];
     }
 
-    public bool IsInstalled(string key) => File.Exists(ModelPath(key)) && File.Exists(ModelPath(key) + ".json");
+    public bool IsInstalled(string key) => _library.Contains(key);
 
-    private string ModelPath(string key) => Path.Combine(VoicesDirectory, Path.GetFileName(key) + ".onnx");
-
-    /// <summary>Downloads a voice (its model and config), checking both against the catalog.</summary>
+    /// <summary>
+    /// Downloads a voice (its model and config) into the voice library, checking both against the catalog. The files
+    /// are gathered in a staging folder first, so the library never shows half a voice.
+    /// </summary>
     public async Task DownloadVoiceAsync(PiperCatalogVoice voice, IProgress<double>? progress = null, CancellationToken ct = default)
     {
         await _gate.WaitAsync(ct).ConfigureAwait(false);
+        var staging = Path.Combine(_library.Directory, ".download-" + Guid.NewGuid().ToString("N"));
         try
         {
-            System.IO.Directory.CreateDirectory(VoicesDirectory);
+            System.IO.Directory.CreateDirectory(staging);
             _log.Info(LogSource, $"Downloading Piper voice {voice.Key}");
-            var model = ModelPath(voice.Key);
+            var model = Path.Combine(staging, Path.GetFileName(voice.Key) + ".onnx");
             await DownloadCheckedAsync(new Uri(VoicesBaseUrl + voice.Config.Path), model + ".json", voice.Config.SizeBytes,
                 HashAlgorithmName.MD5, voice.Config.Md5, null, ct).ConfigureAwait(false);
             await DownloadCheckedAsync(new Uri(VoicesBaseUrl + voice.Model.Path), model, voice.Model.SizeBytes,
                 HashAlgorithmName.MD5, voice.Model.Md5, progress, ct).ConfigureAwait(false);
+            VoiceLibrary.MarkDownloaded(staging);
+            var target = Path.Combine(_library.Directory, VoiceLibrary.SafeName(voice.Key));
+            if (System.IO.Directory.Exists(target)) System.IO.Directory.Delete(target, recursive: true);
+            System.IO.Directory.Move(staging, target);
         }
         finally
         {
+            if (System.IO.Directory.Exists(staging)) System.IO.Directory.Delete(staging, recursive: true);
             _gate.Release();
         }
-        Changed?.Invoke();
+        _library.Refresh();
     }
 
-    public void DeleteVoice(string key)
+    /// <summary>
+    /// The voice config to give the Piper program: the voice's own .json, or a copy Piper 2023.11.14-2 can read (in the
+    /// voice's <c>.cuebot</c> folder) when the voice lists phonemes it refuses (see <see cref="CompatibleConfig"/>).
+    /// </summary>
+    internal static string PrepareConfig(LibraryVoice voice)
     {
-        TryDelete(ModelPath(key));
-        TryDelete(ModelPath(key) + ".json");
-        Changed?.Invoke();
-    }
-
-    /// <summary>The voices in the voices folder that have both files.</summary>
-    public IReadOnlyList<PiperInstalledVoice> InstalledVoices()
-    {
-        if (!System.IO.Directory.Exists(VoicesDirectory)) return [];
-        var list = new List<PiperInstalledVoice>();
-        foreach (var model in System.IO.Directory.EnumerateFiles(VoicesDirectory, "*.onnx").Order(StringComparer.OrdinalIgnoreCase))
+        var original = voice.ConfigPath ?? throw new InvalidOperationException("Only Piper voices have a config.");
+        var compat = Path.Combine(voice.Folder, ".cuebot", "compat.onnx.json");
+        if (File.Exists(compat) && File.GetLastWriteTimeUtc(compat) >= File.GetLastWriteTimeUtc(original)) return compat;
+        var cleaned = CompatibleConfig(File.ReadAllText(original));
+        if (cleaned is null)
         {
-            var config = model + ".json";
-            if (!File.Exists(config)) continue;
-            try
-            {
-                list.Add(ReadVoice(model, File.ReadAllText(config)));
-            }
-            catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException)
-            {
-                _log.Warn(LogSource, $"Skipping Piper voice {Path.GetFileName(model)}: its .json file is not readable ({ex.Message})");
-            }
+            TryDelete(compat);
+            return original;
         }
-        return list;
+        System.IO.Directory.CreateDirectory(Path.GetDirectoryName(compat)!);
+        File.WriteAllText(compat + ".part", cleaned);
+        File.Move(compat + ".part", compat, overwrite: true);
+        return compat;
     }
 
-    internal static PiperInstalledVoice ReadVoice(string modelPath, string configJson)
+    /// <summary>
+    /// Some voices made with Piper 1.5 and later list multi-character phonemes such as "aɪ" in their config without
+    /// using them (they have no "vowel_clusters", so Piper 1.5 also looks phonemes up one character at a time). Piper
+    /// 2023.11.14-2 refuses multi-character phonemes and crashes (issue 61), so this returns the config without them,
+    /// or null when nothing has to change. Voices that do use them are <see cref="VoiceFormat.PiperClusters"/>, which
+    /// only the voice engine speaks.
+    /// </summary>
+    internal static string? CompatibleConfig(string configJson)
     {
-        using var doc = JsonDocument.Parse(configJson);
-        var root = doc.RootElement;
-        var rate = root.TryGetProperty("audio", out var audio) && audio.TryGetProperty("sample_rate", out var sr) ? sr.GetInt32() : 22050;
-        var language = root.TryGetProperty("language", out var lang) && lang.TryGetProperty("code", out var code) ? code.GetString() ?? "" : "";
-        var speakers = root.TryGetProperty("speaker_id_map", out var map) && map.ValueKind == JsonValueKind.Object
-            ? map.EnumerateObject().OrderBy(p => p.Value.GetInt32()).Select(p => p.Name).ToList()
-            : [];
-        return new PiperInstalledVoice(Path.GetFileNameWithoutExtension(modelPath), modelPath, rate, language, speakers);
+        var root = JsonNode.Parse(configJson)?.AsObject() ?? throw new JsonException("The voice config is empty.");
+        var changed = false;
+        if (root["phoneme_id_map"] is JsonObject ids) changed |= RemoveKeys(ids, k => !IsSingleCodepoint(k));
+        if (root["phoneme_map"] is JsonObject map)
+            changed |= RemoveKeys(map, k => !IsSingleCodepoint(k) || map[k] is not JsonArray to
+                || to.Any(p => p?.GetValueKind() != JsonValueKind.String || !IsSingleCodepoint(p.GetValue<string>())));
+        if (root["inference"] is JsonObject inference && inference["phoneme_silence"] is JsonObject silence)
+            changed |= RemoveKeys(silence, k => !IsSingleCodepoint(k));
+        return changed ? root.ToJsonString() : null;
+
+        static bool RemoveKeys(JsonObject obj, Func<string, bool> remove)
+        {
+            var keys = obj.Select(p => p.Key).Where(remove).ToList();
+            foreach (var key in keys) obj.Remove(key);
+            return keys.Count > 0;
+        }
     }
+
+    private static bool IsSingleCodepoint(string s) => s.Length > 0 && s.EnumerateRunes().Count() == 1;
 
     private async Task DownloadCheckedAsync(Uri url, string target, long size, HashAlgorithmName algorithm, string expected,
         IProgress<double>? progress, CancellationToken ct)

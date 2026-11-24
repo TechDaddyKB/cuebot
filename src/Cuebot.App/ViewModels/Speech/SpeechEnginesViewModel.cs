@@ -83,11 +83,11 @@ public sealed partial class EngineCardViewModel : ObservableObject
         _ctx = ctx;
         Fields = BuildFields(engine.Id);
         Hint = HintFor(engine.Id);
-        if (engine is PiperEngine piper) Piper = new PiperPanelViewModel(piper.Store, () => ctx.Settings.Engines.Piper.Executable, OnPiperChanged);
+        if (engine is VoiceLibraryEngine library) Piper = new VoiceLibraryPanelViewModel(library, OnPiperChanged);
     }
 
-    /// <summary>Piper's download section (null for other engines).</summary>
-    public PiperPanelViewModel? Piper { get; }
+    /// <summary>The voice library section (null for other engines).</summary>
+    public VoiceLibraryPanelViewModel? Piper { get; }
 
     public bool HasPiper => Piper is not null;
 
@@ -261,7 +261,7 @@ public sealed partial class EngineCardViewModel : ObservableObject
         "acapela" => "Acapela Cloud account login.",
         "cereproc" => "CereVoice Cloud account login.",
         "openai" => "platform.openai.com → API keys. Paid per use; a chat message costs a fraction of a cent.",
-        "piper" => "Free voices that run on this computer, no account needed. Get Piper once, then download the voices you like.",
+        "piper" => "Free voices that run on this computer, no account needed: Piper voices old and new, Kokoro and other sherpa-onnx voices. Download them below or import voice files.",
         _ => "",
     };
 }
@@ -286,45 +286,59 @@ public sealed class SpeechEnginesViewModel
     }
 }
 
-/// <summary>A downloaded Piper voice with a delete button.</summary>
-public sealed partial class PiperVoiceRow(string key, Action<string> delete) : ObservableObject
+/// <summary>A voice in the voice library, with what it is, what speaks it (or why nothing can) and a delete button.</summary>
+public sealed partial class LibraryVoiceRow(string id, string detail, string note, Action<string> delete) : ObservableObject
 {
-    public string Key => key;
+    public string Id => id;
+
+    /// <summary>"Kokoro voice · voice engine".</summary>
+    public string Detail => detail;
+
+    /// <summary>Why the voice cannot speak; empty when it can.</summary>
+    public string Note => note;
 
     [RelayCommand]
-    private void Delete() => delete(key);
+    private void Delete() => delete(id);
 }
 
 /// <summary>
-/// Piper on the Engines tab: get the program once, then pick voices from Piper's catalog to download. Everything is
-/// checked before it is used (see <see cref="PiperStore"/>).
+/// The voice library on the Engines tab: Cuebot's voice engine, Piper's voice catalog, importing voice files and
+/// packages, and the voices in the library. Changes made to the voices folder outside Cuebot show up by themselves.
 /// </summary>
-public sealed partial class PiperPanelViewModel : ObservableObject
+public sealed partial class VoiceLibraryPanelViewModel : ObservableObject
 {
-    private readonly PiperStore _store;
-    private readonly Func<string> _customProgram;
+    private readonly VoiceLibraryEngine _engine;
     private readonly Action _changed;
     private IReadOnlyList<PiperCatalogVoice> _catalog = [];
 
-    public PiperPanelViewModel(PiperStore store, Func<string> customProgram, Action changed)
+    public VoiceLibraryPanelViewModel(VoiceLibraryEngine engine, Action changed)
     {
-        _store = store;
-        _customProgram = customProgram;
+        _engine = engine;
         _changed = changed;
+        engine.Library.Changed += () => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            RefreshInstalled();
+            _changed();
+        });
         RefreshInstalled();
     }
 
-    public bool HasProgram => _store.FindProgram(_customProgram()) is not null;
+    private VoiceLibrary Library => _engine.Library;
 
-    public bool CanGetProgram => PiperRelease.ForThisComputer() is not null;
+    public string FolderPath => Library.Directory;
 
-    public string ProgramStatus => HasProgram
-        ? $"Piper is installed ({PiperRelease.Tag})."
-        : CanGetProgram ? "Piper is not installed yet."
-        : OperatingSystem.IsMacOS() ? PiperRelease.MacReason
-        : "Piper has no ready-made program for this computer.";
+    public bool CanGetEngine => VoiceEngine.CanInstall;
 
-    public IReadOnlyList<PiperVoiceRow> Installed { get; private set; } = [];
+    public string EngineStatus => _engine.Engine.IsInstalled
+        ? $"Cuebot's voice engine is installed (sherpa-onnx {VoiceEnginePins.SherpaVersion}). It speaks every voice below."
+        : !VoiceEngine.CanInstall ? "Cuebot's voice engine has no build for this computer."
+        : _engine.Store.FindProgram("") is not null
+            ? $"Piper ({PiperRelease.Tag}) speaks your older Piper voices. Get the voice engine (about {VoiceEngine.DownloadMegabytes} MB, once) for Kokoro, sherpa-onnx and newer Piper voices."
+            : $"Get the voice engine to speak these voices (about {VoiceEngine.DownloadMegabytes} MB, once).";
+
+    public string EngineButton => _engine.Engine.IsInstalled ? "Repair voice engine" : "Get voice engine";
+
+    public IReadOnlyList<LibraryVoiceRow> Installed { get; private set; } = [];
 
     public bool HasInstalled => Installed.Count > 0;
 
@@ -334,17 +348,31 @@ public sealed partial class PiperPanelViewModel : ObservableObject
     [ObservableProperty] private PiperCatalogVoice? _selectedVoice;
     [ObservableProperty] private string _progress = "";
     [ObservableProperty] private string _error = "";
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(GetProgramCommand), nameof(DownloadVoiceCommand), nameof(LoadCatalogCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(GetEngineCommand), nameof(DownloadVoiceCommand), nameof(LoadCatalogCommand))]
     private bool _busy;
 
     [ObservableProperty] private string _filter = "English";
+
+    /// <summary>Import moves the picked files into the library instead of copying them.</summary>
+    [ObservableProperty] private bool _moveImportedFiles;
 
     partial void OnFilterChanged(string value) => ApplyFilter();
 
     private bool Idle() => !Busy;
 
     [RelayCommand(CanExecute = nameof(Idle))]
-    private Task GetProgram() => RunAsync("Downloading Piper", p => _store.InstallProgramAsync(p));
+    private Task GetEngine() => RunAsync("Voice engine", p => _engine.Engine.InstallAsync(p));
+
+    [RelayCommand]
+    private void OpenFolder() => Cuebot.App.Shell.FolderLauncher.Open(Library.Directory);
+
+    /// <summary>Imports the files the view's file picker returned (see SpeechEnginesView).</summary>
+    public Task ImportAsync(IReadOnlyList<string> paths) => paths.Count == 0 ? Task.CompletedTask
+        : RunAsync("Importing", async p =>
+        {
+            var ids = await Library.ImportAsync(paths, MoveImportedFiles, p);
+            p.Report($"Imported {string.Join(", ", ids)}");
+        }, keepLastProgress: true);
 
     [RelayCommand(CanExecute = nameof(Idle))]
     private async Task LoadCatalog()
@@ -353,7 +381,7 @@ public sealed partial class PiperPanelViewModel : ObservableObject
         Busy = true;
         try
         {
-            _catalog = await _store.GetCatalogAsync();
+            _catalog = await _engine.Store.GetCatalogAsync();
             ApplyFilter();
         }
         catch (Exception ex)
@@ -374,18 +402,19 @@ public sealed partial class PiperPanelViewModel : ObservableObject
             Error = "Pick a voice first.";
             return Task.CompletedTask;
         }
-        return RunAsync($"Downloading {voice.Display}", p => _store.DownloadVoiceAsync(voice, p));
+        return RunAsync($"Downloading {voice.Display}", p => _engine.Store.DownloadVoiceAsync(voice,
+            new Progress<double>(f => p.Report($"{f:P0}"))));
     }
 
-    private async Task RunAsync(string what, Func<IProgress<double>, Task> work)
+    private async Task RunAsync(string what, Func<IProgress<string>, Task> work, bool keepLastProgress = false)
     {
         Error = "";
         Busy = true;
-        var progress = new Progress<double>(f => Progress = $"{what}: {f:P0}");
+        var progress = new Progress<string>(m => Progress = $"{what}: {m}");
         try
         {
             await work(progress);
-            Progress = "";
+            if (!keepLastProgress) Progress = "";
         }
         catch (Exception ex)
         {
@@ -395,32 +424,46 @@ public sealed partial class PiperPanelViewModel : ObservableObject
         finally
         {
             Busy = false;
-            RefreshInstalled();
-            _changed();
+            Library.Refresh();
         }
     }
 
-    private void DeleteVoice(string key)
+    private void DeleteVoice(string id)
     {
-        _store.DeleteVoice(key);
-        RefreshInstalled();
-        _changed();
+        try
+        {
+            Library.Delete(id);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Error = $"Could not delete {id}: {ex.Message}";
+        }
     }
 
     private void RefreshInstalled()
     {
-        Installed = [.. _store.InstalledVoices().Select(v => new PiperVoiceRow(v.Key, DeleteVoice))];
+        Installed = [.. Library.Voices().Select(v =>
+        {
+            var (backend, why) = _engine.Choose(v);
+            var by = backend switch
+            {
+                VoiceBackend.VoiceEngine => " · voice engine",
+                VoiceBackend.PiperProgram => $" · Piper {PiperRelease.Tag}",
+                _ => "",
+            };
+            return new LibraryVoiceRow(v.Id, v.FormatName + by + (v.Note is null ? "" : $" · {v.Note}"), why ?? "", DeleteVoice);
+        })];
         OnPropertyChanged(nameof(Installed));
         OnPropertyChanged(nameof(HasInstalled));
-        OnPropertyChanged(nameof(HasProgram));
-        OnPropertyChanged(nameof(ProgramStatus));
+        OnPropertyChanged(nameof(EngineStatus));
+        OnPropertyChanged(nameof(EngineButton));
         ApplyFilter();
     }
 
     private void ApplyFilter()
     {
         var words = Filter.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        Available = [.. _catalog.Where(v => !_store.IsInstalled(v.Key)
+        Available = [.. _catalog.Where(v => !_engine.Store.IsInstalled(v.Key)
             && words.All(w => v.Display.Contains(w, StringComparison.OrdinalIgnoreCase) || v.Key.Contains(w, StringComparison.OrdinalIgnoreCase)))];
         OnPropertyChanged(nameof(Available));
         if (SelectedVoice is not null && !Available.Contains(SelectedVoice)) SelectedVoice = null;

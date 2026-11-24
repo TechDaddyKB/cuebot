@@ -65,9 +65,6 @@ Hotkeys and the **Keyboard press** step need permission too: macOS asks for **In
     notifications instead: go to **Automation > Hotkeys**, and under **Desktop** set **Notifications appear** to
     **In-app**.
 
-A few things are not on a Mac yet. The free **Piper** voices only run on Windows and Linux, so pick another
-[text-to-speech engine](../sound/text-to-speech.md).
-
 ## Linux
 
 ### AppImage

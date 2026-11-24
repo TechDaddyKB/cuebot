@@ -8,8 +8,9 @@ page shows how Cuebot makes backups by itself, and how to get one back.
 ![Settings > Backups](../../assets/screens/settings-backups.png)
 
 A **backup** is a zip copy of your [data folder](your-data.md), with every [profile](../platforms/profiles.md) in it.
-Log files are not included, and neither is anything Cuebot downloads again when needed: Python, the Piper program
-and voices, speech-recognition models and caches. A backup stays small, and restoring one keeps what is downloaded here. Go to **Settings**, tab **Backups**.
+Log files are not included, and neither is anything Cuebot downloads again when needed: Python, the voice engine,
+the Piper program, the voices you downloaded from Piper's list, speech-recognition models and caches. Voices you
+imported, or copied into the voices folder yourself, are included, since they may exist nowhere else. A backup stays small, and restoring one keeps what is downloaded here. Go to **Settings**, tab **Backups**.
 
 - **Back up the data folder every time Cuebot starts**: ticked, Cuebot makes a backup each time it starts. It is
   ticked from the start.

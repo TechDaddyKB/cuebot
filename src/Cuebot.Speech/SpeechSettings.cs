@@ -224,7 +224,7 @@ public sealed class OpenAiSpeechSettings
     public string Instructions { get; set; } = "";
 }
 
-/// <summary>Piper (offline voices). The program and voices download into the data folder's "piper" folder.</summary>
+/// <summary>The voice library's settings (engine id "piper"). Voices live in the data folder's "voices" folder, the Piper program in "piper".</summary>
 public sealed class PiperSettings
 {
     /// <summary>A piper program to use instead of the downloaded one (empty = the downloaded one, then PATH).</summary>
