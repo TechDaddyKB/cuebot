@@ -171,8 +171,10 @@ def read_video(path):
 
 def check_test_server(url=TEST_SERVER):
     """A warning only: the attached video still lets App Review see the app if the demo is down."""
+    # Cloudflare rejects Python's default User-Agent with a 403, which looks like an outage.
+    request = urllib.request.Request(url, headers={"User-Agent": "cuebot-release-check"})
     try:
-        with urllib.request.urlopen(url, timeout=20) as response:
+        with urllib.request.urlopen(request, timeout=20) as response:
             if response.status == 200:
                 print(f"Test server is up: {url}")
                 return True
