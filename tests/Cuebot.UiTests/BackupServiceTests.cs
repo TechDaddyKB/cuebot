@@ -53,6 +53,33 @@ public sealed class BackupServiceTests : IDisposable
     }
 
     [Fact]
+    public void Imported_voices_are_backed_up_and_downloaded_ones_are_not()
+    {
+        void Write(string relative, string text = "model")
+        {
+            var path = Path.Combine(_root, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, text);
+        }
+        Write("voices/en_US-amy-medium/en_US-amy-medium.onnx");
+        Write("voices/en_US-amy-medium/.cuebot/downloaded", "catalog");
+        Write("voices/kokoro-en-v0_19/model.onnx");
+        Write("voices/kokoro-en-v0_19/.cuebot/tokens.txt", "a 1");
+        Write("voices/.import-123/partial.onnx");
+
+        var service = Service();
+        var backup = service.Create("manual");
+        Assert.Equal(["actions.json", "globals.json", "sounds/ding.wav", "voices/kokoro-en-v0_19/.cuebot/tokens.txt", "voices/kokoro-en-v0_19/model.onnx"],
+            Entries(backup.Path));
+
+        // Restoring brings the imported voice back and leaves the downloaded one alone.
+        Directory.Delete(Path.Combine(_root, "voices", "kokoro-en-v0_19"), recursive: true);
+        service.RestoreNow(backup.Path);
+        Assert.True(File.Exists(Path.Combine(_root, "voices", "kokoro-en-v0_19", "model.onnx")));
+        Assert.True(File.Exists(Path.Combine(_root, "voices", "en_US-amy-medium", "en_US-amy-medium.onnx")));
+    }
+
+    [Fact]
     public void Keeps_only_the_newest_n_backups()
     {
         _keep = 3;

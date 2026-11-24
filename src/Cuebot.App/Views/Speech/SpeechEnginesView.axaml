@@ -41,13 +41,22 @@
             </ItemsControl.ItemsPanel>
           </ItemsControl>
           <StackPanel Spacing="8" IsVisible="{Binding HasPiper}">
-            <StackPanel DataContext="{Binding Piper}" Spacing="8" x:DataType="sp:PiperPanelViewModel">
+            <StackPanel DataContext="{Binding Piper}" Spacing="8" x:DataType="sp:VoiceLibraryPanelViewModel">
               <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Text="{Binding ProgramStatus}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                <Button Grid.Column="1" Content="Get Piper" Classes="accent" Command="{Binding GetProgramCommand}"
-                        IsVisible="{Binding CanGetProgram}"
-                        ToolTip.Tip="Downloads Piper (about 25 MB) into your Cuebot data folder. You only need to do this once. Press it again to repair Piper." />
+                <TextBlock Text="{Binding EngineStatus}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                <Button Grid.Column="1" Content="{Binding EngineButton}" Classes="accent" Command="{Binding GetEngineCommand}"
+                        IsVisible="{Binding CanGetEngine}" Margin="8,0,0,0"
+                        ToolTip.Tip="Downloads Cuebot's voice engine (Python with sherpa-onnx and a phonemizer) into your Cuebot data folder. You only need to do this once. Press it again to repair it." />
               </Grid>
+              <TextBlock Classes="label" Text="Add voices you already have" />
+              <WrapPanel>
+                <Button Content="Import voice..." Click="OnImportVoices" Margin="0,0,8,4"
+                        ToolTip.Tip="Pick a Piper voice (.onnx with its .onnx.json) or a voice package (.tar.bz2 or .tar.gz, such as sherpa-onnx's Kokoro and vits-piper voices). Cuebot unpacks it and puts it in the voices folder." />
+                <Button Content="Open voices folder" Command="{Binding OpenFolderCommand}" Margin="0,0,8,4"
+                        ToolTip.Tip="Opens the folder that holds your voices, one folder per voice. Voices you copy in or delete there show up here by themselves." />
+                <CheckBox Content="Move the files instead of copying them" IsChecked="{Binding MoveImportedFiles}" Margin="0,0,0,4"
+                          ToolTip.Tip="Deletes the files you import from where they were, once they are in the voices folder." />
+              </WrapPanel>
               <TextBlock Classes="label" Text="Download a voice" />
               <Grid ColumnDefinitions="Auto,160,*,Auto" RowDefinitions="Auto">
                 <Button Content="Show voices" Command="{Binding LoadCatalogCommand}" Margin="0,0,8,0"
@@ -67,13 +76,18 @@
               </Grid>
               <TextBlock Classes="hint" Text="{Binding Progress}" IsVisible="{Binding Progress, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               <TextBlock Classes="error" Text="{Binding Error}" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-              <TextBlock Classes="label" Text="Your Piper voices" IsVisible="{Binding HasInstalled}" />
+              <TextBlock Classes="label" Text="Your voices" IsVisible="{Binding HasInstalled}" />
               <ItemsControl ItemsSource="{Binding Installed}">
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="sp:PiperVoiceRow">
+                  <DataTemplate x:DataType="sp:LibraryVoiceRow">
                     <Grid ColumnDefinitions="*,Auto" Margin="0,2">
-                      <TextBlock Text="{Binding Key}" VerticalAlignment="Center" />
-                      <Button Grid.Column="1" Content="Delete" Command="{Binding DeleteCommand}" ToolTip.Tip="Removes this voice from your computer." />
+                      <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Id}" />
+                        <TextBlock Classes="hint" Text="{Binding Detail}" />
+                        <TextBlock Classes="error" Text="{Binding Note}" TextWrapping="Wrap"
+                                   IsVisible="{Binding Note, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                      </StackPanel>
+                      <Button Grid.Column="1" Content="Delete" Command="{Binding DeleteCommand}" ToolTip.Tip="Removes this voice and its folder from your computer." />
                     </Grid>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>

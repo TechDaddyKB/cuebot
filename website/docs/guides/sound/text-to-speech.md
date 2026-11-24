@@ -21,7 +21,7 @@ An **engine** is the thing that makes the voice. Open the **Engines** tab.
 | --- | --- | --- |
 | **Windows voices** | Windows | Nothing. These are the voices already in Windows. |
 | **eSpeak NG** | Windows and Linux | Free, works without internet. On Linux, install `espeak-ng` (the Flatpak has it). |
-| **Piper** | Windows and Linux (not on a Mac yet) | Free, works without internet, and sounds much more natural than eSpeak. Cuebot downloads it for you: see [Piper](#piper-free-voices-on-your-computer) below. |
+| **Voice library** (Piper, Kokoro, Kitten, Matcha and other sherpa-onnx voices) | Windows, macOS and Linux | Free, works without internet, and sounds much more natural than eSpeak. Download voices in Cuebot or import ones you have: see [the voice library](#the-voice-library-free-voices-on-your-computer) below. |
 | **OpenAI**, **ElevenLabs**, **Microsoft Azure**, **Google Cloud**, **Amazon Polly**, **IBM Watson** | The internet | Your own account and key with that company |
 | **Acapela Cloud**, **CereProc (CereVoice Cloud)**, **TTS Monster**, **UberDuck** | The internet | Your own account and key |
 
@@ -41,28 +41,64 @@ Click **Test** next to an engine to hear it.
 
 ![Audio > Speech > Engines: the voices on this computer and the cloud engines](../../assets/screens/tab-speech-engines.png)
 
-### Piper: free voices on your computer
+### The voice library: free voices on your computer
 
-Piper is a free voice engine that runs on your own computer. It needs no account, costs nothing, and keeps working
-without internet. Cuebot downloads it for you:
+The voice library holds free voices that run on your own computer. They need no account, cost nothing, and keep
+working without internet. It speaks these kinds of voices:
 
-1. On the **Engines** tab, find the **Piper (free, offline)** card and press **Get Piper**. It downloads about 25 MB,
-   once.
+- **Piper voices**, old and new, from [Piper's voice collection](https://huggingface.co/rhasspy/piper-voices).
+- **sherpa-onnx voice packages** ([list](https://k2-fsa.github.io/sherpa/onnx/tts/all/index.html)): Piper voices
+  such as GLaDOS (`vits-piper-...`), **Kokoro**, **Kitten** and **Matcha** voices that use espeak-ng.
+
+Kokoro's multi-language packages speak English, Spanish, French, Hindi, Italian and Brazilian Portuguese; each speaker
+uses its own language. Their Japanese and Mandarin speakers are left out, and so are Matcha voices that read from a
+word list (the Chinese ones), because Cuebot cannot turn text into their sounds.
+
+All of them are on the **Engines** tab, on the **Voice library** card.
+
+1. Press **Get voice engine**. It downloads Cuebot's voice engine (about 50 to 65 MB) once, on Windows, macOS and Linux.
 2. Press **Show voices**. Type your language in the small box (for example `English` or `Spanish`) to make the list
    shorter.
 3. Pick a voice and press **Download**. **Medium** voices sound good and are quick; **high** ones sound a little better
    but are bigger. Most voices are 20 to 120 MB.
-4. Press **Test** on the Piper card. Your voice is now in every voice picker, so you can use it in a voice alias.
+4. Press **Test** on the card. Your voice is now in every voice picker, so you can use it in a voice alias.
 
-Download as many voices as you like. To remove one, press **Delete** next to it under **Your Piper voices**. Some
-voices, like `en_GB-vctk-medium`, contain many speakers; each one shows up as its own voice.
+**Voices you already have.** Press **Import voice...** and pick either:
 
-!!! note "Where Piper and its voices come from"
-    Piper comes from the Piper project on GitHub, and the voices from Piper's voice collection. Cuebot checks every file
-    after downloading it and throws away anything that doesn't match. Each voice has its own licence, listed in the
-    voice collection; most allow streaming.
+- a Piper voice: its `.onnx` file together with its `.onnx.json` file (picking the `.onnx` is enough when the
+  `.json` is next to it), or
+- a voice package: a `.tar.bz2` or `.tar.gz` file, such as `vits-piper-en_US-glados-high.tar.bz2`,
+  `kokoro-int8-multi-lang-v1_0.tar.bz2`, `kitten-nano-en-v0_8-int8.tar.bz2` or `matcha-icefall-en_US-ljspeech.tar.bz2`
+  from sherpa-onnx. Matcha voices also need a *vocoder*, which sherpa-onnx publishes separately: Cuebot downloads it
+  (`hifigan_v2.onnx`, 4 MB) and puts it with the voice.
 
-Piper has no pitch of its own, so Cuebot changes the pitch of Piper's voices itself. The speed stays the same.
+Cuebot unpacks the voice, checks it, and puts it in a folder of its own inside the voices folder. Tick **Move the files
+instead of copying them** to delete the originals afterwards; they are only deleted once the voice is in the voices
+folder, so a refused import never loses them. Cuebot refuses packages that hold no voice, or that try
+to write outside their folder.
+
+**The voices folder.** Press **Open voices folder** to see it: one folder per voice. You can also copy a voice folder
+in, or delete one, by hand. Cuebot notices within a second or two, without a restart.
+
+Each voice shows what it is and what speaks it. If a voice can't speak, a red line under it says why, for example
+**needs Cuebot's voice engine** or **uses a phonemizer Cuebot does not have**. Some voices contain many speakers, such
+as `en_GB-vctk-medium` or Kokoro's; each speaker shows up as its own voice. To remove a voice, press **Delete** next to
+it.
+
+!!! note "Where the voice engine and the voices come from"
+    The voice engine is [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx), running in its own copy of Python inside
+    your Cuebot data folder. It turns text into sounds with espeak-ng, through
+    [piper-phonemize](https://github.com/csukuangfj/piper-phonemize). Cuebot checks every file after downloading it
+    and throws away anything that doesn't match. Each voice has its own licence, listed in its model card; most
+    allow streaming.
+
+!!! tip "Coming from Cuebot 1.0.6 or earlier"
+    Your Piper voices move into the voice library by themselves, so you don't download them again. The Piper program
+    you got then keeps speaking them until you press **Get voice engine**. Voices rebuilt in November 2026 for a newer
+    Piper (most medium English voices, for example `en_US-amy-medium`) need the voice engine: without it, they say so
+    instead of crashing Piper.
+
+Cuebot changes the pitch of these voices itself. The speed stays the same.
 
 ### OpenAI: voices you can describe
 

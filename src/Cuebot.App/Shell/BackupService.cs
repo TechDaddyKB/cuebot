@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO.Compression;
 using Cuebot.Core;
 using Cuebot.Core.Storage;
+using Cuebot.Speech;
 
 namespace Cuebot.App.Shell;
 
@@ -29,11 +30,22 @@ public sealed class BackupService
 
     /// <summary>
     /// Top-level folders never included in (or replaced by) a backup: logs, the backups themselves and everything
-    /// Cuebot downloads again when needed (Python, Piper's program and voices, speech-recognition models, caches).
-    /// Piper voices alone made one backup 420 MB (2026-11-14).
+    /// Cuebot downloads again when needed (Python, the voice engine, Piper's program, speech-recognition models,
+    /// caches). Piper voices alone made one backup 420 MB (2026-11-14). The voice library is in backups except the
+    /// voices Cuebot can download again (<see cref="IsRedownloadableVoice"/>): imported voices may exist nowhere else.
     /// </summary>
     public static readonly IReadOnlySet<string> ExcludedFolders =
-        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "logs", "python", "piper", "models", "cache", FolderName };
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "logs", "python", "piper", "voice-engine", "models", "cache", FolderName };
+
+    /// <summary>The voice library's folder in the data folder.</summary>
+    public const string VoicesFolder = "voices";
+
+    /// <summary>
+    /// A voice folder a backup leaves out, and a restore leaves alone: one downloaded from Piper's catalog
+    /// (<see cref="VoiceLibrary.DownloadedMarker"/>), or one of Cuebot's own unfinished imports (".import-...").
+    /// </summary>
+    internal static bool IsRedownloadableVoice(string voiceFolder) =>
+        Path.GetFileName(voiceFolder).StartsWith('.') || File.Exists(Path.Combine(voiceFolder, VoiceLibrary.DownloadedMarker));
 
     /// <summary>
     /// Top-level files never included in (or replaced by) a backup. The secret store stays on this computer: a backup
@@ -240,8 +252,13 @@ public sealed class BackupService
         foreach (var dir in Directory.EnumerateDirectories(Root))
         {
             if (ExcludedFolders.Contains(Path.GetFileName(dir))) continue;
+            var voices = string.Equals(Path.GetFileName(dir), VoicesFolder, StringComparison.OrdinalIgnoreCase);
             foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+            {
+                if (voices && Path.GetRelativePath(dir, file).Split(Path.DirectorySeparatorChar) is { Length: > 1 } parts
+                    && IsRedownloadableVoice(Path.Combine(dir, parts[0]))) continue;
                 if (!file.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase) && !IsSecretFile(Path.GetFileName(file))) yield return file;
+            }
         }
     }
 

@@ -22,6 +22,7 @@ Each keeps its own license; full license texts are available from the linked pro
 | [SoundFlow](https://github.com/LSXPrime/SoundFlow) | Audio playback and capture | MIT |
 | [miniaudio](https://github.com/mackron/miniaudio) (native library inside SoundFlow) | Audio backend | MIT No Attribution or public domain (Unlicense), at your choice |
 | [NVorbis](https://github.com/NVorbis/NVorbis) | Ogg Vorbis decoding | MIT |
+| [SharpZipLib](https://github.com/icsharpcode/SharpZipLib) | Unpacking `.tar.bz2` voice packages | MIT |
 | [Grpc.Net.Client](https://github.com/grpc/grpc-dotnet) | YouTube live chat stream (gRPC) | Apache-2.0 |
 | [Google.Protobuf](https://github.com/protocolbuffers/protobuf) | YouTube live chat stream messages | BSD-3-Clause |
 | YouTube `stream_list.proto` (from Google's [Streaming Live Chat](https://developers.google.com/youtube/v3/live/streaming-live-chat) guide, compiled into the YouTube module) | YouTube live chat stream definition | Apache-2.0 |
@@ -68,7 +69,12 @@ The Arch source package (`cuebot`) uses the system's `ffmpeg` instead, when inst
 
 | Component | When | License |
 |---|---|---|
-| [python-build-standalone](https://github.com/astral-sh/python-build-standalone) | The first time a Python execute-code sub-action needs the built-in interpreter: a pinned CPython build, checked against a SHA-256 sum compiled into Cuebot | Python Software Foundation License, plus the licenses of the libraries it bundles (OpenSSL, SQLite, libffi, zlib, …) listed in the distribution |
+| [python-build-standalone](https://github.com/astral-sh/python-build-standalone) | The first time a Python execute-code sub-action needs the built-in interpreter, and when you press **Get voice engine** (a separate copy for the voice engine): a pinned CPython build, checked against a SHA-256 sum compiled into Cuebot | Python Software Foundation License, plus the licenses of the libraries it bundles (OpenSSL, SQLite, libffi, zlib, …) listed in the distribution |
+| [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) 2.0.3 (`sherpa-onnx` and `sherpa-onnx-core` wheels, with [ONNX Runtime](https://github.com/microsoft/onnxruntime) inside) | When you press **Get voice engine**: speaks the voice library's voices, in the voice engine's own process; wheels checked against SHA-256 sums compiled into Cuebot (`VoiceEnginePins`) | Apache-2.0; ONNX Runtime MIT |
+| [piper-phonemize](https://github.com/csukuangfj/piper-phonemize) 1.6.1 with [espeak-ng](https://github.com/espeak-ng/espeak-ng) inside | When you press **Get voice engine**: turns text into phonemes for Piper and Kokoro voices. It only runs inside the voice engine's own Python process; Cuebot never loads it | GPL-3.0 (piper-phonemize and espeak-ng) |
+| [Piper](https://github.com/rhasspy/piper) 2023.11.14-2 program (with espeak-ng and ONNX Runtime inside) | Installed by Cuebot 1.0.6 and earlier; still used for older Piper voices until the voice engine is installed. Runs as a separate program | MIT; espeak-ng inside it GPL-3.0; ONNX Runtime MIT |
+| [HiFi-GAN v2 vocoder](https://github.com/k2-fsa/sherpa-onnx/releases/tag/vocoder-models) (`hifigan_v2.onnx`) | When you import a Matcha voice without one: added to the voice's folder, checked against sherpa-onnx's published SHA-256 | MIT (HiFi-GAN) |
+| Voices from [Piper's voice collection](https://huggingface.co/rhasspy/piper-voices), [sherpa-onnx's voice packages](https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models) or anywhere else | When you download or import them | Each voice's own license (see its model card) |
 | [Whisper models](https://huggingface.co/ggerganov/whisper.cpp) (ggml conversions of OpenAI's Whisper) | When you click Download in Voice Control → Settings; saved in the data folder (`models/whisper`) and checked against a SHA-256 sum | MIT |
 | Python packages installed with the library manager | When you install them | Each package's own license |
 

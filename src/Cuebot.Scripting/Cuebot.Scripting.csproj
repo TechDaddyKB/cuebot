@@ -5,6 +5,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.Scripting.Tests" />
     <InternalsVisibleTo Include="Cuebot.UiTests" />
+    <InternalsVisibleTo Include="Cuebot.Speech" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" />

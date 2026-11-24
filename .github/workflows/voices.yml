@@ -1,0 +1,127 @@
+name: voices
+
+# Proves the voice library really speaks on Windows, macOS and Linux (tests/Cuebot.Speech.Tests/LiveVoiceTests.cs):
+# installs Cuebot's voice engine (pinned Python, sherpa-onnx, piper_phonemize), downloads two Piper voices through
+# PiperStore (en_US-amy-medium is a retrained Piper 1.5 voice with vowel clusters, which crashed Piper in issue 61),
+# imports sherpa-onnx's GLaDOS, Kokoro (English, Spanish and French speakers), Kitten and Matcha packages from
+# .tar.bz2, and speaks with each. On Windows and Linux it also
+# speaks with the Piper 2023.11.14-2 program older Cuebot versions installed. Then Whisper has to hear the words.
+# Weekly as well, because Piper's voice collection and the sherpa-onnx packages change upstream.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/Cuebot.Speech/Engines/Piper/**
+      - src/Cuebot.Speech/Voices/**
+      - src/Cuebot.Speech/Processes/**
+      - src/Cuebot.Speech/Audio/Wav.cs
+      - src/Cuebot.Scripting/Python/PinnedPython.cs
+      - src/Cuebot.Scripting/Python/PythonInstaller.cs
+      - tests/Cuebot.Speech.Tests/LiveVoiceTests.cs
+      - .github/workflows/voices.yml
+  pull_request:
+    paths:
+      - src/Cuebot.Speech/Engines/Piper/**
+      - src/Cuebot.Speech/Voices/**
+      - src/Cuebot.Speech/Processes/**
+      - src/Cuebot.Speech/Audio/Wav.cs
+      - src/Cuebot.Scripting/Python/PinnedPython.cs
+      - src/Cuebot.Scripting/Python/PythonInstaller.cs
+      - tests/Cuebot.Speech.Tests/LiveVoiceTests.cs
+      - .github/workflows/voices.yml
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+
+jobs:
+  speak:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install the voice engine, get one voice of each format, and speak
+        shell: bash
+        env:
+          CUEBOT_LIVE_VOICES: '1'
+          CUEBOT_LIVE_PIPER: '1'
+        run: |
+          mkdir -p wav
+          export CUEBOT_LIVE_VOICE_WAV_DIR="$PWD/wav"
+          dotnet test tests/Cuebot.Speech.Tests -c Release --filter "FullyQualifiedName~LiveVoiceTests" --logger "console;verbosity=detailed"
+          ls -l wav
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: voices-${{ runner.os }}
+          path: wav/*.wav
+
+  # Whisper must hear the words, so "speaks" means speech and not just sound.
+  listen:
+    needs: speak
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: voices-*
+          path: wav
+      - name: Transcribe and check
+        run: |
+          python3 -m venv whisper
+          whisper/bin/pip install -q faster-whisper==1.1.1 "av<14" requests
+          whisper/bin/python - <<'PY'
+          import glob, os, re, sys
+          from faster_whisper import WhisperModel
+          lines = {
+              "en": "thanks for the follow ann i like my bright white kite",
+              "es": "gracias por seguirme ana me gusta mucho mi cometa blanca",
+              "fr": "bonjour à tous merci beaucoup pour votre soutien ce soir",
+          }
+          # Every OS speaks every format with the voice engine; Windows and Linux also with the Piper program.
+          voices = ["en_US-amy-medium", "en_US-lessac-low", "vits-piper-en_US-glados-high", "glados-tokens-only",
+                    "kitten-nano-en-v0_8-int8", "matcha-icefall-en_US-ljspeech",
+                    "kokoro-int8-multi-lang-v1_0-af_heart", "kokoro-int8-multi-lang-v1_0-ef_dora", "kokoro-int8-multi-lang-v1_0-ff_siwis"]
+          expected = {f"{os_}/engine-{v}.wav" for os_ in ("voices-Windows", "voices-macOS", "voices-Linux") for v in voices}
+          expected |= {f"{os_}/after-skip-kitten-nano-en-v0_8-int8.wav" for os_ in ("voices-Windows", "voices-macOS", "voices-Linux")}
+          expected |= {f"{os_}/program-en_US-lessac-low.wav" for os_ in ("voices-Windows", "voices-Linux")}
+          language = lambda name: "es" if "ef_dora" in name else "fr" if "ff_siwis" in name else "en"
+          # GLaDOS is a deliberately distorted voice: Whisper often hears "kite" as "K" or "cake" (any engine).
+          def needed(name):
+              if "glados" in name: return {"follow", "white"}
+              return {"en": {"follow", "bright", "white", "kite"}, "es": {"gracias", "cometa", "blanca"}, "fr": {"bonjour", "merci", "soutien", "soir"}}[language(name)]
+          def wer(words, line):
+              d = list(range(len(words) + 1))
+              for i, r in enumerate(line, 1):
+                  p, d[0] = d[0], i
+                  for j, w in enumerate(words, 1):
+                      p, d[j] = d[j], min(d[j] + 1, d[j - 1] + 1, p + (r != w))
+              return d[-1] / len(line)
+          model = WhisperModel("small", device="cpu", compute_type="int8")
+          found = {os.path.relpath(f, "wav").replace(os.sep, "/") for f in glob.glob("wav/*/*.wav")}
+          failed = sorted(expected - found)
+          for name in failed:
+              print(f"MISSING {name}")
+          for name in sorted(found):
+              lang = language(name)
+              segments, _ = model.transcribe(f"wav/{name}", beam_size=5, language=lang)
+              text = " ".join(s.text.strip() for s in segments)
+              words = re.findall(r"\w+", text.lower())
+              ok = needed(name) <= set(words)
+              if not ok:
+                  failed.append(name)
+              print(f"{'ok  ' if ok else 'FAIL'} WER {wer(words, lines[lang].split()):.2f}  {name}: {text}")
+          sys.exit(1 if failed else 0)
+          PY

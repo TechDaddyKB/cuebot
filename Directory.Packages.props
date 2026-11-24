@@ -35,6 +35,8 @@
          win-x64/x86/arm64 and linux-x64/arm/arm64; NVorbis (MIT) decodes Ogg Vorbis in managed code. -->
     <PackageVersion Include="SoundFlow" Version="1.4.2" />
     <PackageVersion Include="NVorbis" Version="0.10.5" />
+    <!-- Voice packages: SharpZipLib (MIT) unpacks .tar.bz2, which .NET cannot (src/Cuebot.Speech/Voices/VoiceArchive.cs). -->
+    <PackageVersion Include="SharpZipLib" Version="1.4.2" />
     <!-- Phone pairing QR code: QRCoder (MIT), managed code only; its PNG renderer needs no System.Drawing. -->
     <PackageVersion Include="QRCoder" Version="1.9.0" />
     <!-- Webhooks: BouncyCastle (MIT) verifies Throne's Ed25519 signatures (the .NET 10 BCL has no Ed25519 API). -->

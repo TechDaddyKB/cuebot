@@ -66,12 +66,24 @@ public static class SpeechServiceCollectionExtensions
     {
         services.AddSingleton<ITtsEngine, WindowsSpeechEngine>();
         services.AddSingleton<ITtsEngine, EspeakEngine>();
-        services.AddSingleton(sp => new PiperStore(sp.GetRequiredService<AppPaths>().GetSharedDirectory("piper"),
+        services.AddSingleton(sp =>
+        {
+            // The shared voice library. Piper voices of Cuebot 1.0.6 and before move in here once, without downloading.
+            var paths = sp.GetRequiredService<AppPaths>();
+            var library = new VoiceLibrary(paths.GetSharedDirectory("voices"), sp.GetRequiredService<AppLog>(), sp.GetRequiredService<HttpClient>());
+            library.MigrateLegacyPiperVoices(paths.GetSharedDirectory("piper"));
+            library.Watch();
+            return library;
+        });
+        services.AddSingleton(sp => new VoiceEngine(sp.GetRequiredService<AppPaths>().GetSharedDirectory("voice-engine"),
             sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<AppLog>()));
+        services.AddSingleton(sp => new PiperStore(sp.GetRequiredService<AppPaths>().GetSharedDirectory("piper"),
+            sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<AppLog>(), sp.GetRequiredService<VoiceLibrary>()));
         services.AddSingleton<ITtsEngine>(sp =>
         {
             var settings = sp.GetRequiredService<JsonFile<SpeechSettings>>();
-            return new PiperEngine(sp.GetRequiredService<PiperStore>(), () => settings.Value.Engines.Piper);
+            return new VoiceLibraryEngine(sp.GetRequiredService<VoiceLibrary>(), sp.GetRequiredService<VoiceEngine>(),
+                sp.GetRequiredService<PiperStore>(), () => settings.Value.Engines.Piper);
         });
         AddCloud(services, (http, s) => new ElevenLabsEngine(http, () => s().ElevenLabsApiKey));
         AddCloud(services, (http, s) => new AzureEngine(http, () => s().Engines.Azure));

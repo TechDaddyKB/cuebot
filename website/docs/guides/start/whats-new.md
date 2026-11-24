@@ -4,6 +4,18 @@ What changed in each version of Cuebot, newest first. Each line links to the gui
 
 To get the newest version, see [Updating Cuebot](updating.md).
 
+## Unreleased
+
+A voice library for free voices on your computer, now on Mac too.
+
+- **Voice library.** Piper voices old and new, Kokoro (in six languages), Kitten, Matcha and sherpa-onnx voices such as GLaDOS all work, on Windows, macOS and Linux, after a one-time **Get voice engine**. See [the voice library](../sound/text-to-speech.md#the-voice-library-free-voices-on-your-computer).
+- **Import voices.** Add a Piper voice (`.onnx` and `.onnx.json`) or a `.tar.bz2` / `.tar.gz` voice package, and open the voices folder from Cuebot. Voices you copy in show up without a restart. Imported voices are in your backups; downloaded ones are not, since Cuebot can download them again.
+- **Your Piper voices move in** by themselves, without downloading them again.
+
+Fixes:
+
+- **Piper voices** no longer crash Piper (`Piper failed: exit code -1073740791` on Windows). Voices rebuilt in November 2026 for a newer Piper now speak through the voice engine. Without it, they say what to do instead of crashing.
+
 ## 1.0.6
 
 A better start and an easy way to reach us in the phone app. Update it from Google Play or the App Store.

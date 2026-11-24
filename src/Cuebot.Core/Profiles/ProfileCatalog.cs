@@ -63,7 +63,7 @@ public sealed class ProfileCatalog
     public static readonly IReadOnlySet<string> SharedEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         FileName, FolderName, ServerSettingsFile, "app.json", "updates.json", "instance.lock", "instance.sock", "restore.pending",
-        "logs", "backups", "python", "piper", "models", "cache", "crashes", "reports",
+        "logs", "backups", "python", "piper", "voices", "voice-engine", "models", "cache", "crashes", "reports",
     };
 
     /// <summary>The files (and folders) each copyable part is made of.</summary>

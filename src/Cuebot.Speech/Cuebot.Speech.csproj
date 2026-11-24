@@ -5,6 +5,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Cuebot.Core\Cuebot.Core.csproj" />
+    <!-- The voice engine installs the same pinned Python the scripting engine uses (PinnedPython, PythonInstaller). -->
+    <ProjectReference Include="..\Cuebot.Scripting\Cuebot.Scripting.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Cuebot.Speech.Tests" />
@@ -13,5 +15,9 @@
     <PackageReference Include="System.Speech" />
     <PackageReference Include="SoundFlow" />
     <PackageReference Include="NVorbis" />
+    <PackageReference Include="SharpZipLib" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Voices\cuebot_voice_host.py" LogicalName="Cuebot.Speech.cuebot_voice_host.py" />
   </ItemGroup>
 </Project>
