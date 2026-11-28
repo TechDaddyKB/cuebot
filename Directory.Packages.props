@@ -1,11 +1,11 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <AvaloniaVersion>12.1.6</AvaloniaVersion>
+    <AvaloniaVersion>12.2.0</AvaloniaVersion>
   </PropertyGroup>
   <ItemGroup>
     <!-- Assistant: the official Anthropic SDK (MIT) for the Anthropic API-key provider. -->
-    <PackageVersion Include="Anthropic" Version="13.12.0" />
+    <PackageVersion Include="Anthropic" Version="13.14.0" />
     <!-- UI -->
     <PackageVersion Include="Avalonia" Version="$(AvaloniaVersion)" />
     <PackageVersion Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
